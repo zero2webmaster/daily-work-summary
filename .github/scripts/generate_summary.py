@@ -23,6 +23,12 @@ except ImportError:
     print("ERROR: PyGithub not installed. Run: pip install PyGithub")
     sys.exit(1)
 
+try:
+    import markdown as markdown_lib
+except ImportError:
+    print("ERROR: markdown not installed. Run: pip install markdown")
+    sys.exit(1)
+
 MAX_MSG_LENGTH = 80
 MAX_RETRIES = 3
 SUMMARY_DIR = "summaries"
@@ -46,7 +52,8 @@ def get_github_client() -> Github:
         print("  Create token:   https://github.com/settings/tokens")
         sys.exit(1)
 
-    return Github(token, per_page=100)
+    from github import Auth
+    return Github(auth=Auth.Token(token), per_page=100)
 
 
 def truncate(msg: str, length: int = MAX_MSG_LENGTH) -> str:
@@ -282,8 +289,7 @@ def generate_summary() -> str:
     markdown_body = "\n".join(lines)
 
     # Convert markdown to HTML and wrap for larger email font size
-    import markdown
-    html_content = markdown.markdown(markdown_body, extensions=["nl2br"])
+    html_content = markdown_lib.markdown(markdown_body, extensions=["nl2br"])
     return f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;">{html_content}</div>'
 
 
