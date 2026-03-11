@@ -1,0 +1,22 @@
+# Dependencies (large, auto-generated)
+node_modules/
+package-lock.json
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Build outputs
+dist/
+build/
+*.pyc
+__pycache__/
+
+# Temporary/generated files
+.tmp/
+*.log
+
+# Generated summaries (can be large over time)
+summaries/

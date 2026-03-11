@@ -1,0 +1,39 @@
+# Project-Specific Rules
+
+> **Global Instructions:** See AGENTS.md for the 3-layer architecture and operating principles that apply to all projects.
+
+## This Project
+
+**Project:** Daily Work Summary
+**Objective:** Automatically generate and email daily smart summaries of GitHub development work across all zero2webmaster repos at 10pm EST.
+
+**Data Source:**
+- GitHub API: All commits in last 24 hours across ALL zero2webmaster/* and personal repos
+
+**Key Requirements:**
+1. GitHub Actions workflow runs daily at 10pm EST (cron: `0 3 * * *` UTC)
+2. Smart commit grouping per repo ("3 changes: feat X; fix Y; refactor Z")
+3. Email delivery via Gmail SMTP + Markdown archive saved to repo
+4. Repos sorted by commit count (most active first)
+
+**APIs Used:**
+- GitHub API (PyGithub) - Fetch commits across all repos
+- Gmail SMTP (dawidd6/action-send-mail) - Send daily email
+
+**GitHub Secrets (configured in repo settings):**
+- `PAT_GITHUB` - Personal Access Token with `repo` + `read:user` scopes
+- `EMAIL_USERNAME` - Gmail address (kerry@zero2webmaster.com)
+- `EMAIL_PASSWORD` - Gmail App Password (16-char, no spaces)
+
+**Expected Outputs:**
+1. Daily email at 10pm EST to kerry@zero2webmaster.com
+2. Markdown archive: `summaries/daily-summary-YYYY-MM-DD.md`
+3. Structured format: repos grouped by commit count with intelligent summaries
+
+**Edge Cases to Handle:**
+- No commits today: "No work today—well rested!"
+- Long commit messages: truncate to 80 chars
+- 403 PAT errors: clear error message + setup instructions
+- Empty summary: skip email step
+- API rate limiting: exponential backoff retry
+- Private repos: PAT must have full `repo` scope
