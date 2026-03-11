@@ -182,15 +182,26 @@ def main():
 
     # --- Output configuration ---
     print("\n" + "=" * 55)
-    print("Setup complete! Add these as GitHub repository VARIABLES:")
-    print("  Settings > Secrets and variables > Actions > Variables")
+    print("Setup complete!")
     print("=" * 55)
     print(f"\n  AIRTABLE_TABLE_SUMMARIES = {summaries_id}")
     print(f"  AIRTABLE_TABLE_REPOS     = {repos_id}")
-    print(f"\n  (Base ID you already have: AIRTABLE_BASE_ID = {base_id})")
-    print(f"\n  Also add AIRTABLE_PAT as a SECRET (not a variable).")
-    print(f"\n  Set DELIVERY_METHOD variable to 'both' or 'airtable'")
-    print(f"  to enable Airtable delivery.\n")
+    print(f"\n  (Base ID: AIRTABLE_BASE_ID = {base_id})")
+
+    # Write to $GITHUB_OUTPUT when running inside GitHub Actions so the
+    # setup-airtable.yml workflow can auto-save these as repository variables.
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a") as fh:
+            fh.write(f"summaries_table_id={summaries_id}\n")
+            fh.write(f"repos_table_id={repos_id}\n")
+        print("\n  Table IDs written to GITHUB_OUTPUT — workflow will save them")
+        print("  as repository variables automatically.")
+    else:
+        print("\n  Add these as GitHub repository VARIABLES:")
+        print("    Settings > Secrets and variables > Actions > Variables")
+        print(f"\n  Also ensure AIRTABLE_PAT is added as a SECRET.")
+        print(f"  Set DELIVERY_METHOD to 'airtable' or 'email,airtable'.\n")
 
 
 def _add_linked_field(

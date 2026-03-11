@@ -165,24 +165,34 @@ Save daily summaries and repository data to Airtable for searchable, filterable 
 
 ### Airtable Setup
 
-1. **Create an Airtable base** at [airtable.com](https://airtable.com) (name it anything, e.g. "GitHub Daily Work Summary")
-2. **Copy the base ID** from the URL: `https://airtable.com/appXXXXXXXXXXXXXX/...`
-3. **Create a PAT** at [airtable.com/create/tokens](https://airtable.com/create/tokens) with scopes:
-   - `data.records:read`
-   - `data.records:write`
-   - `schema.bases:read`
-   - `schema.bases:write`
-   - Grant access to the base you created
-4. **Run the setup script** to create tables automatically:
-   ```bash
-   AIRTABLE_PAT=patXXX AIRTABLE_BASE_ID=appXXX python3 execution/setup_airtable.py
-   ```
-5. The script prints the table IDs — add them as **GitHub Secrets** (recommended) or Variables:
-   - `AIRTABLE_TABLE_SUMMARIES` = `tblXXXXXXXXXXXXXX`
-   - `AIRTABLE_TABLE_REPOS` = `tblXXXXXXXXXXXXXX`
-6. Add `AIRTABLE_PAT` as a **GitHub Secret**
-7. Add `AIRTABLE_BASE_ID` as a **GitHub Secret** (or Variable — both work)
-8. Set `DELIVERY_METHOD` variable to `email,airtable` (email + Airtable) or `airtable` (Airtable only)
+Everything is done from inside GitHub — no local Python required.
+
+**Step 1 — Create an Airtable base**
+
+Go to [airtable.com](https://airtable.com) → **Add a base** → name it anything (e.g. "GitHub Daily Work Summary"). Copy the base ID from the URL: `https://airtable.com/appXXXXXXXXXXXXXX/...`
+
+**Step 2 — Create an Airtable PAT**
+
+Go to [airtable.com/create/tokens](https://airtable.com/create/tokens), create a token with these scopes: `data.records:read`, `data.records:write`, `schema.bases:read`, `schema.bases:write`. Grant access to the base you just created.
+
+**Step 3 — Add secrets to GitHub**
+
+Under **Settings → Secrets and variables → Actions → Secrets**, add:
+- `AIRTABLE_PAT` — your Airtable Personal Access Token
+- `AIRTABLE_BASE_ID` — the base ID (`appXXXXXXXXXXXXXX`)
+
+**Step 4 — Run the Setup Airtable workflow**
+
+Go to **Actions → Setup Airtable Tables → Run workflow → Run workflow**.
+
+This workflow will:
+- Create the **Daily Summaries** and **Repositories** tables with the correct fields
+- Automatically save `AIRTABLE_TABLE_SUMMARIES` and `AIRTABLE_TABLE_REPOS` as GitHub Variables — no copying or pasting needed
+- Safe to re-run — it skips tables that already exist
+
+**Step 5 — Enable Airtable delivery**
+
+Set the `DELIVERY_METHOD` variable to `email,airtable` (or `airtable` for Airtable only). That's it — the next daily run will populate your base.
 
 > **Note:** All references use Airtable IDs (`appXXX`, `tblXXX`), not names. You can rename tables/bases freely without breaking the integration.
 
@@ -294,7 +304,9 @@ Open `.github/workflows/daily-summary.yml` and update the `cron:` line. See the 
 
 ```
 ├── .github/
-│   ├── workflows/daily-summary.yml    # Cron + email + Airtable + webhook workflow
+│   ├── workflows/
+│   │   ├── daily-summary.yml          # Cron + email + Airtable + webhook workflow
+│   │   └── setup-airtable.yml         # One-click Airtable table setup (run once)
 │   └── scripts/
 │       ├── generate_summary.py        # Summary generator + delivery routing
 │       ├── airtable_client.py         # Airtable REST API client
@@ -302,7 +314,7 @@ Open `.github/workflows/daily-summary.yml` and update the `cron:` line. See the 
 ├── summaries/                         # Daily archives (auto-generated)
 ├── directives/                        # SOPs
 ├── execution/
-│   ├── setup_airtable.py             # One-time Airtable table creation
+│   ├── setup_airtable.py             # Airtable table creation (used by setup workflow)
 │   └── ...
 └── requirements.txt
 ```

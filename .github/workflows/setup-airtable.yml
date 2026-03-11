@@ -1,0 +1,55 @@
+name: Setup Airtable Tables
+
+# Run this once after adding your Airtable secrets to create the required
+# tables in your base and automatically save the table IDs as GitHub Variables.
+#
+# Prerequisites (add these before running):
+#   Secrets: AIRTABLE_PAT, AIRTABLE_BASE_ID (or as a Variable)
+#
+# What this does:
+#   1. Creates "Daily Summaries" and "Repositories" tables in your Airtable base
+#      (safe to re-run — skips tables that already exist)
+#   2. Automatically saves AIRTABLE_TABLE_SUMMARIES and AIRTABLE_TABLE_REPOS
+#      as GitHub repository Variables so the daily workflow is ready to go
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create Airtable tables
+        id: airtable_setup
+        env:
+          AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID || vars.AIRTABLE_BASE_ID }}
+        run: python execution/setup_airtable.py
+
+      - name: Save table IDs as GitHub Variables
+        env:
+          GH_TOKEN: ${{ secrets.PAT_GITHUB }}
+        run: |
+          gh variable set AIRTABLE_TABLE_SUMMARIES \
+            --body "${{ steps.airtable_setup.outputs.summaries_table_id }}"
+          echo "✅ AIRTABLE_TABLE_SUMMARIES saved"
+
+          gh variable set AIRTABLE_TABLE_REPOS \
+            --body "${{ steps.airtable_setup.outputs.repos_table_id }}"
+          echo "✅ AIRTABLE_TABLE_REPOS saved"
+
+          echo ""
+          echo "All done! Your Airtable base is ready."
+          echo "Run the 'Daily Work Summary' workflow to start populating it."
