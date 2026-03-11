@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.2.3
+**Version:** 1.3.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -84,14 +84,24 @@ Set **one** of these to enable AI-powered repo summaries. If you set multiple ke
 
 > **Tip:** OpenRouter lets you use models from Anthropic, OpenAI, Google, and others with a single key — useful if you want flexibility without managing multiple accounts.
 
+### Optional Airtable Secret
+
+| Secret | Description |
+|--------|-------------|
+| `AIRTABLE_PAT` | [Airtable Personal Access Token](https://airtable.com/create/tokens) with scopes: `data.records:read`, `data.records:write`, `schema.bases:read`, `schema.bases:write` |
+
 ### Variables
 
 Set these under **Settings → Secrets and variables → Actions → Variables**:
 
 | Variable | Options | Default |
 |----------|---------|---------|
+| `DELIVERY_METHOD` | `email`, `airtable`, `both` | `email` |
 | `AI_PROVIDER` | `openrouter`, `anthropic`, `gemini`, `openai` | Auto-detects from first available key |
 | `EMAIL_TIMEZONE` | Any [IANA timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) (e.g. `America/New_York`, `Europe/London`) | `America/New_York` |
+| `AIRTABLE_BASE_ID` | Your Airtable base ID (`appXXXXXXXXXXXXXX`) | *(none)* |
+| `AIRTABLE_TABLE_SUMMARIES` | Daily Summaries table ID (`tblXXXXXXXXXXXXXX`) | *(none)* |
+| `AIRTABLE_TABLE_REPOS` | Repositories table ID (`tblXXXXXXXXXXXXXX`) | *(none)* |
 
 ### Email Schedule (cron)
 
@@ -107,6 +117,52 @@ Edit `.github/workflows/daily-summary.yml` and change the `cron:` line. Cron tim
 | 9:00 AM | Asia/Tokyo (JST) | `0 0 * * *` |
 
 Use [crontab.guru](https://crontab.guru) to calculate the right UTC cron for your timezone.
+
+---
+
+## Airtable Integration (Optional)
+
+Save daily summaries and repository data to Airtable for searchable, filterable records with linked relationships. Each day creates a **Daily Summary** record linked to **Repository** records — click a repo to see every day you worked on it.
+
+### Airtable Schema
+
+**Daily Summaries** table:
+- Timestamp (YYYY-MM-DD) — primary field
+- Date — native date for calendar views
+- Summary — full markdown summary
+- Repos Worked On — count
+- Total Commits — count
+- AI Summaries — bulleted AI summaries (no commit details)
+- Repositories — linked to Repositories table
+
+**Repositories** table:
+- Name — `owner/repo-name`
+- URL — GitHub repo link
+- Owner — GitHub org/username
+- Daily Summaries — linked back to Daily Summaries
+
+### Airtable Setup
+
+1. **Create an Airtable base** at [airtable.com](https://airtable.com) (name it anything, e.g. "GitHub Daily Work Summary")
+2. **Copy the base ID** from the URL: `https://airtable.com/appXXXXXXXXXXXXXX/...`
+3. **Create a PAT** at [airtable.com/create/tokens](https://airtable.com/create/tokens) with scopes:
+   - `data.records:read`
+   - `data.records:write`
+   - `schema.bases:read`
+   - `schema.bases:write`
+   - Grant access to the base you created
+4. **Run the setup script** to create tables automatically:
+   ```bash
+   AIRTABLE_PAT=patXXX AIRTABLE_BASE_ID=appXXX python3 execution/setup_airtable.py
+   ```
+5. The script prints the table IDs — add them as **GitHub Variables**:
+   - `AIRTABLE_TABLE_SUMMARIES` = `tblXXXXXXXXXXXXXX`
+   - `AIRTABLE_TABLE_REPOS` = `tblXXXXXXXXXXXXXX`
+6. Add `AIRTABLE_PAT` as a **GitHub Secret**
+7. Add `AIRTABLE_BASE_ID` as a **GitHub Variable**
+8. Set `DELIVERY_METHOD` variable to `both` (email + Airtable) or `airtable` (Airtable only)
+
+> **Note:** All references use Airtable IDs (`appXXX`, `tblXXX`), not names. You can rename tables/bases freely without breaking the integration.
 
 ---
 
@@ -139,6 +195,7 @@ Use [crontab.guru](https://crontab.guru) to calculate the right UTC cron for you
 | `ANTHROPIC_API_KEY` | *(Optional)* Your Anthropic key |
 | `GOOGLE_API_KEY` | *(Optional)* Your Google AI key |
 | `OPENAI_API_KEY` | *(Optional)* Your OpenAI key |
+| `AIRTABLE_PAT` | *(Optional)* Your Airtable PAT ([create one](https://airtable.com/create/tokens)) |
 
 Only add the AI key(s) you actually have. One is enough.
 
@@ -150,6 +207,10 @@ Only add the AI key(s) you actually have. One is enough.
 |----------|---------------|
 | `EMAIL_TIMEZONE` | `America/New_York` |
 | `AI_PROVIDER` | `openrouter` *(only needed if you set multiple AI keys)* |
+| `DELIVERY_METHOD` | `both` *(email + Airtable; default is `email`)* |
+| `AIRTABLE_BASE_ID` | `appXXXXXXXXXXXXXX` *(from setup script)* |
+| `AIRTABLE_TABLE_SUMMARIES` | `tblXXXXXXXXXXXXXX` *(from setup script)* |
+| `AIRTABLE_TABLE_REPOS` | `tblXXXXXXXXXXXXXX` *(from setup script)* |
 
 ### 5. Enable Workflow Permissions
 
@@ -176,11 +237,15 @@ Open `.github/workflows/daily-summary.yml` and update the `cron:` line. See the 
 
 ```
 ├── .github/
-│   ├── workflows/daily-summary.yml   # Cron + email workflow
-│   └── scripts/generate_summary.py  # Summary generator
-├── summaries/                        # Daily archives (auto-generated)
-├── directives/                       # SOPs
-├── execution/                        # Local dev scripts
+│   ├── workflows/daily-summary.yml    # Cron + email + Airtable workflow
+│   └── scripts/
+│       ├── generate_summary.py        # Summary generator + delivery routing
+│       └── airtable_client.py         # Airtable REST API client
+├── summaries/                         # Daily archives (auto-generated)
+├── directives/                        # SOPs
+├── execution/
+│   ├── setup_airtable.py             # One-time Airtable table creation
+│   └── ...
 └── requirements.txt
 ```
 
@@ -213,4 +278,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.2.3 | Last Updated: 2026-03-11*
+*Version: 1.3.0 | Last Updated: 2026-03-11*

@@ -1,6 +1,6 @@
 # Directive: Generate Daily Work Summary
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Last Updated:** 2026-03-11
 **Owner:** Kerry Kriger
 
@@ -23,6 +23,9 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 | GitHub PAT | `PAT_GITHUB` secret | Scopes: `repo`, `read:user` |
 | Email credentials | `EMAIL_USERNAME`, `EMAIL_PASSWORD` secrets | Gmail App Password |
 | Time window | Last 24 hours from run time | Uses `datetime.utcnow() - timedelta(hours=24)` |
+| Delivery method | `DELIVERY_METHOD` variable | `email` (default), `airtable`, or `both` |
+| Airtable PAT | `AIRTABLE_PAT` secret | Required when delivery includes Airtable |
+| Airtable IDs | `AIRTABLE_BASE_ID`, `AIRTABLE_TABLE_SUMMARIES`, `AIRTABLE_TABLE_REPOS` variables | All IDs (`appXXX`, `tblXXX`), never names |
 
 ## Process
 
@@ -59,19 +62,29 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 - Write to `summaries/daily-summary-YYYY-MM-DD.md`
 - Git add + commit + push from within the workflow
 
-### Step 5: Send Email
+### Step 5: Deliver Summary
+Based on `DELIVERY_METHOD` variable:
+
+**Email** (`email` or `both`):
 - Use `dawidd6/action-send-mail` GitHub Action
 - To: kerry@zero2webmaster.com
 - Subject: `Daily Work Summary — Day Mon DD`
 - Body: HTML-formatted summary
 - Skip email if summary file is empty or only contains "no commits" message
 
+**Airtable** (`airtable` or `both`):
+- Find or create Repository records for each repo (by full_name)
+- Create Daily Summary record with all fields + linked repo records
+- Duplicate detection: skip if record for today's date already exists
+- All references use IDs (`appXXX`, `tblXXX`), never table/base names
+
 ## Outputs
 
 | Output | Location | Format |
 |--------|----------|--------|
-| Email | kerry@zero2webmaster.com | HTML |
+| Email | kerry@zero2webmaster.com | HTML (when DELIVERY_METHOD is `email` or `both`) |
 | Archive | `summaries/daily-summary-YYYY-MM-DD.md` | Markdown |
+| Airtable | Daily Summaries + Repositories tables | Structured records (when DELIVERY_METHOD is `airtable` or `both`) |
 | Logs | GitHub Actions run logs | Plaintext |
 
 ## Edge Cases
@@ -90,8 +103,10 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 
 | Script | Purpose |
 |--------|---------|
-| `.github/scripts/generate_summary.py` | Main summary generator (Layer 3) |
+| `.github/scripts/generate_summary.py` | Main summary generator + delivery routing (Layer 3) |
+| `.github/scripts/airtable_client.py` | Airtable REST API client (Layer 3) |
 | `.github/workflows/daily-summary.yml` | Workflow orchestration |
+| `execution/setup_airtable.py` | One-time Airtable table creation |
 
 ## Performance
 

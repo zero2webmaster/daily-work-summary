@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-03-11
+
+### Added
+- **Airtable integration:** Write daily summaries and repository data to Airtable with linked records
+- `airtable_client.py` — lightweight Python Airtable REST API client with create, query, update, delete, and Meta API support
+- `execution/setup_airtable.py` — one-time script to create Daily Summaries + Repositories tables via Airtable Meta API
+- `DELIVERY_METHOD` variable: choose `email`, `airtable`, or `both` (default: `email` for backward compatibility)
+- Duplicate detection: re-running the workflow won't create duplicate Airtable records
+- Linked records: Daily Summaries ↔ Repositories (bidirectional — click a repo to see all days, click a day to see all repos)
+- New secrets: `AIRTABLE_PAT`; new variables: `AIRTABLE_BASE_ID`, `AIRTABLE_TABLE_SUMMARIES`, `AIRTABLE_TABLE_REPOS`
+- `requests` added explicitly to `requirements.txt`
+
+### Changed
+- `generate_summary.py` refactored to return structured data dict (html, markdown, repos, ai_summaries, counts) instead of just HTML
+- Workflow conditionally skips email step when `DELIVERY_METHOD=airtable`
+- README: Added Airtable Integration section with full setup guide
+
+### Fixed
+- Version drift: VERSION (1.2.6) and README (1.2.3) now synchronized at 1.3.0
+
 ## [1.2.6] - 2026-03-11
 
 ### Changed

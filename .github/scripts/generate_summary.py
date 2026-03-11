@@ -6,6 +6,9 @@ Fetches all commits from the last 24 hours across every repository
 the authenticated GitHub user owns, then generates a smart grouped
 summary as Markdown with optional AI-powered repo descriptions.
 
+Supports multiple delivery methods (email, Airtable, or both) controlled
+by the DELIVERY_METHOD environment variable.
+
 Runs as part of the GitHub Actions workflow, but can also be tested
 locally with PAT_GITHUB set in environment or .env file.
 """
@@ -16,6 +19,7 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any
 
 try:
     from github import Github, GithubException, RateLimitExceededException
@@ -108,7 +112,6 @@ def _get_ai_client_and_key() -> tuple[str | None, str | None, str | None]:
 
     provider = (os.environ.get("AI_PROVIDER") or "").lower().strip()
     if not provider:
-        # Auto-detect: use first provider that has a key
         for p, (key_env, model) in AI_PROVIDERS.items():
             if os.environ.get(key_env):
                 print(f"  AI provider auto-detected: {p}")
@@ -202,16 +205,23 @@ Commits:
         return None
 
 
-def generate_summary() -> str:
+def generate_summary() -> dict[str, Any]:
+    """Fetch commits, generate summary, and return structured data.
+
+    Returns a dict with keys:
+        html, markdown, date, total_commits, total_repos,
+        repos (list of dicts), ai_summaries_text, has_commits
+    """
     g = get_github_client()
     user = g.get_user()
     print(f"Authenticated as: {user.login}")
 
     since = datetime.now(timezone.utc) - timedelta(hours=24)
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     print(f"Fetching commits since: {since.isoformat()}")
 
-    # Group by owner (account) -> repo_name -> messages
     owner_repos: dict[str, dict[str, list[str]]] = defaultdict(dict)
+    repo_urls: dict[str, str] = {}
 
     repos = list(user.get_repos(affiliation="owner,organization_member"))
     print(f"Found {len(repos)} repositories")
@@ -225,8 +235,10 @@ def generate_summary() -> str:
             messages = [c.commit.message for c in commits]
             owner, repo_name = repo.full_name.split("/", 1)
             owner_repos[owner][repo_name] = messages
+            repo_urls[repo.full_name] = repo.html_url
             print(f"  {repo.full_name}: {len(commits)} commits")
 
+    # No commits — return minimal result
     if not owner_repos:
         msg = "No commits today — well rested! ✅"
         footer = (
@@ -235,7 +247,17 @@ def generate_summary() -> str:
             '<p>Contribute to the public repository at: '
             '<a href="https://github.com/zero2webmaster/daily-work-summary">github.com/zero2webmaster/daily-work-summary</a></p>'
         )
-        return f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;"><p>{msg}</p>{footer}</div>'
+        html = f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;"><p>{msg}</p>{footer}</div>'
+        return {
+            "html": html,
+            "markdown": msg,
+            "date": today,
+            "total_commits": 0,
+            "total_repos": 0,
+            "repos": [],
+            "ai_summaries_text": "",
+            "has_commits": False,
+        }
 
     total_commits = sum(
         len(msgs) for per_owner in owner_repos.values() for msgs in per_owner.values()
@@ -251,25 +273,28 @@ def generate_summary() -> str:
         "",
     ]
 
+    structured_repos: list[dict[str, Any]] = []
+    ai_summary_bullets: list[str] = []
+
     for owner in sorted(owner_repos.keys()):
         repos_data = owner_repos[owner]
-        # Sort repos by commit count (most active first)
-        sorted_repos = sorted(
+        sorted_repos_list = sorted(
             repos_data.items(), key=lambda x: len(x[1]), reverse=True
         )
 
         lines.append(f"## {owner}")
         lines.append("")
 
-        for repo_name, messages in sorted_repos:
+        for repo_name, messages in sorted_repos_list:
+            full_name = f"{owner}/{repo_name}"
             count = len(messages)
             commit_label = f"{count} commit{'s' if count != 1 else ''}"
 
-            # AI summary (optional)
             ai_summary = generate_ai_repo_summary(messages)
             lines.append(f"### {repo_name} ({commit_label})")
             if ai_summary:
                 lines.append(f"*{ai_summary}*")
+                ai_summary_bullets.append(f"- {repo_name}: {ai_summary}")
             lines.append("")
 
             for msg in messages:
@@ -277,6 +302,15 @@ def generate_summary() -> str:
                 lines.append(f"* {bullet}")
 
             lines.append("")
+
+            structured_repos.append({
+                "full_name": full_name,
+                "url": repo_urls.get(full_name, f"https://github.com/{full_name}"),
+                "owner": owner,
+                "commits": count,
+                "messages": messages,
+                "ai_summary": ai_summary,
+            })
 
     lines.append("---")
     lines.append("")
@@ -288,11 +322,143 @@ def generate_summary() -> str:
     lines.append("")
 
     markdown_body = "\n".join(lines)
-
-    # Convert markdown to HTML and wrap for larger email font size
     html_content = markdown_lib.markdown(markdown_body, extensions=["nl2br"])
-    return f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;">{html_content}</div>'
+    html = f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;">{html_content}</div>'
 
+    return {
+        "html": html,
+        "markdown": markdown_body,
+        "date": today,
+        "total_commits": total_commits,
+        "total_repos": total_repos,
+        "repos": structured_repos,
+        "ai_summaries_text": "\n".join(ai_summary_bullets),
+        "has_commits": True,
+    }
+
+
+# ------------------------------------------------------------------
+# Airtable delivery
+# ------------------------------------------------------------------
+
+def _get_airtable_config() -> dict[str, str] | None:
+    """Return Airtable config dict if all required vars are set, else None."""
+    pat = os.environ.get("AIRTABLE_PAT")
+    base_id = os.environ.get("AIRTABLE_BASE_ID")
+    table_summaries = os.environ.get("AIRTABLE_TABLE_SUMMARIES")
+    table_repos = os.environ.get("AIRTABLE_TABLE_REPOS")
+
+    if not all([pat, base_id, table_summaries, table_repos]):
+        missing = []
+        if not pat:
+            missing.append("AIRTABLE_PAT")
+        if not base_id:
+            missing.append("AIRTABLE_BASE_ID")
+        if not table_summaries:
+            missing.append("AIRTABLE_TABLE_SUMMARIES")
+        if not table_repos:
+            missing.append("AIRTABLE_TABLE_REPOS")
+        print(f"  Airtable: skipped (missing: {', '.join(missing)})")
+        return None
+
+    return {
+        "pat": pat,
+        "base_id": base_id,
+        "table_summaries": table_summaries,
+        "table_repos": table_repos,
+    }
+
+
+def write_to_airtable(summary_data: dict[str, Any]) -> bool:
+    """Write summary data to Airtable. Returns True on success."""
+    from airtable_client import AirtableClient, AirtableError
+
+    config = _get_airtable_config()
+    if not config:
+        return False
+
+    client = AirtableClient(pat=config["pat"], base_id=config["base_id"])
+    tbl_summaries = config["table_summaries"]
+    tbl_repos = config["table_repos"]
+
+    date_str = summary_data["date"]
+
+    # --- Duplicate detection: skip if today's summary already exists ---
+    try:
+        existing = client.query_records(
+            tbl_summaries,
+            filter_formula=f"{{Timestamp}}='{date_str}'",
+            max_records=1,
+        )
+        if existing:
+            print(f"  Airtable: summary for {date_str} already exists (record {existing[0]['id']}), skipping.")
+            return True
+    except AirtableError as exc:
+        print(f"  Airtable: warning checking for duplicates: {exc}")
+
+    # --- Find or create Repository records ---
+    repo_record_ids: list[str] = []
+    for repo_info in summary_data["repos"]:
+        repo_record_id = _find_or_create_repo(client, tbl_repos, repo_info)
+        if repo_record_id:
+            repo_record_ids.append(repo_record_id)
+
+    # --- Create Daily Summary record ---
+    fields: dict[str, Any] = {
+        "Timestamp": date_str,
+        "Date": date_str,
+        "Summary": summary_data["markdown"],
+        "Repos Worked On": summary_data["total_repos"],
+        "Total Commits": summary_data["total_commits"],
+        "AI Summaries": summary_data["ai_summaries_text"] or "(AI summaries not enabled)",
+    }
+    if repo_record_ids:
+        fields["Repositories"] = repo_record_ids
+
+    try:
+        record = client.create_record(tbl_summaries, fields)
+        print(f"  Airtable: created daily summary record {record['id']} for {date_str}")
+        return True
+    except AirtableError as exc:
+        print(f"  Airtable ERROR creating summary: {exc}")
+        return False
+
+
+def _find_or_create_repo(
+    client: "AirtableClient", table_id: str, repo_info: dict
+) -> str | None:
+    """Find an existing repo record by name, or create one. Returns record ID."""
+    from airtable_client import AirtableError
+
+    full_name = repo_info["full_name"]
+
+    try:
+        existing = client.query_records(
+            table_id,
+            filter_formula=f"{{Name}}='{full_name}'",
+            max_records=1,
+        )
+        if existing:
+            return existing[0]["id"]
+    except AirtableError as exc:
+        print(f"  Airtable: warning looking up repo '{full_name}': {exc}")
+
+    try:
+        record = client.create_record(table_id, {
+            "Name": full_name,
+            "URL": repo_info["url"],
+            "Owner": repo_info["owner"],
+        })
+        print(f"  Airtable: created repo record for {full_name}")
+        return record["id"]
+    except AirtableError as exc:
+        print(f"  Airtable ERROR creating repo '{full_name}': {exc}")
+        return None
+
+
+# ------------------------------------------------------------------
+# Main
+# ------------------------------------------------------------------
 
 def main():
     print("=" * 50)
@@ -300,7 +466,7 @@ def main():
     print("=" * 50)
 
     try:
-        summary = generate_summary()
+        summary_data = generate_summary()
     except GithubException as e:
         if e.status == 401:
             print("ERROR: PAT_GITHUB is invalid or expired.")
@@ -314,14 +480,28 @@ def main():
         else:
             raise
 
-    Path(SUMMARY_DIR).mkdir(exist_ok=True)
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    summary_path = Path(SUMMARY_DIR) / f"daily-summary-{today}.md"
+    # Determine delivery method
+    delivery = (os.environ.get("DELIVERY_METHOD") or "email").lower().strip()
+    if delivery not in ("email", "airtable", "both"):
+        print(f"  WARNING: DELIVERY_METHOD='{delivery}' not recognized, defaulting to 'email'")
+        delivery = "email"
 
-    summary_path.write_text(summary)
+    # Write summary file (always, for the archive and email step)
+    Path(SUMMARY_DIR).mkdir(exist_ok=True)
+    summary_path = Path(SUMMARY_DIR) / f"daily-summary-{summary_data['date']}.md"
+    summary_path.write_text(summary_data["html"])
     print(f"\nSummary written to: {summary_path}")
+
+    # Airtable delivery
+    if delivery in ("airtable", "both") and summary_data["has_commits"]:
+        print("\n--- Airtable Delivery ---")
+        write_to_airtable(summary_data)
+
+    if delivery == "airtable":
+        print("\n  Delivery: Airtable only (email step will be skipped by workflow)")
+
     print(f"\n{'=' * 50}")
-    print(summary)
+    print(summary_data["html"])
 
 
 if __name__ == "__main__":

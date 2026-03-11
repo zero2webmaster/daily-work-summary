@@ -43,19 +43,27 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DELIVERY_METHOD: ${{ vars.DELIVERY_METHOD }}
+          AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
+          AIRTABLE_BASE_ID: ${{ vars.AIRTABLE_BASE_ID }}
+          AIRTABLE_TABLE_SUMMARIES: ${{ vars.AIRTABLE_TABLE_SUMMARIES }}
+          AIRTABLE_TABLE_REPOS: ${{ vars.AIRTABLE_TABLE_REPOS }}
         run: |
           python .github/scripts/generate_summary.py
-          
+
           # Check if summary was generated and has content
           TODAY=$(date -u +%Y-%m-%d)
           SUMMARY_FILE="summaries/daily-summary-${TODAY}.md"
-          
+
           if [ -f "$SUMMARY_FILE" ] && [ -s "$SUMMARY_FILE" ]; then
             echo "has_summary=true" >> $GITHUB_OUTPUT
             echo "summary_file=$SUMMARY_FILE" >> $GITHUB_OUTPUT
           else
             echo "has_summary=false" >> $GITHUB_OUTPUT
           fi
+
+          # Pass delivery method so the email step can be conditionally skipped
+          echo "delivery_method=${DELIVERY_METHOD:-email}" >> $GITHUB_OUTPUT
 
       - name: Commit summary to repo
         if: steps.summary.outputs.has_summary == 'true'
@@ -67,7 +75,9 @@ jobs:
           git push
 
       - name: Send email
-        if: steps.summary.outputs.has_summary == 'true'
+        if: >-
+          steps.summary.outputs.has_summary == 'true' &&
+          steps.summary.outputs.delivery_method != 'airtable'
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com

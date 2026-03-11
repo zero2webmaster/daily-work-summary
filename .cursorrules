@@ -19,22 +19,29 @@
 **APIs Used:**
 - GitHub API (PyGithub) - Fetch commits across all repos
 - Gmail SMTP (dawidd6/action-send-mail) - Send daily email
+- Airtable REST API (requests) - Write daily summaries and repo records
 
 **GitHub Secrets (configured in repo settings):**
 - `PAT_GITHUB` - Personal Access Token with `repo` + `read:user` scopes
 - `EMAIL_USERNAME` - Gmail address (kerry@zero2webmaster.com)
 - `EMAIL_PASSWORD` - Gmail App Password (16-char, no spaces)
+- `AIRTABLE_PAT` - (Optional) Airtable Personal Access Token with `data.records:read`, `data.records:write`, `schema.bases:read`, `schema.bases:write` scopes
 - `AI_PROVIDER` - (Variable) Set to ONE of: `openrouter`, `anthropic`, `gemini`, `openai`. Auto-detects from first available key if unset. **Do not set to the full pipe-separated list — that is just documentation of the options.**
 - `OPENROUTER_API_KEY` - (Optional) OpenRouter API key
 - `OPENAI_API_KEY` - (Optional) OpenAI API key
 - `ANTHROPIC_API_KEY` - (Optional) Anthropic API key
 - `GOOGLE_API_KEY` - (Optional) Google/Gemini API key
 - `EMAIL_TIMEZONE` - (Variable) IANA timezone for subject date (default America/New_York). Cron time edited in workflow file.
+- `DELIVERY_METHOD` - (Variable) `email`, `airtable`, or `both` (default: `email`)
+- `AIRTABLE_BASE_ID` - (Variable) Airtable base ID (`appXXXXXXXXXXXXXX`)
+- `AIRTABLE_TABLE_SUMMARIES` - (Variable) Daily Summaries table ID (`tblXXXXXXXXXXXXXX`)
+- `AIRTABLE_TABLE_REPOS` - (Variable) Repositories table ID (`tblXXXXXXXXXXXXXX`)
 
 **Expected Outputs:**
-1. Daily email at 10pm EST to kerry@zero2webmaster.com
+1. Daily email at 10pm EST to kerry@zero2webmaster.com (when DELIVERY_METHOD is `email` or `both`)
 2. Markdown archive: `summaries/daily-summary-YYYY-MM-DD.md`
 3. Structured format: repos grouped by commit count with intelligent summaries
+4. Airtable records: Daily Summary + Repository records with linked relationships (when DELIVERY_METHOD is `airtable` or `both`)
 
 **Edge Cases to Handle:**
 - No commits today: "No work today—well rested!"
