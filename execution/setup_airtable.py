@@ -250,14 +250,11 @@ def _add_linked_field(
     body = {
         "name": "Repositories",
         "type": "multipleRecordLinks",
-        "options": {
-            "linkedTableId": repos_table_id,
-            "inverseLinkFieldName": "Daily Summaries",
-        },
+        "options": {"linkedTableId": repos_table_id},
     }
     try:
         client._request("POST", url, json_body=body)
-        print("Linked 'Daily Summaries.Repositories' <-> 'Repositories.Daily Summaries'")
+        print("Linked 'Daily Summaries.Repositories' <-> Repositories (inverse link auto-created)")
     except AirtableError as exc:
         err_lower = str(exc).lower()
         if "already exists" in err_lower or "duplicate" in err_lower or "field with that name" in err_lower:
