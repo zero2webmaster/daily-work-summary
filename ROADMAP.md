@@ -101,11 +101,35 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
+## Phase 5: Slack / Discord Delivery ✅
+**Status:** Complete (2026-03-11)
+**Estimated Time:** 45 minutes
+
+**Tasks:**
+- [x] Create `webhook_client.py` — Slack Block Kit + Discord embed delivery with retry logic
+- [x] Add `send_to_slack()` + `send_to_discord()` functions to `generate_summary.py`
+- [x] Refactor `DELIVERY_METHOD` to accept comma-separated values (`email,slack,discord`)
+- [x] Add `SLACK_WEBHOOK_URL` + `DISCORD_WEBHOOK_URL` secrets to workflow
+- [x] Fix email step condition: script outputs `send_email=true/false` via `$GITHUB_OUTPUT`
+- [x] README: Added Slack & Discord Integration section with step-by-step webhook setup
+- [x] Handle message length limits (Slack 3000 chars/block, Discord 4096 char description)
+- [x] Bumped to v1.4.0
+
+**Verification:**
+```bash
+python3 -m py_compile .github/scripts/webhook_client.py
+python3 -m py_compile .github/scripts/generate_summary.py
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+```
+
+**Dependencies:** Phases 1-4 (builds on existing delivery routing)
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:
 
-- [ ] Slack / Discord delivery options
 - [ ] Filter by repo patterns (WordPress vs AI projects)
 - [ ] Commit impact analysis (lines changed, files touched)
 - [ ] Weekly/monthly rollup summaries

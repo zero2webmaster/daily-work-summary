@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11
+**Last Updated:** 2026-03-11 (v1.4.0)
 
 ---
 
@@ -36,14 +36,18 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Backward compatible — existing users see no change. Airtable is purely opt-in via setting the variable to `airtable` or `both`.
 
+### Decision: Comma-separated DELIVERY_METHOD for Slack/Discord
+**Date:** 2026-03-11
+**Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
+
 ---
 
 ## ✅ Next Actions
 
 1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
 2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Verify Airtable records and linked relationships
-4. Consider adding Slack/Discord delivery options (next roadmap item)
+3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
+4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
 
 ---
 
@@ -54,6 +58,14 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
+- Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic
+- Added `send_to_slack()` + `send_to_discord()` in `generate_summary.py`
+- Refactored `DELIVERY_METHOD` to comma-separated (e.g. `email,slack,discord`); `both` alias preserved
+- Workflow: added `SLACK_WEBHOOK_URL` + `DISCORD_WEBHOOK_URL`; email condition now uses `send_email` output
+- README: new Slack & Discord Integration section with step-by-step setup
+- Bumped to v1.4.0
 
 ### Session: 2026-03-11 - Airtable Integration (v1.3.0)
 - Built `airtable_client.py` — full Airtable REST API client with retry logic

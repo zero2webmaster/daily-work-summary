@@ -6,8 +6,18 @@ Fetches all commits from the last 24 hours across every repository
 the authenticated GitHub user owns, then generates a smart grouped
 summary as Markdown with optional AI-powered repo descriptions.
 
-Supports multiple delivery methods (email, Airtable, or both) controlled
-by the DELIVERY_METHOD environment variable.
+Supports multiple delivery methods controlled by the DELIVERY_METHOD
+environment variable (comma-separated list):
+  email    — send HTML email via Gmail SMTP (workflow step)
+  airtable — write to Airtable tables
+  slack    — POST to Slack incoming webhook (SLACK_WEBHOOK_URL)
+  discord  — POST to Discord incoming webhook (DISCORD_WEBHOOK_URL)
+  both     — alias for "email,airtable" (backward-compatible)
+
+Examples:
+  DELIVERY_METHOD=email
+  DELIVERY_METHOD=slack,discord
+  DELIVERY_METHOD=email,slack,airtable
 
 Runs as part of the GitHub Actions workflow, but can also be tested
 locally with PAT_GITHUB set in environment or .env file.
@@ -338,6 +348,69 @@ def generate_summary() -> dict[str, Any]:
 
 
 # ------------------------------------------------------------------
+# Delivery method parsing
+# ------------------------------------------------------------------
+
+VALID_DELIVERY_METHODS = {"email", "airtable", "slack", "discord"}
+
+
+def parse_delivery_methods(raw: str | None) -> set[str]:
+    """Parse DELIVERY_METHOD env var into a set of method names.
+
+    Supports comma-separated values and the legacy 'both' alias.
+    Returns {'email'} as the default if nothing valid is set.
+    """
+    raw = (raw or "email").lower().strip()
+    # Backward-compatible alias
+    if raw == "both":
+        raw = "email,airtable"
+
+    methods = {m.strip() for m in raw.split(",") if m.strip()}
+    unknown = methods - VALID_DELIVERY_METHODS
+    if unknown:
+        valid_str = ", ".join(sorted(VALID_DELIVERY_METHODS))
+        print(f"  WARNING: Unknown DELIVERY_METHOD value(s): {', '.join(sorted(unknown))} — ignoring. "
+              f"Valid options: {valid_str}")
+        methods -= unknown
+
+    if not methods:
+        print("  WARNING: No valid delivery methods found, defaulting to 'email'")
+        return {"email"}
+
+    return methods
+
+
+# ------------------------------------------------------------------
+# Slack / Discord delivery
+# ------------------------------------------------------------------
+
+def send_to_slack(summary_data: dict) -> bool:
+    """Send summary to Slack webhook. Returns True on success."""
+    from webhook_client import send_slack
+
+    webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
+    if not webhook_url:
+        print("  Slack: skipped (SLACK_WEBHOOK_URL not set)")
+        return False
+
+    print("  Slack: sending message...")
+    return send_slack(webhook_url, summary_data)
+
+
+def send_to_discord(summary_data: dict) -> bool:
+    """Send summary to Discord webhook. Returns True on success."""
+    from webhook_client import send_discord
+
+    webhook_url = os.environ.get("DISCORD_WEBHOOK_URL")
+    if not webhook_url:
+        print("  Discord: skipped (DISCORD_WEBHOOK_URL not set)")
+        return False
+
+    print("  Discord: sending message...")
+    return send_discord(webhook_url, summary_data)
+
+
+# ------------------------------------------------------------------
 # Airtable delivery
 # ------------------------------------------------------------------
 
@@ -480,25 +553,42 @@ def main():
         else:
             raise
 
-    # Determine delivery method
-    delivery = (os.environ.get("DELIVERY_METHOD") or "email").lower().strip()
-    if delivery not in ("email", "airtable", "both"):
-        print(f"  WARNING: DELIVERY_METHOD='{delivery}' not recognized, defaulting to 'email'")
-        delivery = "email"
+    # Determine delivery methods (comma-separated, 'both' = email+airtable)
+    delivery_methods = parse_delivery_methods(os.environ.get("DELIVERY_METHOD"))
+    print(f"\nDelivery methods: {', '.join(sorted(delivery_methods))}")
 
     # Write summary file (always, for the archive and email step)
     Path(SUMMARY_DIR).mkdir(exist_ok=True)
     summary_path = Path(SUMMARY_DIR) / f"daily-summary-{summary_data['date']}.md"
     summary_path.write_text(summary_data["html"])
-    print(f"\nSummary written to: {summary_path}")
+    print(f"Summary written to: {summary_path}")
 
     # Airtable delivery
-    if delivery in ("airtable", "both") and summary_data["has_commits"]:
+    if "airtable" in delivery_methods and summary_data["has_commits"]:
         print("\n--- Airtable Delivery ---")
         write_to_airtable(summary_data)
 
-    if delivery == "airtable":
-        print("\n  Delivery: Airtable only (email step will be skipped by workflow)")
+    # Slack delivery
+    if "slack" in delivery_methods:
+        print("\n--- Slack Delivery ---")
+        send_to_slack(summary_data)
+
+    # Discord delivery
+    if "discord" in delivery_methods:
+        print("\n--- Discord Delivery ---")
+        send_to_discord(summary_data)
+
+    # Tell the workflow whether to run the email step
+    send_email = "email" in delivery_methods
+    if not send_email:
+        active = ", ".join(sorted(delivery_methods - {"email"}))
+        print(f"\n  Email step: skipped (delivery is {active} only)")
+
+    # Write outputs for the workflow to consume
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a") as fh:
+            fh.write(f"send_email={'true' if send_email else 'false'}\n")
 
     print(f"\n{'=' * 50}")
     print(summary_data["html"])

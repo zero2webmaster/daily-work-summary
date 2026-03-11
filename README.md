@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.3.0
+**Version:** 1.4.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -90,18 +90,37 @@ Set **one** of these to enable AI-powered repo summaries. If you set multiple ke
 |--------|-------------|
 | `AIRTABLE_PAT` | [Airtable Personal Access Token](https://airtable.com/create/tokens) with scopes: `data.records:read`, `data.records:write`, `schema.bases:read`, `schema.bases:write` |
 
+### Optional Slack / Discord Secrets
+
+| Secret | Description |
+|--------|-------------|
+| `SLACK_WEBHOOK_URL` | Slack [Incoming Webhook URL](https://api.slack.com/messaging/webhooks) — format: `https://hooks.slack.com/services/...` |
+| `DISCORD_WEBHOOK_URL` | Discord channel webhook URL — format: `https://discord.com/api/webhooks/...` |
+
 ### Variables
 
 Set these under **Settings → Secrets and variables → Actions → Variables**:
 
 | Variable | Options | Default |
 |----------|---------|---------|
-| `DELIVERY_METHOD` | `email`, `airtable`, `both` | `email` |
+| `DELIVERY_METHOD` | Comma-separated list: `email`, `airtable`, `slack`, `discord`. Also accepts `both` (= `email,airtable`) | `email` |
 | `AI_PROVIDER` | `openrouter`, `anthropic`, `gemini`, `openai` | Auto-detects from first available key |
 | `EMAIL_TIMEZONE` | Any [IANA timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) (e.g. `America/New_York`, `Europe/London`) | `America/New_York` |
 | `AIRTABLE_BASE_ID` | Your Airtable base ID (`appXXXXXXXXXXXXXX`) | *(none)* |
 | `AIRTABLE_TABLE_SUMMARIES` | Daily Summaries table ID (`tblXXXXXXXXXXXXXX`) | *(none)* |
 | `AIRTABLE_TABLE_REPOS` | Repositories table ID (`tblXXXXXXXXXXXXXX`) | *(none)* |
+
+**`DELIVERY_METHOD` examples:**
+
+| Value | What happens |
+|-------|--------------|
+| `email` | HTML email only (default) |
+| `slack` | Slack message only |
+| `discord` | Discord embed only |
+| `email,slack` | Email + Slack |
+| `slack,discord` | Both Slack and Discord |
+| `email,airtable,slack,discord` | All four channels |
+| `both` | Email + Airtable (backward-compatible alias) |
 
 ### Email Schedule (cron)
 
@@ -166,6 +185,39 @@ Save daily summaries and repository data to Airtable for searchable, filterable 
 
 ---
 
+## Slack & Discord Integration (Optional)
+
+Get your daily summary posted directly to a Slack channel or Discord server via webhooks — no bot setup required.
+
+### Slack Setup
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) → **Create New App** → **From scratch**
+2. Name it (e.g. "Daily Work Summary"), choose your workspace
+3. Under **Features**, click **Incoming Webhooks** → toggle **Activate Incoming Webhooks** to On
+4. Click **Add New Webhook to Workspace**, choose the channel, click **Allow**
+5. Copy the Webhook URL (`https://hooks.slack.com/services/...`)
+6. Add it as a GitHub Secret: `SLACK_WEBHOOK_URL`
+7. Set `DELIVERY_METHOD` to include `slack` (e.g. `slack` or `email,slack`)
+
+### Discord Setup
+
+1. Open your Discord server → right-click the channel → **Edit Channel**
+2. Go to **Integrations** → **Webhooks** → **New Webhook**
+3. Name it (e.g. "Daily Work Summary"), optionally set an avatar
+4. Click **Copy Webhook URL** (`https://discord.com/api/webhooks/...`)
+5. Add it as a GitHub Secret: `DISCORD_WEBHOOK_URL`
+6. Set `DELIVERY_METHOD` to include `discord` (e.g. `discord` or `email,discord`)
+
+### What the Message Looks Like
+
+**Slack** — uses [Block Kit](https://api.slack.com/block-kit) with a header, stats bar, per-repo sections with linked repo names, optional AI summaries in italics, and a footer link.
+
+**Discord** — uses a rich embed with a green accent color (grey on no-commit days), commit stats as inline fields, and a full per-repo breakdown with hyperlinked repo names.
+
+Both handle message length limits gracefully — long summaries are truncated with `...` and a "...and N more repos" notice if needed.
+
+---
+
 ## Setup Guide
 
 ### 1. Create a GitHub PAT
@@ -196,6 +248,8 @@ Save daily summaries and repository data to Airtable for searchable, filterable 
 | `GOOGLE_API_KEY` | *(Optional)* Your Google AI key |
 | `OPENAI_API_KEY` | *(Optional)* Your OpenAI key |
 | `AIRTABLE_PAT` | *(Optional)* Your Airtable PAT ([create one](https://airtable.com/create/tokens)) |
+| `SLACK_WEBHOOK_URL` | *(Optional)* Slack Incoming Webhook URL |
+| `DISCORD_WEBHOOK_URL` | *(Optional)* Discord channel webhook URL |
 
 Only add the AI key(s) you actually have. One is enough.
 
@@ -207,7 +261,7 @@ Only add the AI key(s) you actually have. One is enough.
 |----------|---------------|
 | `EMAIL_TIMEZONE` | `America/New_York` |
 | `AI_PROVIDER` | `openrouter` *(only needed if you set multiple AI keys)* |
-| `DELIVERY_METHOD` | `both` *(email + Airtable; default is `email`)* |
+| `DELIVERY_METHOD` | `email,slack` *(comma-separated; default is `email`. Options: `email`, `airtable`, `slack`, `discord`)* |
 | `AIRTABLE_BASE_ID` | `appXXXXXXXXXXXXXX` *(from setup script)* |
 | `AIRTABLE_TABLE_SUMMARIES` | `tblXXXXXXXXXXXXXX` *(from setup script)* |
 | `AIRTABLE_TABLE_REPOS` | `tblXXXXXXXXXXXXXX` *(from setup script)* |
@@ -237,10 +291,11 @@ Open `.github/workflows/daily-summary.yml` and update the `cron:` line. See the 
 
 ```
 ├── .github/
-│   ├── workflows/daily-summary.yml    # Cron + email + Airtable workflow
+│   ├── workflows/daily-summary.yml    # Cron + email + Airtable + webhook workflow
 │   └── scripts/
 │       ├── generate_summary.py        # Summary generator + delivery routing
-│       └── airtable_client.py         # Airtable REST API client
+│       ├── airtable_client.py         # Airtable REST API client
+│       └── webhook_client.py          # Slack + Discord webhook delivery
 ├── summaries/                         # Daily archives (auto-generated)
 ├── directives/                        # SOPs
 ├── execution/
@@ -278,4 +333,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.3.0 | Last Updated: 2026-03-11*
+*Version: 1.4.0 | Last Updated: 2026-03-11*

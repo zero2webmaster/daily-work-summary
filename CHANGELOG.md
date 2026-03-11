@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-03-11
+
+### Added
+- **Slack integration:** Post daily summaries to Slack channels via Incoming Webhooks using Block Kit formatting (header, stats bar, per-repo sections with linked repo names, AI summaries in italics, footer)
+- **Discord integration:** Post daily summaries to Discord channels via Incoming Webhooks using rich embeds (green/grey color by activity, inline commit stats, per-repo breakdown with hyperlinks)
+- `webhook_client.py` — Slack and Discord webhook client with exponential-backoff retry, rate-limit handling (`Retry-After` header), and message-length truncation
+- `SLACK_WEBHOOK_URL` secret support
+- `DISCORD_WEBHOOK_URL` secret support
+- `DELIVERY_METHOD` now accepts a **comma-separated list** of methods: `email`, `airtable`, `slack`, `discord` (e.g. `email,slack,discord`)
+- `both` alias preserved for backward compatibility (`= email,airtable`)
+- `send_email` output from Python script replaces raw `delivery_method` for cleaner workflow condition logic
+- README: Slack & Discord Integration section with step-by-step setup for both platforms
+
+### Changed
+- `generate_summary.py`: delivery parsing moved to `parse_delivery_methods()` — unified, extensible, unknown-value-tolerant
+- `generate_summary.py`: writes `send_email` boolean to `$GITHUB_OUTPUT` for the workflow email step
+- Workflow email condition updated from `delivery_method != 'airtable'` to `send_email == 'true'`
+- Workflow: `SLACK_WEBHOOK_URL` and `DISCORD_WEBHOOK_URL` env vars passed to generate step
+- README Variables table updated with full `DELIVERY_METHOD` options and examples table
+
 ## [1.3.0] - 2026-03-11
 
 ### Added

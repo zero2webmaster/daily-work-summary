@@ -48,6 +48,8 @@ jobs:
           AIRTABLE_BASE_ID: ${{ vars.AIRTABLE_BASE_ID }}
           AIRTABLE_TABLE_SUMMARIES: ${{ vars.AIRTABLE_TABLE_SUMMARIES }}
           AIRTABLE_TABLE_REPOS: ${{ vars.AIRTABLE_TABLE_REPOS }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           python .github/scripts/generate_summary.py
 
@@ -60,10 +62,9 @@ jobs:
             echo "summary_file=$SUMMARY_FILE" >> $GITHUB_OUTPUT
           else
             echo "has_summary=false" >> $GITHUB_OUTPUT
+            # send_email defaults to false when there is no summary
+            echo "send_email=false" >> $GITHUB_OUTPUT
           fi
-
-          # Pass delivery method so the email step can be conditionally skipped
-          echo "delivery_method=${DELIVERY_METHOD:-email}" >> $GITHUB_OUTPUT
 
       - name: Commit summary to repo
         if: steps.summary.outputs.has_summary == 'true'
@@ -77,7 +78,7 @@ jobs:
       - name: Send email
         if: >-
           steps.summary.outputs.has_summary == 'true' &&
-          steps.summary.outputs.delivery_method != 'airtable'
+          steps.summary.outputs.send_email == 'true'
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
