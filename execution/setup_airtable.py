@@ -140,6 +140,7 @@ def main():
                 summaries_id = t["id"]
                 break
         print(f"\n'Daily Summaries' table already exists: {summaries_id}")
+        _ensure_table_fields(client, summaries_id, DAILY_SUMMARIES_FIELDS, "Daily Summaries")
     else:
         try:
             result = client.create_table(
@@ -161,6 +162,7 @@ def main():
                 repos_id = t["id"]
                 break
         print(f"'Repositories' table already exists: {repos_id}")
+        _ensure_table_fields(client, repos_id, REPOSITORIES_FIELDS, "Repositories")
     else:
         try:
             result = client.create_table(
@@ -202,6 +204,38 @@ def main():
         print("    Settings > Secrets and variables > Actions > Variables")
         print(f"\n  Also ensure AIRTABLE_PAT is added as a SECRET.")
         print(f"  Set DELIVERY_METHOD to 'airtable' or 'email,airtable'.\n")
+
+
+def _ensure_table_fields(
+    client: AirtableClient,
+    table_id: str,
+    expected_fields: list[dict],
+    table_label: str,
+) -> None:
+    """Ensure a table has all required fields; add any that are missing."""
+    tables = client.list_tables()
+    table = next((t for t in tables if t["id"] == table_id), None)
+    if not table:
+        return
+    existing_names = {f["name"] for f in table["fields"]}
+    for field_def in expected_fields:
+        name = field_def["name"]
+        if name in existing_names:
+            continue
+        try:
+            options = field_def.get("options")
+            client.add_field(
+                table_id,
+                name=name,
+                field_type=field_def["type"],
+                options=options,
+            )
+            print(f"  Added field '{name}' to {table_label}")
+        except AirtableError as exc:
+            if "already exists" in str(exc).lower() or exc.status_code == 422:
+                pass  # Race condition, field was added
+            else:
+                print(f"  WARNING: Could not add field '{name}' to {table_label}: {exc}")
 
 
 def _add_linked_field(

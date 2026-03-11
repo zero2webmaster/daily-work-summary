@@ -232,3 +232,21 @@ class AirtableClient:
                 ],
             })
         return tables
+
+    def add_field(
+        self,
+        table_id: str,
+        name: str,
+        field_type: str,
+        options: dict[str, Any] | None = None,
+    ) -> dict:
+        """Add a field to an existing table (Meta API).
+
+        Requires PAT scope: schema.bases:write
+        """
+        url = f"{META_URL}/bases/{self.base_id}/tables/{table_id}/fields"
+        body: dict[str, Any] = {"name": name, "type": field_type}
+        if options:
+            body["options"] = options
+        data = self._request("POST", url, json_body=body)
+        return {"id": data["id"], "name": data["name"], "type": data.get("type")}
