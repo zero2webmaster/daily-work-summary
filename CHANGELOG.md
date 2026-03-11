@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.5] - 2026-03-11
+
+### Added
+- README: "Keeping your fork in sync" section with GitHub UI (Sync fork) and CLI (`git remote add upstream`) instructions
+- README: Step 5 in Quick Start reminding fork users to sync periodically
+- `.env` template: AI provider section with all four provider keys (commented out as examples)
+
+### Fixed
+- `.cursorrules`: `AI_PROVIDER` description now explicitly says to set ONE value, not the pipe-separated list (the full list was mistakenly used as the variable value, causing AI summaries to be silently skipped)
+- Directive: Updated `generate_daily_summary.md` to document current behavior (owner grouping, per-commit bullets, AI summary format)
+
 ## [1.2.4] - 2026-03-11
 
 ### Fixed

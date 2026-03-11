@@ -24,6 +24,12 @@
 - `PAT_GITHUB` - Personal Access Token with `repo` + `read:user` scopes
 - `EMAIL_USERNAME` - Gmail address (kerry@zero2webmaster.com)
 - `EMAIL_PASSWORD` - Gmail App Password (16-char, no spaces)
+- `AI_PROVIDER` - (Variable) Set to ONE of: `openrouter`, `anthropic`, `gemini`, `openai`. Auto-detects from first available key if unset. **Do not set to the full pipe-separated list — that is just documentation of the options.**
+- `OPENROUTER_API_KEY` - (Optional) OpenRouter API key
+- `OPENAI_API_KEY` - (Optional) OpenAI API key
+- `ANTHROPIC_API_KEY` - (Optional) Anthropic API key
+- `GOOGLE_API_KEY` - (Optional) Google/Gemini API key
+- `EMAIL_TIMEZONE` - (Variable) IANA timezone for subject date (default America/New_York). Cron time edited in workflow file.
 
 **Expected Outputs:**
 1. Daily email at 10pm EST to kerry@zero2webmaster.com

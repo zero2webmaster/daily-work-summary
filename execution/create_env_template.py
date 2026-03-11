@@ -26,6 +26,13 @@ PAT_GITHUB=ghp_your_token_here
 # OPTIONAL - Email (only needed if testing email locally)
 EMAIL_USERNAME=kerry@zero2webmaster.com
 EMAIL_PASSWORD=your_gmail_app_password_here
+
+# OPTIONAL - AI-powered repo summaries (set one provider + key)
+# AI_PROVIDER=openrouter  # or: anthropic, gemini, openai
+# OPENROUTER_API_KEY=sk-or-...
+# OPENAI_API_KEY=sk-...
+# ANTHROPIC_API_KEY=sk-ant-...
+# GOOGLE_API_KEY=...
 """
 
 

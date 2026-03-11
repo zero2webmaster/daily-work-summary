@@ -12,6 +12,7 @@ Automated daily email summaries of your GitHub development work across all repos
 2. **Add secrets** — GitHub PAT + Gmail credentials (and optionally one AI key)
 3. **Enable workflow permissions** — Settings → Actions → General → Read and write
 4. **Run manually** to test, then let the daily cron handle it
+5. **Sync your fork** periodically to pull in updates — on GitHub, use **Sync fork** (or **Fetch upstream**) on your fork’s page
 
 ---
 
@@ -188,6 +189,19 @@ Open `.github/workflows/daily-summary.yml` and update the `cron:` line. See the 
 ## Troubleshooting
 
 See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues (403 PAT errors, email not sending, AI key errors, rate limits).
+
+---
+
+## Keeping your fork in sync
+
+Forking copies the repo at that moment — you won’t get updates automatically. To pull in changes from the original repo:
+
+- **GitHub UI:** Open your fork → click **Sync fork** (or **Fetch upstream**) → **Update branch**
+- **CLI:** Add the upstream remote once, then fetch and merge:
+  ```bash
+  git remote add upstream https://github.com/zero2webmaster/daily-work-summary.git
+  git fetch upstream && git merge upstream/main
+  ```
 
 ---
 

@@ -12,8 +12,9 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 
 ## Trigger
 
-- **Automated:** GitHub Actions cron at `0 3 * * *` UTC (10pm EST)
+- **Automated:** GitHub Actions cron (default `0 3 * * *` UTC = 10pm EST). User edits workflow to change time.
 - **Manual:** GitHub Actions → "Run workflow" button
+- **Timezone:** `EMAIL_TIMEZONE` variable (e.g. America/New_York) for subject date. Default: America/New_York.
 
 ## Inputs
 
@@ -36,16 +37,22 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 - Collect: repo name, commit message (first line), SHA, timestamp
 
 ### Step 3: Generate Smart Summary
-- Group commits by repository
+- Group commits by repository owner (account)
+- Account header: `## owner` (e.g., `## zero2webmaster`)
+- Repo header: `### repo-name` (repo name only, not full owner/repo)
 - Sort repos by commit count (most active first)
+- Optional AI summary: If any AI key set (OPENROUTER_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY), generate one-sentence description per repo. Use AI_PROVIDER variable to choose: openrouter, anthropic, gemini, openai. Auto-detects from first available key if unset.
 - Format each repo section:
   ```
-  ## owner/repo-name
+  ### repo-name
+  *AI summary sentence* (if OPENAI_API_KEY set)
   **N commits**
-  • N changes: summary1; summary2; summary3 (+M more)
+  * commit message 1
+  * commit message 2
+  ...
   ```
+- One bullet per commit; show all commits (no truncation)
 - Truncate individual commit messages to 80 characters
-- If >5 commits in a repo, show first 5 and "(+M more)"
 - If zero commits across all repos: "No commits today — well rested! ✅"
 
 ### Step 4: Save Markdown Archive
