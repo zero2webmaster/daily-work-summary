@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.4] - 2026-03-11
+
+### Fixed
+- AI summary: added clear error message when `AI_PROVIDER` variable is set to an invalid value (e.g., the placeholder `"openrouter | anthropic | gemini | openai"` instead of a single provider name)
+- AI summary: added logging for auto-detection so Actions logs show which provider was found
+- AI summary: added `print()` when provider/key is found to confirm AI is active before each repo call
+
 ## [1.2.3] - 2026-03-11
 
 ### Changed

@@ -111,10 +111,14 @@ def _get_ai_client_and_key() -> tuple[str | None, str | None, str | None]:
         # Auto-detect: use first provider that has a key
         for p, (key_env, model) in AI_PROVIDERS.items():
             if os.environ.get(key_env):
+                print(f"  AI provider auto-detected: {p}")
                 return p, os.environ.get(key_env), model
+        print("  AI summary: skipped (no provider key found in environment)")
         return None, None, None
 
     if provider not in AI_PROVIDERS:
+        valid = ", ".join(AI_PROVIDERS.keys())
+        print(f"  AI summary: skipped (AI_PROVIDER='{provider}' is not valid; must be one of: {valid})")
         return None, None, None
 
     key_env, model = AI_PROVIDERS[provider]
@@ -129,7 +133,9 @@ def generate_ai_repo_summary(messages: list[str]) -> str | None:
     """Generate a one-sentence summary of the type of work from commit messages."""
     provider, api_key, model = _get_ai_client_and_key()
     if not provider or not api_key:
+        print("  AI summary: skipped (no provider key configured)")
         return None
+    print(f"  AI summary: using {provider}/{model}")
 
     commit_list = "\n".join(truncate(m) for m in messages[:20])
     prompt = f"""In one sentence, summarize the theme of development work from these git commits. Be concise and professional.
