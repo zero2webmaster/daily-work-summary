@@ -259,11 +259,24 @@ def _add_linked_field(
         client._request("POST", url, json_body=body)
         print("Linked 'Daily Summaries.Repositories' <-> 'Repositories.Daily Summaries'")
     except AirtableError as exc:
-        if "already exists" in str(exc).lower() or exc.status_code == 422:
+        err_lower = str(exc).lower()
+        if "already exists" in err_lower or "duplicate" in err_lower or "field with that name" in err_lower:
             print("Linked record fields already exist (skipped).")
         else:
             print(f"WARNING: Could not create linked field: {exc}")
             print("  You may need to add a 'Link to another record' field manually.")
+            raise  # Don't silently swallow real errors
+
+    # Verify the Repositories field exists on Daily Summaries
+    tables = client.list_tables()
+    summaries_table = next((t for t in tables if t["id"] == summaries_table_id), None)
+    if summaries_table:
+        has_repos = any(f["name"] == "Repositories" for f in summaries_table["fields"])
+        if not has_repos:
+            print("WARNING: Repositories link field is missing on Daily Summaries table.")
+            print("  Add it manually in Airtable: Daily Summaries → + → Link to another record")
+            print("  → choose Repositories table, name it 'Repositories'.")
+            print("  The daily workflow will create summaries; run it again after adding the field to link repos.")
 
 
 if __name__ == "__main__":

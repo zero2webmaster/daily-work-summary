@@ -492,22 +492,47 @@ def write_to_airtable(summary_data: dict[str, Any]) -> bool:
     if repo_record_ids:
         fields["Repositories"] = repo_record_ids
 
+    def _write_summary(with_repos: bool = True) -> bool:
+        f = fields.copy()
+        if not with_repos and "Repositories" in f:
+            del f["Repositories"]
+        if existing_record:
+            client.update_record(tbl_summaries, existing_record["id"], f)
+            return True
+        record = client.create_record(tbl_summaries, f)
+        print(f"  Airtable: created daily summary record {record['id']} for {date_str}")
+        return True
+
     if existing_record:
         # Summary exists — update it to add/refresh repo links (backfill if missing)
         try:
-            client.update_record(tbl_summaries, existing_record["id"], fields)
+            _write_summary(with_repos=True)
             print(f"  Airtable: updated existing summary {existing_record['id']} for {date_str} (repos linked)")
             return True
         except AirtableError as exc:
+            if getattr(exc, "status_code", None) == 422:
+                try:
+                    _write_summary(with_repos=False)
+                    print(f"  Airtable: updated summary (Repositories field missing — run Setup Airtable to add it)")
+                    return True
+                except AirtableError:
+                    pass
             print(f"  Airtable: warning updating summary: {exc}")
             return True  # Summary exists, don't fail the run
 
     # --- Create new Daily Summary record ---
     try:
-        record = client.create_record(tbl_summaries, fields)
-        print(f"  Airtable: created daily summary record {record['id']} for {date_str}")
+        _write_summary(with_repos=True)
         return True
     except AirtableError as exc:
+        if getattr(exc, "status_code", None) == 422:
+            try:
+                _write_summary(with_repos=False)
+                print(f"  Airtable: created summary (Repositories link field missing — run Setup Airtable)")
+                return True
+            except AirtableError as retry_exc:
+                print(f"  Airtable ERROR creating summary: {retry_exc}")
+                return False
         print(f"  Airtable ERROR creating summary: {exc}")
         return False
 

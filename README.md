@@ -194,6 +194,8 @@ This workflow will:
 
 Set the `DELIVERY_METHOD` variable to `email,airtable` (or `airtable` for Airtable only). That's it — the next daily run will populate your base.
 
+**If Daily Summaries has no "Repositories" link field:** Add it manually in Airtable: Daily Summaries table → **+** (add field) → **Link to another record** → choose the Repositories table → name the field `Repositories`. Re-run the Daily Work Summary workflow to backfill the links.
+
 > **Note:** All references use Airtable IDs (`appXXX`, `tblXXX`), not names. You can rename tables/bases freely without breaking the integration.
 
 ---
