@@ -456,7 +456,20 @@ def write_to_airtable(summary_data: dict[str, Any]) -> bool:
 
     date_str = summary_data["date"]
 
-    # --- Duplicate detection: skip if today's summary already exists ---
+    # --- Find or create Repository records (always, even if summary exists) ---
+    repo_record_ids: list[str] = []
+    repos = summary_data.get("repos", [])
+    if not repos:
+        print("  Airtable: no repos in summary (no commits today?)")
+    for repo_info in repos:
+        repo_record_id = _find_or_create_repo(client, tbl_repos, repo_info)
+        if repo_record_id:
+            repo_record_ids.append(repo_record_id)
+    if repos:
+        print(f"  Airtable: {len(repo_record_ids)}/{len(repos)} repo records ready for linking")
+
+    # --- Duplicate detection: did we already create today's summary? ---
+    existing_record = None
     try:
         existing = client.query_records(
             tbl_summaries,
@@ -464,19 +477,10 @@ def write_to_airtable(summary_data: dict[str, Any]) -> bool:
             max_records=1,
         )
         if existing:
-            print(f"  Airtable: summary for {date_str} already exists (record {existing[0]['id']}), skipping.")
-            return True
+            existing_record = existing[0]
     except AirtableError as exc:
         print(f"  Airtable: warning checking for duplicates: {exc}")
 
-    # --- Find or create Repository records ---
-    repo_record_ids: list[str] = []
-    for repo_info in summary_data["repos"]:
-        repo_record_id = _find_or_create_repo(client, tbl_repos, repo_info)
-        if repo_record_id:
-            repo_record_ids.append(repo_record_id)
-
-    # --- Create Daily Summary record ---
     fields: dict[str, Any] = {
         "Timestamp": date_str,
         "Date": date_str,
@@ -488,6 +492,17 @@ def write_to_airtable(summary_data: dict[str, Any]) -> bool:
     if repo_record_ids:
         fields["Repositories"] = repo_record_ids
 
+    if existing_record:
+        # Summary exists — update it to add/refresh repo links (backfill if missing)
+        try:
+            client.update_record(tbl_summaries, existing_record["id"], fields)
+            print(f"  Airtable: updated existing summary {existing_record['id']} for {date_str} (repos linked)")
+            return True
+        except AirtableError as exc:
+            print(f"  Airtable: warning updating summary: {exc}")
+            return True  # Summary exists, don't fail the run
+
+    # --- Create new Daily Summary record ---
     try:
         record = client.create_record(tbl_summaries, fields)
         print(f"  Airtable: created daily summary record {record['id']} for {date_str}")
