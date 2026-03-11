@@ -263,18 +263,13 @@ def generate_summary() -> str:
 
         for repo_name, messages in sorted_repos:
             count = len(messages)
+            commit_label = f"{count} commit{'s' if count != 1 else ''}"
 
             # AI summary (optional)
             ai_summary = generate_ai_repo_summary(messages)
+            lines.append(f"### {repo_name} ({commit_label})")
             if ai_summary:
-                lines.append(f"### {repo_name}")
                 lines.append(f"*{ai_summary}*")
-                lines.append("")
-            else:
-                lines.append(f"### {repo_name}")
-                lines.append("")
-
-            lines.append(f"**{count} commit{'s' if count != 1 else ''}**")
             lines.append("")
 
             for msg in messages:

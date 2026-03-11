@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.6] - 2026-03-11
+
+### Changed
+- Email format: commit count moved to repo header line — `### z2w-web-events (16 commits)` — instead of a separate `**16 commits**` line below the AI summary
+
 ## [1.2.5] - 2026-03-11
 
 ### Added
