@@ -84,11 +84,14 @@ Set **one** of these to enable AI-powered repo summaries. If you set multiple ke
 
 > **Tip:** OpenRouter lets you use models from Anthropic, OpenAI, Google, and others with a single key — useful if you want flexibility without managing multiple accounts.
 
-### Optional Airtable Secret
+### Optional Airtable Secrets
 
 | Secret | Description |
 |--------|-------------|
 | `AIRTABLE_PAT` | [Airtable Personal Access Token](https://airtable.com/create/tokens) with scopes: `data.records:read`, `data.records:write`, `schema.bases:read`, `schema.bases:write` |
+| `AIRTABLE_BASE_ID` | Your Airtable base ID (`appXXXXXXXXXXXXXX`) — can be stored as a **Secret** *or* a Variable |
+| `AIRTABLE_TABLE_SUMMARIES` | Daily Summaries table ID (`tblXXXXXXXXXXXXXX`) — can be stored as a **Secret** *or* a Variable |
+| `AIRTABLE_TABLE_REPOS` | Repositories table ID (`tblXXXXXXXXXXXXXX`) — can be stored as a **Secret** *or* a Variable |
 
 ### Optional Slack / Discord Secrets
 
@@ -106,9 +109,9 @@ Set these under **Settings → Secrets and variables → Actions → Variables**
 | `DELIVERY_METHOD` | Comma-separated list: `email`, `airtable`, `slack`, `discord`. Also accepts `both` (= `email,airtable`) | `email` |
 | `AI_PROVIDER` | `openrouter`, `anthropic`, `gemini`, `openai` | Auto-detects from first available key |
 | `EMAIL_TIMEZONE` | Any [IANA timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) (e.g. `America/New_York`, `Europe/London`) | `America/New_York` |
-| `AIRTABLE_BASE_ID` | Your Airtable base ID (`appXXXXXXXXXXXXXX`) | *(none)* |
-| `AIRTABLE_TABLE_SUMMARIES` | Daily Summaries table ID (`tblXXXXXXXXXXXXXX`) | *(none)* |
-| `AIRTABLE_TABLE_REPOS` | Repositories table ID (`tblXXXXXXXXXXXXXX`) | *(none)* |
+| `AIRTABLE_BASE_ID` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
+| `AIRTABLE_TABLE_SUMMARIES` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
+| `AIRTABLE_TABLE_REPOS` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
 
 **`DELIVERY_METHOD` examples:**
 
@@ -174,12 +177,12 @@ Save daily summaries and repository data to Airtable for searchable, filterable 
    ```bash
    AIRTABLE_PAT=patXXX AIRTABLE_BASE_ID=appXXX python3 execution/setup_airtable.py
    ```
-5. The script prints the table IDs — add them as **GitHub Variables**:
+5. The script prints the table IDs — add them as **GitHub Secrets** (recommended) or Variables:
    - `AIRTABLE_TABLE_SUMMARIES` = `tblXXXXXXXXXXXXXX`
    - `AIRTABLE_TABLE_REPOS` = `tblXXXXXXXXXXXXXX`
 6. Add `AIRTABLE_PAT` as a **GitHub Secret**
-7. Add `AIRTABLE_BASE_ID` as a **GitHub Variable**
-8. Set `DELIVERY_METHOD` variable to `both` (email + Airtable) or `airtable` (Airtable only)
+7. Add `AIRTABLE_BASE_ID` as a **GitHub Secret** (or Variable — both work)
+8. Set `DELIVERY_METHOD` variable to `email,airtable` (email + Airtable) or `airtable` (Airtable only)
 
 > **Note:** All references use Airtable IDs (`appXXX`, `tblXXX`), not names. You can rename tables/bases freely without breaking the integration.
 
@@ -261,10 +264,10 @@ Only add the AI key(s) you actually have. One is enough.
 |----------|---------------|
 | `EMAIL_TIMEZONE` | `America/New_York` |
 | `AI_PROVIDER` | `openrouter` *(only needed if you set multiple AI keys)* |
-| `DELIVERY_METHOD` | `email,slack` *(comma-separated; default is `email`. Options: `email`, `airtable`, `slack`, `discord`)* |
-| `AIRTABLE_BASE_ID` | `appXXXXXXXXXXXXXX` *(from setup script)* |
-| `AIRTABLE_TABLE_SUMMARIES` | `tblXXXXXXXXXXXXXX` *(from setup script)* |
-| `AIRTABLE_TABLE_REPOS` | `tblXXXXXXXXXXXXXX` *(from setup script)* |
+| `DELIVERY_METHOD` | `email,airtable` *(comma-separated; default is `email`. Options: `email`, `airtable`, `slack`, `discord`)* |
+| `AIRTABLE_BASE_ID` | `appXXXXXXXXXXXXXX` *(only needed if not stored as a Secret)* |
+| `AIRTABLE_TABLE_SUMMARIES` | `tblXXXXXXXXXXXXXX` *(only needed if not stored as a Secret)* |
+| `AIRTABLE_TABLE_REPOS` | `tblXXXXXXXXXXXXXX` *(only needed if not stored as a Secret)* |
 
 ### 5. Enable Workflow Permissions
 

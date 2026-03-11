@@ -45,9 +45,9 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DELIVERY_METHOD: ${{ vars.DELIVERY_METHOD }}
           AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
-          AIRTABLE_BASE_ID: ${{ vars.AIRTABLE_BASE_ID }}
-          AIRTABLE_TABLE_SUMMARIES: ${{ vars.AIRTABLE_TABLE_SUMMARIES }}
-          AIRTABLE_TABLE_REPOS: ${{ vars.AIRTABLE_TABLE_REPOS }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID || vars.AIRTABLE_BASE_ID }}
+          AIRTABLE_TABLE_SUMMARIES: ${{ secrets.AIRTABLE_TABLE_SUMMARIES || vars.AIRTABLE_TABLE_SUMMARIES }}
+          AIRTABLE_TABLE_REPOS: ${{ secrets.AIRTABLE_TABLE_REPOS || vars.AIRTABLE_TABLE_REPOS }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
