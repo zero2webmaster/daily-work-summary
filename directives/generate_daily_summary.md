@@ -1,6 +1,6 @@
 # Directive: Generate Daily Work Summary
 
-**Version:** 1.1.0
+**Version:** 1.2.0
 **Last Updated:** 2026-03-11
 **Owner:** Kerry Kriger
 
@@ -8,7 +8,7 @@
 
 ## Goal
 
-Generate a smart daily summary of all GitHub commits across every zero2webmaster and personal repository from the last 24 hours. Email the summary and save a Markdown archive.
+Generate a smart daily summary of all GitHub commits across every zero2webmaster and personal repository from the last 24 hours. Deliver via email, Airtable, Slack, and/or Discord, and save a Markdown archive.
 
 ## Trigger
 
@@ -23,9 +23,11 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 | GitHub PAT | `PAT_GITHUB` secret | Scopes: `repo`, `read:user` |
 | Email credentials | `EMAIL_USERNAME`, `EMAIL_PASSWORD` secrets | Gmail App Password |
 | Time window | Last 24 hours from run time | Uses `datetime.utcnow() - timedelta(hours=24)` |
-| Delivery method | `DELIVERY_METHOD` variable | `email` (default), `airtable`, or `both` |
-| Airtable PAT | `AIRTABLE_PAT` secret | Required when delivery includes Airtable |
+| Delivery method | `DELIVERY_METHOD` variable | Comma-separated: `email` (default), `airtable`, `slack`, `discord`. `both` = `email,airtable` |
+| Airtable PAT | `AIRTABLE_PAT` secret | Required when delivery includes `airtable` |
 | Airtable IDs | `AIRTABLE_BASE_ID`, `AIRTABLE_TABLE_SUMMARIES`, `AIRTABLE_TABLE_REPOS` variables | All IDs (`appXXX`, `tblXXX`), never names |
+| Slack webhook | `SLACK_WEBHOOK_URL` secret | Required when delivery includes `slack` |
+| Discord webhook | `DISCORD_WEBHOOK_URL` secret | Required when delivery includes `discord` |
 
 ## Process
 
@@ -63,28 +65,40 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 - Git add + commit + push from within the workflow
 
 ### Step 5: Deliver Summary
-Based on `DELIVERY_METHOD` variable:
+Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 
-**Email** (`email` or `both`):
+**Email** (when `email` is in the list):
 - Use `dawidd6/action-send-mail` GitHub Action
 - To: kerry@zero2webmaster.com
 - Subject: `Daily Work Summary — Day Mon DD`
 - Body: HTML-formatted summary
-- Skip email if summary file is empty or only contains "no commits" message
+- `generate_summary.py` outputs `send_email=true/false` to `$GITHUB_OUTPUT`; workflow email step is conditional on that value
 
-**Airtable** (`airtable` or `both`):
+**Airtable** (when `airtable` is in the list):
 - Find or create Repository records for each repo (by full_name)
 - Create Daily Summary record with all fields + linked repo records
 - Duplicate detection: skip if record for today's date already exists
 - All references use IDs (`appXXX`, `tblXXX`), never table/base names
 
+**Slack** (when `slack` is in the list):
+- POST to `SLACK_WEBHOOK_URL` secret
+- Slack Block Kit message: header, stats bar, per-repo sections with linked names, AI summaries in italics, footer
+- Message length capped at 3000 chars/block; max 50 blocks; overflows noted as "...and N more repos"
+
+**Discord** (when `discord` is in the list):
+- POST to `DISCORD_WEBHOOK_URL` secret
+- Discord embed: green (has commits) or grey (no commits) accent, inline commit/repo stats, per-repo breakdown with hyperlinks
+- Description capped at 4000 chars; overflows truncated with `...`
+
 ## Outputs
 
 | Output | Location | Format |
 |--------|----------|--------|
-| Email | kerry@zero2webmaster.com | HTML (when DELIVERY_METHOD is `email` or `both`) |
-| Archive | `summaries/daily-summary-YYYY-MM-DD.md` | Markdown |
-| Airtable | Daily Summaries + Repositories tables | Structured records (when DELIVERY_METHOD is `airtable` or `both`) |
+| Email | kerry@zero2webmaster.com | HTML (when `email` in DELIVERY_METHOD) |
+| Archive | `summaries/daily-summary-YYYY-MM-DD.md` | Markdown (always) |
+| Airtable | Daily Summaries + Repositories tables | Structured records (when `airtable` in DELIVERY_METHOD) |
+| Slack | Slack channel | Block Kit message (when `slack` in DELIVERY_METHOD) |
+| Discord | Discord channel | Rich embed (when `discord` in DELIVERY_METHOD) |
 | Logs | GitHub Actions run logs | Plaintext |
 
 ## Edge Cases
@@ -105,6 +119,7 @@ Based on `DELIVERY_METHOD` variable:
 |--------|---------|
 | `.github/scripts/generate_summary.py` | Main summary generator + delivery routing (Layer 3) |
 | `.github/scripts/airtable_client.py` | Airtable REST API client (Layer 3) |
+| `.github/scripts/webhook_client.py` | Slack + Discord webhook delivery (Layer 3) |
 | `.github/workflows/daily-summary.yml` | Workflow orchestration |
 | `execution/setup_airtable.py` | One-time Airtable table creation |
 
