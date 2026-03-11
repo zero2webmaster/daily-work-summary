@@ -25,10 +25,24 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Set date for email subject
+        id: date
+        env:
+          EMAIL_TIMEZONE: ${{ vars.EMAIL_TIMEZONE }}
+        run: |
+          SUBJECT_DATE=$(TZ="${EMAIL_TIMEZONE:-America/New_York}" date +'%a %b %d')
+          echo "subject_date=$SUBJECT_DATE" >> $GITHUB_OUTPUT
+
       - name: Generate daily summary
         id: summary
         env:
           PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
+          AI_PROVIDER: ${{ vars.AI_PROVIDER }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           python .github/scripts/generate_summary.py
           
@@ -46,8 +60,8 @@ jobs:
       - name: Commit summary to repo
         if: steps.summary.outputs.has_summary == 'true'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "Daily Summary Bot"
+          git config user.email "daily-summary@users.noreply.github.com"
           git add summaries/
           git diff --cached --quiet || git commit -m "Add daily summary for $(date -u +%Y-%m-%d)"
           git push
@@ -61,8 +75,7 @@ jobs:
           secure: true
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "Daily Work Summary — $(date +'%a %b %d')"
+          subject: "Daily Work Summary — ${{ steps.date.outputs.subject_date }}"
           to: kerry@zero2webmaster.com
           from: ${{ secrets.EMAIL_USERNAME }}
           html_body: file://${{ steps.summary.outputs.summary_file }}
-          convert_markdown: true

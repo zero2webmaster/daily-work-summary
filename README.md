@@ -1,156 +1,202 @@
 # Daily Work Summary
 
-**Version:** 1.0.0 | **Framework:** 2.13.0
+**Version:** 1.2.3
 
-Automated daily smart summaries of GitHub development work across all repositories, emailed at 10pm EST.
+Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
-Groups commits by repo with intelligent summaries instead of raw commit lists:
+---
 
-```
-## zero2webmaster/my-website
-**3 commits**
-• 3 changes: DeepL caching; SEO meta fix; queue refactor
-```
+## Quick Start
+
+1. **Fork** this repository
+2. **Add secrets** — GitHub PAT + Gmail credentials (and optionally one AI key)
+3. **Enable workflow permissions** — Settings → Actions → General → Read and write
+4. **Run manually** to test, then let the daily cron handle it
 
 ---
 
 ## How It Works
 
-1. **GitHub Actions** runs a cron job at 10pm EST every night
-2. **PyGithub** fetches all commits from the last 24 hours across every repo you own
-3. Commits are **grouped by repo** and summarized intelligently
-4. A **Markdown archive** is saved to `summaries/daily-summary-YYYY-MM-DD.md`
-5. An **HTML email** is sent via Gmail SMTP
+1. **GitHub Actions** triggers on your schedule (default: 10 PM EST)
+2. **PyGithub** fetches every commit you made in the last 24 hours across all repos you own
+3. Commits are **grouped by account → repo**, sorted by activity (most commits first)
+4. **Optional AI** generates a one-sentence thematic summary per repo
+5. The result is saved as a **Markdown archive** in `summaries/` and emailed as HTML
 
 ---
 
-## Setup (3 Steps)
+## How AI Summaries Work
 
-### Step 1: Create a GitHub Personal Access Token (PAT)
+When an AI provider key is configured, each repo's commit messages are sent to your chosen model with this prompt:
 
-1. Go to **https://github.com/settings/tokens** → **"Generate new token (classic)"**
-2. Name it: `daily-work-summary`
-3. Set expiration (recommend: 90 days, set a calendar reminder to rotate)
-4. Select scopes:
-   - **`repo`** (full control) — needed for private repo access
-   - **`read:user`** — needed to list all your repos
-5. Click **"Generate token"**
-6. Copy the token immediately (you won't see it again)
+> *"In one sentence, describe the type of development work from these git commits. Be concise and professional. Do not list commits; summarize the overall theme."*
 
-### Step 2: Create a Gmail App Password
+**Without AI** — you get the raw commit list:
 
-> Requires 2-Factor Authentication enabled on your Google account.
+```
+### my-website
 
-1. Go to **https://myaccount.google.com/apppasswords**
-2. App name: `Daily Work Summary`
-3. Click **"Create"**
-4. Copy the **16-character password** (remove spaces if displayed with them)
+**3 commits**
 
-### Step 3: Add Repository Secrets
+* Add DeepL caching for translations
+* Fix SEO meta tags on homepage
+* Refactor email queue handler
+```
 
-1. Go to your repo: **https://github.com/zero2webmaster/daily-work-summary/settings/secrets/actions**
-2. Click **"New repository secret"** for each:
+**With AI** — each repo gets a one-sentence summary above the commit list:
 
-| Secret Name | Value |
-|---|---|
-| `PAT_GITHUB` | Your GitHub PAT from Step 1 |
-| `EMAIL_USERNAME` | `kerry@zero2webmaster.com` |
-| `EMAIL_PASSWORD` | Your Gmail App Password from Step 2 |
+```
+### my-website
+*Performance improvements, SEO fixes, and backend refactoring across translations and email.*
 
-### Step 4: Enable Workflow Permissions
+**3 commits**
 
-1. Go to **Settings → Actions → General**
-2. Under "Workflow permissions," select **"Read and write permissions"**
-3. Click **Save**
+* Add DeepL caching for translations
+* Fix SEO meta tags on homepage
+* Refactor email queue handler
+```
+
+Each AI call uses a small/fast model (Claude 3.5 Haiku, GPT-4o-mini, or Gemini Flash), so costs are negligible — typically under $0.01/day even across many repos.
+
+---
+
+## Configuration Reference
+
+### Required Secrets
+
+| Secret | Description |
+|--------|-------------|
+| `PAT_GITHUB` | GitHub Personal Access Token. [Create one](https://github.com/settings/tokens) with scopes: `repo`, `read:user` |
+| `EMAIL_USERNAME` | Gmail address used to send (e.g. `you@gmail.com`) |
+| `EMAIL_PASSWORD` | [Gmail App Password](https://myaccount.google.com/apppasswords) — 16 characters, no spaces (requires 2FA) |
+
+### Optional AI Secrets
+
+Set **one** of these to enable AI-powered repo summaries. If you set multiple keys, use the `AI_PROVIDER` variable (below) to pick which one to use — otherwise it auto-detects from the first key found.
+
+| Secret | Provider | Default model | Get your key |
+|--------|----------|---------------|--------------|
+| `OPENROUTER_API_KEY` | [OpenRouter](https://openrouter.ai) | `anthropic/claude-3-5-haiku` | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| `ANTHROPIC_API_KEY` | [Anthropic](https://console.anthropic.com) | `claude-3-5-haiku-20241022` | [console.anthropic.com/keys](https://console.anthropic.com/settings/keys) |
+| `GOOGLE_API_KEY` | [Google Gemini](https://aistudio.google.com) | `gemini-1.5-flash` | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| `OPENAI_API_KEY` | [OpenAI](https://platform.openai.com) | `gpt-4o-mini` | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+
+> **Tip:** OpenRouter lets you use models from Anthropic, OpenAI, Google, and others with a single key — useful if you want flexibility without managing multiple accounts.
+
+### Variables
+
+Set these under **Settings → Secrets and variables → Actions → Variables**:
+
+| Variable | Options | Default |
+|----------|---------|---------|
+| `AI_PROVIDER` | `openrouter`, `anthropic`, `gemini`, `openai` | Auto-detects from first available key |
+| `EMAIL_TIMEZONE` | Any [IANA timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) (e.g. `America/New_York`, `Europe/London`) | `America/New_York` |
+
+### Email Schedule (cron)
+
+Edit `.github/workflows/daily-summary.yml` and change the `cron:` line. Cron times are in **UTC**:
+
+| Local time | Timezone | Cron |
+|------------|----------|------|
+| 10:00 PM | America/New_York (EST) | `0 3 * * *` |
+| 10:00 PM | America/New_York (EDT, summer) | `0 2 * * *` |
+| 9:00 PM | America/Chicago (CST) | `0 3 * * *` |
+| 6:00 PM | America/Los_Angeles (PST) | `0 2 * * *` |
+| 8:00 PM | Europe/London (GMT) | `0 20 * * *` |
+| 9:00 AM | Asia/Tokyo (JST) | `0 0 * * *` |
+
+Use [crontab.guru](https://crontab.guru) to calculate the right UTC cron for your timezone.
+
+---
+
+## Setup Guide
+
+### 1. Create a GitHub PAT
+
+1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) → **Generate new token (classic)**
+2. Name: `daily-work-summary`
+3. Scopes: **`repo`** (full) and **`read:user`**
+4. Copy the token immediately — you can't view it again
+
+### 2. Create a Gmail App Password
+
+1. Enable [2-Factor Authentication](https://myaccount.google.com/signinoptions/two-step-verification) on your Google account
+2. Go to [App Passwords](https://myaccount.google.com/apppasswords)
+3. Create a new app password (name it anything, e.g. "Daily Summary")
+4. Copy the 16-character password — no spaces
+
+### 3. Add Secrets
+
+**Settings → Secrets and variables → Actions → Secrets → New repository secret**
+
+| Secret | Value |
+|--------|-------|
+| `PAT_GITHUB` | Your GitHub token |
+| `EMAIL_USERNAME` | Your Gmail address |
+| `EMAIL_PASSWORD` | Your Gmail App Password |
+| `OPENROUTER_API_KEY` | *(Optional)* Your OpenRouter key |
+| `ANTHROPIC_API_KEY` | *(Optional)* Your Anthropic key |
+| `GOOGLE_API_KEY` | *(Optional)* Your Google AI key |
+| `OPENAI_API_KEY` | *(Optional)* Your OpenAI key |
+
+Only add the AI key(s) you actually have. One is enough.
+
+### 4. Add Variables (Optional)
+
+**Settings → Secrets and variables → Actions → Variables → New repository variable**
+
+| Variable | Example value |
+|----------|---------------|
+| `EMAIL_TIMEZONE` | `America/New_York` |
+| `AI_PROVIDER` | `openrouter` *(only needed if you set multiple AI keys)* |
+
+### 5. Enable Workflow Permissions
+
+1. **Settings → Actions → General**
+2. Scroll to **Workflow permissions**
+3. Select **Read and write permissions**
+4. Click **Save**
+
+### 6. Customize the Email Schedule (Optional)
+
+Open `.github/workflows/daily-summary.yml` and update the `cron:` line. See the table above for common times.
 
 ---
 
 ## Testing
 
-### Manual Trigger
-
-1. Go to **Actions** tab in your repository
-2. Click **"Daily Work Summary"** in the left sidebar
-3. Click **"Run workflow"** → **"Run workflow"**
-4. Watch the logs to verify everything works
-
-### What to Expect
-
-**If you have commits today:**
-```
-Subject: Daily Work Summary — Wed Mar 11
-
-## zero2webmaster/daily-work-summary
-**2 commits**
-• 2 changes: initial project setup; add smart summary script
-
-## zero2webmaster/my-website
-**1 commit**
-• fix: update meta description for homepage
-```
-
-**If no commits today:**
-```
-Subject: Daily Work Summary — Wed Mar 11
-
-No commits today — well rested! ✅
-```
+1. Go to **Actions** → **Daily Work Summary**
+2. Click **Run workflow** → **Run workflow**
+3. Check the Actions log and your inbox within a minute
 
 ---
 
 ## Project Structure
 
 ```
-daily-work-summary/
 ├── .github/
-│   ├── workflows/
-│   │   └── daily-summary.yml      # GitHub Actions workflow (cron + email)
-│   └── scripts/
-│       └── generate_summary.py    # Smart summary generator (Layer 3)
-├── directives/
-│   └── generate_daily_summary.md  # SOP for the summary process (Layer 1)
-├── execution/
-│   ├── create_env_template.py     # .env file creator for local dev
-│   └── install_git_hooks.py       # Git hooks installer
-├── summaries/                     # Auto-generated daily Markdown archives
-│   └── daily-summary-YYYY-MM-DD.md
-├── .cursorrules                   # AI agent project context
-├── .cursorignore                  # AI context exclusions
-├── .gitignore
-├── AGENTS.md                      # 3-layer architecture instructions
-├── CHANGELOG.md
-├── README.md                      # This file
-├── ROADMAP.md                     # Project phases and progress
-├── SETUP_GUIDE.md                 # Framework setup reference
-├── STATUS.md                      # Current project state
-├── TROUBLESHOOTING.md             # Known issues and solutions
-├── VERSION                        # Semantic version (1.0.0)
-└── requirements.txt               # Python dependencies
+│   ├── workflows/daily-summary.yml   # Cron + email workflow
+│   └── scripts/generate_summary.py  # Summary generator
+├── summaries/                        # Daily archives (auto-generated)
+├── directives/                       # SOPs
+├── execution/                        # Local dev scripts
+└── requirements.txt
 ```
 
 ---
 
-## Schedule
+## Troubleshooting
 
-The workflow runs daily at **10:00 PM Eastern Time** (US).
-
-- Cron expression: `0 3 * * *` (3:00 AM UTC)
-- UTC offset: EST = UTC-5, EDT = UTC-4
-- During Daylight Saving Time (Mar–Nov), the email arrives at **11:00 PM EDT**
-- To adjust for DST, change cron to `0 2 * * *` during EDT months
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues (403 PAT errors, email not sending, AI key errors, rate limits).
 
 ---
 
-## Future Improvements
+## Contributing
 
-- AI-powered summaries via OpenAI/Claude API
-- Slack / Airtable / Discord delivery
-- Filter by repo patterns (WordPress vs AI projects)
-- Commit impact analysis (lines changed, files touched)
-- Weekly/monthly rollup summaries
-- VS Code/Cursor sidebar widget
+Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-work-summary](https://github.com/zero2webmaster/daily-work-summary).
 
 ---
 
-*Built with the [Zero2Webmaster](https://zero2webmaster.com/) 3-Layer Architecture.*
-*Version: 1.0.0 | Last Updated: 2026-03-11*
+*Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
+
+*Version: 1.2.3 | Last Updated: 2026-03-11*

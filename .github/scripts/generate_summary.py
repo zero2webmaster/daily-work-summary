@@ -4,7 +4,7 @@ Daily Work Summary Generator
 
 Fetches all commits from the last 24 hours across every repository
 the authenticated GitHub user owns, then generates a smart grouped
-summary as Markdown.
+summary as Markdown with optional AI-powered repo descriptions.
 
 Runs as part of the GitHub Actions workflow, but can also be tested
 locally with PAT_GITHUB set in environment or .env file.
@@ -13,6 +13,7 @@ locally with PAT_GITHUB set in environment or .env file.
 import os
 import sys
 import time
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -23,9 +24,9 @@ except ImportError:
     sys.exit(1)
 
 MAX_MSG_LENGTH = 80
-MAX_COMMITS_SHOWN = 5
 MAX_RETRIES = 3
 SUMMARY_DIR = "summaries"
+HTML_FONT_SIZE = "18px"
 
 
 def get_github_client() -> Github:
@@ -81,26 +82,111 @@ def fetch_commits_with_retry(repo, since, author, retries=MAX_RETRIES):
     return []
 
 
-def format_commit_summary(messages: list[str]) -> str:
-    """Create an intelligent one-line summary of commit messages."""
-    cleaned = []
-    for msg in messages:
-        first_line = truncate(msg)
-        prefix_stripped = first_line
-        for prefix in ("feat:", "fix:", "chore:", "docs:", "refactor:", "style:", "test:", "ci:", "build:", "perf:"):
-            if prefix_stripped.lower().startswith(prefix):
-                prefix_stripped = prefix_stripped[len(prefix):].strip()
-                break
-        cleaned.append(prefix_stripped)
+# AI provider config: (api_key_env, model). Gemini also accepts GEMINI_API_KEY.
+AI_PROVIDERS = {
+    "openrouter": ("OPENROUTER_API_KEY", "anthropic/claude-3-5-haiku"),
+    "anthropic": ("ANTHROPIC_API_KEY", "claude-3-5-haiku-20241022"),
+    "gemini": ("GOOGLE_API_KEY", "gemini-1.5-flash"),  # GOOGLE_API_KEY or GEMINI_API_KEY
+    "openai": ("OPENAI_API_KEY", "gpt-4o-mini"),
+}
 
-    count = len(cleaned)
-    shown = cleaned[:MAX_COMMITS_SHOWN]
-    summary_parts = "; ".join(shown)
-    extra = count - len(shown)
 
-    if extra > 0:
-        return f"{count} changes: {summary_parts} (+{extra} more)"
-    return f"{count} change{'s' if count != 1 else ''}: {summary_parts}"
+def _get_ai_client_and_key() -> tuple[str | None, str | None, str | None]:
+    """Return (provider, api_key, model) if AI is configured, else (None, None, None)."""
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
+
+    provider = (os.environ.get("AI_PROVIDER") or "").lower().strip()
+    if not provider:
+        # Auto-detect: use first provider that has a key
+        for p, (key_env, model) in AI_PROVIDERS.items():
+            if os.environ.get(key_env):
+                return p, os.environ.get(key_env), model
+        return None, None, None
+
+    if provider not in AI_PROVIDERS:
+        return None, None, None
+
+    key_env, model = AI_PROVIDERS[provider]
+    api_key = os.environ.get(key_env) or (os.environ.get("GEMINI_API_KEY") if provider == "gemini" else None)
+    if not api_key:
+        return None, None, None
+
+    return provider, api_key, model
+
+
+def generate_ai_repo_summary(messages: list[str]) -> str | None:
+    """Generate a one-sentence summary of the type of work from commit messages."""
+    provider, api_key, model = _get_ai_client_and_key()
+    if not provider or not api_key:
+        return None
+
+    commit_list = "\n".join(truncate(m) for m in messages[:20])
+    prompt = f"""In one sentence, summarize the theme of development work from these git commits. Be concise and professional.
+
+Rules:
+- Do NOT list or enumerate commits (e.g., never say "2 changes: X; Y" or "3 commits: A, B, C")
+- Do NOT say how many commits there were
+- Describe the TYPE of work and WHAT area it touched (e.g., "Authentication refactor and UI polish across the login and dashboard flows.")
+- If there is only one commit, still describe the theme, not the commit itself
+
+Commits:
+{commit_list}"""
+
+    try:
+        if provider == "openrouter":
+            from openai import OpenAI
+            client = OpenAI(
+                api_key=api_key,
+                base_url="https://openrouter.ai/api/v1",
+            )
+            response = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=80,
+            )
+            summary = response.choices[0].message.content.strip()
+
+        elif provider == "openai":
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key)
+            response = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=80,
+            )
+            summary = response.choices[0].message.content.strip()
+
+        elif provider == "anthropic":
+            import anthropic
+            client = anthropic.Anthropic(api_key=api_key)
+            response = client.messages.create(
+                model=model,
+                max_tokens=80,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            summary = response.content[0].text.strip()
+
+        elif provider == "gemini":
+            import google.generativeai as genai
+            genai.configure(api_key=api_key)
+            model_obj = genai.GenerativeModel(model)
+            response = model_obj.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(max_output_tokens=80),
+            )
+            summary = response.text.strip()
+
+        else:
+            return None
+
+        return summary.rstrip(".")
+    except Exception as e:
+        print(f"  AI summary error ({provider}): {e}")
+        return None
 
 
 def generate_summary() -> str:
@@ -111,7 +197,8 @@ def generate_summary() -> str:
     since = datetime.now(timezone.utc) - timedelta(hours=24)
     print(f"Fetching commits since: {since.isoformat()}")
 
-    repo_commits: dict[str, list[str]] = {}
+    # Group by owner (account) -> repo_name -> messages
+    owner_repos: dict[str, dict[str, list[str]]] = defaultdict(dict)
 
     repos = list(user.get_repos(affiliation="owner,organization_member"))
     print(f"Found {len(repos)} repositories")
@@ -123,38 +210,81 @@ def generate_summary() -> str:
         commits = fetch_commits_with_retry(repo, since, user.login)
         if commits:
             messages = [c.commit.message for c in commits]
-            repo_commits[repo.full_name] = messages
+            owner, repo_name = repo.full_name.split("/", 1)
+            owner_repos[owner][repo_name] = messages
             print(f"  {repo.full_name}: {len(commits)} commits")
 
-    if not repo_commits:
-        return "No commits today — well rested! ✅\n"
+    if not owner_repos:
+        msg = "No commits today — well rested! ✅"
+        footer = (
+            "<p>Daily Work Summary initially created by "
+            '<a href="https://zero2webmaster.com/kerry-kriger">Zero2Webmaster Founder Dr. Kerry Kriger</a></p>'
+            '<p>Contribute to the public repository at: '
+            '<a href="https://github.com/zero2webmaster/daily-work-summary">github.com/zero2webmaster/daily-work-summary</a></p>'
+        )
+        return f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;"><p>{msg}</p>{footer}</div>'
 
-    sorted_repos = sorted(repo_commits.items(), key=lambda x: len(x[1]), reverse=True)
+    total_commits = sum(
+        len(msgs) for per_owner in owner_repos.values() for msgs in per_owner.values()
+    )
+    total_repos = sum(len(r) for r in owner_repos.values())
 
-    total_commits = sum(len(msgs) for msgs in repo_commits.values())
     lines = [
         f"# Daily Work Summary — {datetime.now(timezone.utc).strftime('%a %b %d, %Y')}",
         "",
-        f"**{total_commits} commits** across **{len(repo_commits)} repos**",
+        f"**{total_commits} commits** across **{total_repos} repos**",
         "",
         "---",
         "",
     ]
 
-    for repo_name, messages in sorted_repos:
-        count = len(messages)
-        summary = format_commit_summary(messages)
+    for owner in sorted(owner_repos.keys()):
+        repos_data = owner_repos[owner]
+        # Sort repos by commit count (most active first)
+        sorted_repos = sorted(
+            repos_data.items(), key=lambda x: len(x[1]), reverse=True
+        )
 
-        lines.append(f"## {repo_name}")
-        lines.append(f"**{count} commit{'s' if count != 1 else ''}**")
-        lines.append(f"- {summary}")
+        lines.append(f"## {owner}")
         lines.append("")
 
+        for repo_name, messages in sorted_repos:
+            count = len(messages)
+
+            # AI summary (optional)
+            ai_summary = generate_ai_repo_summary(messages)
+            if ai_summary:
+                lines.append(f"### {repo_name}")
+                lines.append(f"*{ai_summary}*")
+                lines.append("")
+            else:
+                lines.append(f"### {repo_name}")
+                lines.append("")
+
+            lines.append(f"**{count} commit{'s' if count != 1 else ''}**")
+            lines.append("")
+
+            for msg in messages:
+                bullet = truncate(msg)
+                lines.append(f"* {bullet}")
+
+            lines.append("")
+
     lines.append("---")
+    lines.append("")
+    lines.append("Daily Work Summary initially created by [Zero2Webmaster Founder Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger)")
+    lines.append("")
+    lines.append("Contribute to the public repository at: https://github.com/zero2webmaster/daily-work-summary")
+    lines.append("")
     lines.append(f"*Generated at {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}*")
     lines.append("")
 
-    return "\n".join(lines)
+    markdown_body = "\n".join(lines)
+
+    # Convert markdown to HTML and wrap for larger email font size
+    import markdown
+    html_content = markdown.markdown(markdown_body, extensions=["nl2br"])
+    return f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;">{html_content}</div>'
 
 
 def main():

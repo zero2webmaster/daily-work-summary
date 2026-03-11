@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.3] - 2026-03-11
+
+### Changed
+- README: Added "How AI Summaries Work" section with before/after examples and cost note
+- README: Expanded AI provider table with direct links to get API keys for each provider
+- README: Restructured Setup Guide — secrets table now lists all AI keys with clear *(Optional)* labels
+- README: Added Variables setup table and expanded cron timezone table with more examples
+- README: Changed git commit author from `github-actions[bot]` to `Daily Summary Bot`
+- AI prompt: Strengthened instructions to prevent "N changes: X; Y" style outputs
+
+## [1.2.2] - 2026-03-11
+
+### Changed
+- Removed example block from README
+- `EMAIL_TIMEZONE` variable for subject date (default America/New_York)
+- README: "Customize Schedule & Timezone" section with cron table and IANA timezone examples
+
+## [1.2.1] - 2026-03-11
+
+### Changed
+- Email footer: Added attribution link to Kerry Kriger and contribute link to public repo
+- OpenRouter default model: `anthropic/claude-3-5-haiku` (was openai/gpt-4o-mini)
+
+## [1.2.0] - 2026-03-11
+
+### Added
+- **Four AI provider options:** OpenRouter, Anthropic, Gemini, OpenAI
+- `AI_PROVIDER` variable (openrouter | anthropic | gemini | openai) — auto-detects from first available key if unset
+- Secrets: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY` (or `GEMINI_API_KEY`)
+
+## [1.1.0] - 2026-03-11
+
+### Changed
+- **Email subject:** Fixed literal `$(date...)` — now uses workflow step output for proper date (e.g., "Wed Mar 11")
+- **Structure:** Account as section header (e.g., `## zero2webmaster`), repo name only as subheader (`### z2w-web-events`)
+- **Format:** One bullet per commit; removed redundant "N changes:" prefix; show all commits (no "+N more")
+- **Font size:** Email body wrapped in 18px HTML for better readability
+- **AI summaries:** Optional OpenAI integration — one-sentence repo summary when `OPENAI_API_KEY` secret is set
+- Output is now HTML (converted from markdown) for consistent email rendering
+
 ## [1.0.0] - 2026-03-11
 
 ### Added
