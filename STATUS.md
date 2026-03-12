@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-03-12 (v1.5.0)
 
 ---
 
@@ -11,6 +11,10 @@ None currently.
 ---
 
 ## 🧭 Decisions
+
+### Decision: Daily summary format switched to conversational repo bullets
+**Date:** 2026-03-12
+**Rationale:** The automation requirement is now a project-by-project recap with 3-5 outcome bullets per repo, sorted by activity, plus a specific archive filename and email subject format.
 
 ### Decision: Use GitHub Actions (not local cron)
 **Date:** 2026-03-11
@@ -44,10 +48,10 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Validate the next scheduled cron run on `main` sends email with subject `Daily Cursor Work - [DATE]`
+2. Confirm the archive file is committed as `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+3. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
+4. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
 
 ---
 
@@ -58,6 +62,13 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-03-12 - Conversational Daily Cursor Work Format (v1.5.0)
+- Updated `generate_summary.py` to produce 3-5 conversational bullets per active repo
+- Sorting now applies globally by commit count (most active first)
+- New markdown archive naming: `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Added dedicated HTML summary artifact for email body rendering
+- Updated workflow subject to `Daily Cursor Work - [DATE]` and switched email body input to HTML artifact
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic

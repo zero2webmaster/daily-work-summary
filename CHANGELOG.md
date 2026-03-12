@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-03-12
+
+### Added
+- New conversational repo summary format: each active repo now outputs **3-5 bullets** focused on features, refactors, bug fixes, and accomplishments
+- Deterministic fallback bullet generation when no AI provider key is configured
+- New markdown archive filename pattern: `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- New HTML email body artifact: `summaries/daily-summary-YYYY-MM-DD.html`
+
+### Changed
+- Repo sections are now globally sorted by commit volume (most active first), not grouped by owner first
+- Email subject updated to `Daily Cursor Work - [DATE]`
+- No-commit message updated to: `No work today – hope you enjoyed the rest!`
+- Workflow summary detection now validates both markdown and html summary artifacts before delivery
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

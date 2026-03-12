@@ -57,11 +57,13 @@ jobs:
 
           # Check if summary was generated and has content
           TODAY=$(date -u +%Y-%m-%d)
-          SUMMARY_FILE="summaries/daily-summary-${TODAY}.md"
+          SUMMARY_FILE="summaries/${TODAY}-GitHub-Daily-Summary.md"
+          SUMMARY_HTML_FILE="summaries/daily-summary-${TODAY}.html"
 
-          if [ -f "$SUMMARY_FILE" ] && [ -s "$SUMMARY_FILE" ]; then
+          if [ -f "$SUMMARY_FILE" ] && [ -s "$SUMMARY_FILE" ] && [ -f "$SUMMARY_HTML_FILE" ] && [ -s "$SUMMARY_HTML_FILE" ]; then
             echo "has_summary=true" >> $GITHUB_OUTPUT
             echo "summary_file=$SUMMARY_FILE" >> $GITHUB_OUTPUT
+            echo "summary_html_file=$SUMMARY_HTML_FILE" >> $GITHUB_OUTPUT
           else
             echo "has_summary=false" >> $GITHUB_OUTPUT
             # send_email defaults to false when there is no summary
@@ -88,7 +90,7 @@ jobs:
           secure: true
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "Daily Work Summary — ${{ steps.date.outputs.subject_date }}"
+          subject: "Daily Cursor Work - ${{ steps.date.outputs.subject_date }}"
           to: kerry@zero2webmaster.com
           from: ${{ secrets.EMAIL_USERNAME }}
-          html_body: file://${{ steps.summary.outputs.summary_file }}
+          html_body: file://${{ steps.summary.outputs.summary_html_file }}
