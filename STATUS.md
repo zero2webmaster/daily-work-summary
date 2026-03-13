@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-03-13 (v1.5.0)
 
 ---
 
@@ -40,6 +40,10 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
 
+### Decision: Daily summary format changed to repo-level bullet briefs
+**Date:** 2026-03-13
+**Rationale:** The automation requirement is now a conversational project digest ("3-5 bullets per repo") sorted globally by activity, with fixed archive naming and email subject conventions.
+
 ---
 
 ## ✅ Next Actions
@@ -58,6 +62,17 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-03-13 - Daily Cursor Work Format Update (v1.5.0)
+- Updated `generate_summary.py` to:
+  - Scan personal + org repos with de-duplication
+  - Build 3-5 conversational summary bullets per repo (AI when available, deterministic fallback otherwise)
+  - Sort active repos globally by commit count (most active first)
+  - Write markdown archive and HTML email companion files with new naming format
+  - Export workflow outputs (`has_summary`, `send_email`, file paths) directly via `$GITHUB_OUTPUT`
+- Updated workflow email subject to `Daily Cursor Work - YYYY-MM-DD`
+- Fixed archive correctness: markdown file now contains markdown content (not HTML)
+- Updated README and directive docs to match runtime behavior
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic

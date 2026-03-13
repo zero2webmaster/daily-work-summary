@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-03-13
+
+### Added
+- New daily archive naming format: `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Companion HTML output for email delivery: `summaries/YYYY-MM-DD-GitHub-Daily-Summary.html`
+- GitHub CLI token fallback for local/automation runs when `PAT_GITHUB` is not set
+
+### Changed
+- Summary format now generates 3-5 conversational project bullets per active repo (features, fixes, refactors, accomplishments)
+- Repo sections are now globally sorted by commit count (most active first), without owner grouping
+- Workflow email subject now matches requested format: `Daily Cursor Work - YYYY-MM-DD`
+- Workflow now consumes summary output variables directly from `generate_summary.py`
+
+### Fixed
+- Markdown archive now stores actual Markdown (instead of HTML content written to a `.md` file)
+- No-work-day fallback message now uses: `No work today - hope you enjoyed the rest!`
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

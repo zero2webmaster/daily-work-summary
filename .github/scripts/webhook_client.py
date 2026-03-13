@@ -30,6 +30,7 @@ RETRY_BASE_DELAY = 2          # seconds
 
 Z2W_URL = "https://zero2webmaster.com/kerry-kriger"
 REPO_URL = "https://github.com/zero2webmaster/daily-work-summary"
+NO_WORK_MESSAGE = "No work today - hope you enjoyed the rest!"
 
 
 # ------------------------------------------------------------------ #
@@ -132,7 +133,7 @@ def send_slack(webhook_url: str, summary_data: dict[str, Any]) -> bool:
     if not has_commits:
         blocks.append({
             "type": "section",
-            "text": {"type": "mrkdwn", "text": "No commits today — well rested! ✅"},
+            "text": {"type": "mrkdwn", "text": NO_WORK_MESSAGE},
         })
     else:
         # Stats bar
@@ -242,7 +243,7 @@ def send_discord(webhook_url: str, summary_data: dict[str, Any]) -> bool:
     color = 0x2ECC71 if has_commits else 0x95A5A6  # emerald green / concrete grey
 
     if not has_commits:
-        description = "No commits today — well rested! ✅"
+        description = NO_WORK_MESSAGE
     else:
         description = _build_discord_description(repos)
 

@@ -11,6 +11,21 @@
 
 ## GitHub Actions
 
+### Issue: Markdown Archive Contains HTML Instead of Markdown
+
+**Problem:** Daily archive file (`.md`) renders raw HTML because the script writes `summary_data["html"]` to the markdown path.
+
+**Root Cause:** The generator originally produced only one file for both archive and email body.
+
+**Solution:**
+1. Write markdown archive from `summary_data["markdown"]` to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+2. Write a separate HTML companion file for email delivery (`.html`)
+3. Pass both file paths through `$GITHUB_OUTPUT` (`summary_markdown_file`, `summary_file`)
+
+**Verification:** Open the `.md` archive and confirm it contains markdown headings/bullets, not HTML tags
+
+---
+
 ### Issue: Workflow Not Triggering on Schedule
 
 **Problem:** Cron schedule doesn't fire, no workflow runs appear in Actions tab.
