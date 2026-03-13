@@ -17,7 +17,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - Markdown archive now stores actual Markdown (instead of HTML content written to a `.md` file)
-- No-work-day fallback message now uses: `No work today - hope you enjoyed the rest!`
+- No-work-day fallback message now uses: `No work today – hope you enjoyed the rest!`
 
 ## [1.4.0] - 2026-03-11
 

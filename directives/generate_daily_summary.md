@@ -51,7 +51,7 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
   - notable accomplishments
 - AI-assisted bullets are used when an AI provider key is available; otherwise deterministic heuristics summarize commit messages
 - Commit message snippets are truncated to 80 characters before summarization
-- If zero commits across all repos: "No work today - hope you enjoyed the rest!"
+- If zero commits across all repos: "No work today – hope you enjoyed the rest!"
 
 ### Step 4: Save Markdown Archive
 - Write markdown archive to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
@@ -99,7 +99,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 
 | Scenario | Handling |
 |----------|----------|
-| No commits in 24h | "No work today - hope you enjoyed the rest!" |
+| No commits in 24h | "No work today – hope you enjoyed the rest!" |
 | Long commit message | Truncate to 80 chars with `...` |
 | 403 PAT error | Log clear error + link to token settings |
 | Empty repo (no commits ever) | Skip silently |

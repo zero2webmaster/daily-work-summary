@@ -30,7 +30,7 @@ RETRY_BASE_DELAY = 2          # seconds
 
 Z2W_URL = "https://zero2webmaster.com/kerry-kriger"
 REPO_URL = "https://github.com/zero2webmaster/daily-work-summary"
-NO_WORK_MESSAGE = "No work today - hope you enjoyed the rest!"
+NO_WORK_MESSAGE = "No work today – hope you enjoyed the rest!"
 
 
 # ------------------------------------------------------------------ #
