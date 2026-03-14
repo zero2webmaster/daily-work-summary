@@ -11,6 +11,23 @@
 
 ## GitHub Actions
 
+### Issue: Local Cursor Run Fails with 403 on `/user`
+
+**Problem:** Running `.github/scripts/generate_summary.py` locally in Cursor Cloud fails with:
+`Request GET /user failed with 403: Forbidden`.
+
+**Root Cause:** The default `gh auth token` in Cursor Cloud may not have the required scopes (`repo`, `read:user`) for cross-repo scanning.
+
+**Solution:**
+1. Use a PAT with `repo` + `read:user` scopes and export it as `PAT_GITHUB`
+2. Prefer running through the GitHub Actions workflow where `PAT_GITHUB` is configured as a repository secret
+3. Verify with logs: `Authenticated as: <username>`
+
+**Verification:**  
+`PAT_GITHUB=ghp_xxx python3 .github/scripts/generate_summary.py`
+
+---
+
 ### Issue: Workflow Not Triggering on Schedule
 
 **Problem:** Cron schedule doesn't fire, no workflow runs appear in Actions tab.
