@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-03-14 (v1.5.0)
 
 ---
 
@@ -40,14 +40,17 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
 
+### Decision: Archive filename aligned to automation contract
+**Date:** 2026-03-14
+**Rationale:** Automation now writes `YYYY-MM-DD-GitHub-Daily-Summary.md` at repo root to match the exact requested output naming and simplify discovery.
+
 ---
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Monitor first production run with new archive naming and subject format
+2. Validate email rendering from `.tmp/*-GitHub-Daily-Summary.html` in workflow logs
+3. Optionally adapt Slack/Discord formatting from raw commit bullets to summary bullets
 
 ---
 
@@ -83,5 +86,12 @@ None currently.
 - Created README with production setup guide
 - Added 4 AI providers, email formatting, fork sync docs
 - All 3 core phases complete
+
+### Session: 2026-03-14 - Daily Cursor Format Alignment (v1.5.0)
+- Updated `.github/scripts/generate_summary.py` to produce repo-level 3-5 conversational bullets sorted by commit count
+- Changed archive output to repo root: `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Added workflow output wiring for `archive_file` and `summary_file` emitted directly by script
+- Updated workflow email subject to `Daily Cursor Work - [DATE]`
+- Updated no-work message to "No work today – hope you enjoyed the rest!"
 
 ---

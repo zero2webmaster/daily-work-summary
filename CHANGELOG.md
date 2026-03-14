@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-03-14
+
+### Added
+- Repo-level conversational summary format with **3-5 bullets per active repository**, focused on features, fixes, refactors, and accomplishments
+- New archive naming format at repo root: `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Generator now emits workflow outputs for both files:
+  - `archive_file` (markdown file to commit)
+  - `summary_file` (temporary HTML email body file)
+
+### Changed
+- Email subject updated to requested format: `Daily Cursor Work - [DATE]`
+- Summary layout now sorts all active repos globally by commit count (most active first)
+- "No commits" message updated to: `No work today – hope you enjoyed the rest!`
+- Workflow now commits the exact generated archive file path instead of `summaries/`
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

@@ -137,4 +137,24 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
-*Last Updated: 2026-03-11*
+## Phase 6: Cursor Daily Format Alignment ✅
+**Status:** Complete (2026-03-14)
+**Estimated Time:** 20 minutes
+
+**Tasks:**
+- [x] Update summary format to project-centric conversational bullets (3-5 per repo)
+- [x] Rename archive output to `YYYY-MM-DD-GitHub-Daily-Summary.md` at repo root
+- [x] Update email subject to `Daily Cursor Work - [DATE]`
+- [x] Update no-work message to "No work today – hope you enjoyed the rest!"
+- [x] Refactor workflow to consume script outputs (`archive_file`, `summary_file`)
+
+**Verification:**
+```bash
+python3 -m py_compile .github/scripts/generate_summary.py
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+python3 .github/scripts/generate_summary.py
+```
+
+---
+
+*Last Updated: 2026-03-14*
