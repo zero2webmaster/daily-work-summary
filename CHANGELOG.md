@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.6] - 2026-03-15
+
+### Changed
+- Daily summary format now produces **repo-level 3-5 bullet accomplishments** (features, fixes, refactors, outcomes) instead of listing every commit message
+- Repositories are now sorted globally by commit count (most active first), regardless of owner grouping
+- No-commit message updated to: `No work today – hope you enjoyed the rest!`
+- Archive output path changed to repo root: `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Workflow email subject changed to: `Daily Cursor Work - YYYY-MM-DD`
+- Workflow now consumes script outputs (`has_summary`, `archive_file`, `summary_file`, `send_email`) directly from `generate_summary.py`
+
+### Added
+- Deterministic fallback summarizer for 3-5 bullets when AI provider keys are not configured
+- Temporary HTML email payload output in `.tmp/YYYY-MM-DD-GitHub-Daily-Summary.html` for email rendering while keeping markdown archive clean
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
