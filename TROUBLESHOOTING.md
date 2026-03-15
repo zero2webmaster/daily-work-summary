@@ -1,7 +1,7 @@
 # Troubleshooting Guide
 
 **Project:** Daily Work Summary
-**Last Updated:** 2026-03-11
+**Last Updated:** 2026-03-15
 
 ---
 
@@ -39,6 +39,25 @@
 4. Classic tokens: check expiration date
 
 **Verification:** Run workflow manually, check logs for "Authenticated as: <username>"
+
+---
+
+### Issue: Local automation token only sees one repo (`cursor[bot]`)
+
+**Problem:** Running `generate_summary.py` locally with `PAT_GITHUB=$(gh auth token)` returns:
+- `Request GET /user failed with 403: Forbidden`
+- GraphQL viewer login is `cursor[bot]` with only `zero2webmaster/daily-work-summary` visible
+
+**Root Cause:** Cursor Cloud's `gh` token is an installation/integration token scoped to this single repository, not a full user PAT with `repo` + `read:user` across all personal/org repos.
+
+**Solution / Workaround:**
+1. Run summary generation in GitHub Actions where `PAT_GITHUB` secret is configured with full scopes.
+2. Keep `generate_summary.py` expecting `PAT_GITHUB` for full-account scans.
+3. If local test is needed, export a real user PAT:
+   - `export PAT_GITHUB=ghp_...`
+   - `python3 .github/scripts/generate_summary.py`
+
+**Verification:** In logs, `Authenticated as:` should be the real account (not `cursor[bot]`), and repo count should match expected org + personal repos.
 
 ---
 
@@ -83,6 +102,7 @@
 | Push fails in workflow | Missing write permissions | Settings → Actions → "Read and write permissions" |
 | Cron not firing | Workflow not on `main` | Merge to `main` branch |
 | Rate limit errors | Too many API calls | Script has built-in exponential backoff |
+| Local run only shows one repo | Integration token is repo-scoped | Use PAT in Actions secrets or local env |
 
 ---
 

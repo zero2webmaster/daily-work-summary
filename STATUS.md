@@ -6,7 +6,7 @@
 
 ## 🚧 Blockers
 
-None currently.
+- Cursor Cloud `gh` integration token is repo-scoped (`cursor[bot]`) and cannot run full-account scans locally (`/user` and workflow dispatch return 403). Full scan/email delivery must run in GitHub Actions with `PAT_GITHUB` + email secrets.
 
 ---
 
