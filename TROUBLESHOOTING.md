@@ -11,6 +11,24 @@
 
 ## GitHub Actions
 
+### Issue: Local Dry-Run Fails with 403 Using `gh auth token`
+
+**Problem:** Running `generate_summary.py` locally with `PAT_GITHUB="$(gh auth token)"` fails with:
+`PAT_GITHUB has insufficient permissions. Required scopes: repo, read:user`.
+
+**Root Cause:** The GitHub CLI authentication token may not include full `repo` scope, even when the CLI is authenticated for normal read-only commands.
+
+**Solution:**
+1. Create/use a dedicated PAT with `repo` + `read:user` scopes
+2. Export it directly before local test:
+   `export PAT_GITHUB=ghp_xxx`
+3. Re-run:
+   `EMAIL_TIMEZONE=America/New_York DELIVERY_METHOD=email python3 .github/scripts/generate_summary.py`
+
+**Verification:** Logs should show `Authenticated as: <username>` and continue past `/user` API call.
+
+---
+
 ### Issue: Workflow Not Triggering on Schedule
 
 **Problem:** Cron schedule doesn't fire, no workflow runs appear in Actions tab.
