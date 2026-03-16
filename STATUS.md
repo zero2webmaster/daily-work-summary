@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-03-16 (v1.5.0)
 
 ---
 
@@ -58,6 +58,14 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-03-16 - Daily Cursor Work Format Update (v1.5.0)
+- Updated summary output to project-first conversational bullets (3-5 bullets per active repo), sorted globally by commit activity
+- Expanded repo collection to personal repos + zero2webmaster org repos, with deduping
+- Changed archive output to root-level `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Changed no-work fallback message to: "No work today – hope you enjoyed the rest!"
+- Updated workflow subject line to: `Daily Cursor Work - [DATE]`
+- Added workflow outputs for summary markdown/html paths and email gating from Python
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic

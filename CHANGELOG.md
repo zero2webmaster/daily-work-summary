@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-03-16
+
+### Changed
+- Daily report format now uses per-project conversational bullet summaries (3-5 bullets per active repo) instead of raw per-commit lists
+- Repositories are now compiled from personal repos + `zero2webmaster/*` repos, deduplicated, then sorted globally by commit volume
+- No-work message updated to: `No work today – hope you enjoyed the rest!`
+- Email subject updated to: `Daily Cursor Work - [DATE]`
+
+### Added
+- Root-level archive naming: `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Workflow outputs from `generate_summary.py`: `has_summary`, `summary_markdown_file`, `summary_html_file`, `send_email`
+- `.tmp/YYYY-MM-DD-GitHub-Daily-Summary.html` generation for clean HTML email delivery while keeping committed archive as Markdown
+
+### Documentation
+- Updated directive `directives/generate_daily_summary.md` to reflect new repo scope, summary structure, archive path, and subject line
+- Updated README examples and project structure for the new output format and version
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
