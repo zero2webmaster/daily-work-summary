@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-03-17 (v1.5.0)
 
 ---
 
@@ -44,10 +44,10 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Confirm production cron run generated the new root archive file format
+2. Validate email rendering with the new project-bullet summary format
+3. Verify Slack/Discord payload formatting with `summary_bullets` fields
+4. Monitor Airtable `AI Summaries` field length with bullet-based content
 
 ---
 
@@ -58,6 +58,13 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-03-17 - Cursor Output Contract Alignment (v1.5.0)
+- Updated summary format to per-project sections with 3-5 conversational bullets
+- Added root archive output: `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Updated no-work copy to: `No work today – hope you enjoyed the rest!`
+- Updated workflow email subject to: `Daily Cursor Work - YYYY-MM-DD`
+- Updated webhook formatting to use project summary bullets
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic

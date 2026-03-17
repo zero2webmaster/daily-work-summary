@@ -32,7 +32,7 @@ jobs:
         env:
           EMAIL_TIMEZONE: ${{ vars.EMAIL_TIMEZONE }}
         run: |
-          SUBJECT_DATE=$(TZ="${EMAIL_TIMEZONE:-America/New_York}" date +'%a %b %d')
+          SUBJECT_DATE=$(TZ="${EMAIL_TIMEZONE:-America/New_York}" date +'%Y-%m-%d')
           echo "subject_date=$SUBJECT_DATE" >> $GITHUB_OUTPUT
 
       - name: Generate daily summary
@@ -73,6 +73,11 @@ jobs:
         run: |
           git config user.name "Daily Summary Bot"
           git config user.email "daily-summary@users.noreply.github.com"
+          TODAY=$(date -u +%Y-%m-%d)
+          ARCHIVE_FILE="${TODAY}-GitHub-Daily-Summary.md"
+          if [ -f "$ARCHIVE_FILE" ]; then
+            git add "$ARCHIVE_FILE"
+          fi
           git add summaries/
           git diff --cached --quiet || git commit -m "Add daily summary for $(date -u +%Y-%m-%d)"
           git push
@@ -88,7 +93,7 @@ jobs:
           secure: true
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "Daily Work Summary — ${{ steps.date.outputs.subject_date }}"
+          subject: "Daily Cursor Work - ${{ steps.date.outputs.subject_date }}"
           to: kerry@zero2webmaster.com
           from: ${{ secrets.EMAIL_USERNAME }}
           html_body: file://${{ steps.summary.outputs.summary_file }}

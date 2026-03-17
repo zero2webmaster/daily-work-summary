@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-03-17
+
+### Added
+- New daily markdown archive filename: `YYYY-MM-DD-GitHub-Daily-Summary.md` (repo root)
+- Repo-level summary bullets (`3-5` bullets) with conversational accomplishment tone
+- AI bullet-generation path per repo with deterministic fallback when no AI provider key is configured
+
+### Changed
+- Daily summary collection now aggregates personal + organization repositories explicitly
+- Summary format now lists projects directly (sorted by commit count), rather than owner-grouped commit dumps
+- Workflow email subject updated to: `Daily Cursor Work - YYYY-MM-DD`
+- Workflow commit step now stages the dated root archive file in addition to `summaries/` artifacts
+- No-work message updated to: `No work today – hope you enjoyed the rest!`
+- Slack/Discord formatting now prefers repo summary bullets when available
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
