@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-03-20
+
+### Added
+- GitHub integration fallback: local/automation runs now use `gh auth token` when `PAT_GITHUB` is not present
+- New archive naming: `YYYY-MM-DD-GitHub-Daily-Summary.md` written to repo root
+- HTML companion output in `summaries/daily-summary-YYYY-MM-DD.html` for reliable email rendering
+
+### Changed
+- Summary format now uses conversational per-repo bullets (`• ...`) with 3-5 high-level bullets per active repo
+- Repo ordering is now global by commit count (most active first), rather than grouped by owner sections
+- No-activity message updated to: `No work today – hope you enjoyed the rest!`
+- Email subject updated to: `Daily Cursor Work - YYYY-MM-DD`
+- Workflow now consumes `summary_file` / `email_file` outputs emitted by `generate_summary.py`
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

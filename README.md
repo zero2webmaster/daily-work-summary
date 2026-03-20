@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.4.0
+**Version:** 1.5.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -20,9 +20,9 @@ Automated daily email summaries of your GitHub development work across all repos
 
 1. **GitHub Actions** triggers on your schedule (default: 10 PM EST)
 2. **PyGithub** fetches every commit you made in the last 24 hours across all repos you own
-3. Commits are **grouped by account → repo**, sorted by activity (most commits first)
+3. Active repos are **globally sorted by activity** (most commits first)
 4. **Optional AI** generates a one-sentence thematic summary per repo
-5. The result is saved as a **Markdown archive** in `summaries/` and emailed as HTML
+5. The result is saved as `YYYY-MM-DD-GitHub-Daily-Summary.md` and emailed as HTML
 
 ---
 
@@ -313,7 +313,8 @@ Open `.github/workflows/daily-summary.yml` and update the `cron:` line. See the 
 │       ├── generate_summary.py        # Summary generator + delivery routing
 │       ├── airtable_client.py         # Airtable REST API client
 │       └── webhook_client.py          # Slack + Discord webhook delivery
-├── summaries/                         # Daily archives (auto-generated)
+├── summaries/                         # HTML email companions (auto-generated)
+├── YYYY-MM-DD-GitHub-Daily-Summary.md # Markdown archive (auto-generated)
 ├── directives/                        # SOPs
 ├── execution/
 │   ├── setup_airtable.py             # Airtable table creation (used by setup workflow)
@@ -350,4 +351,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.4.0 | Last Updated: 2026-03-11*
+*Version: 1.5.0 | Last Updated: 2026-03-20*

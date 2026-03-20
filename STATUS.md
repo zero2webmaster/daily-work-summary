@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-03-20 (v1.5.0)
 
 ---
 
@@ -58,6 +58,15 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-03-20 - Daily Cursor Work Format Update (v1.5.0)
+- Updated output format to match "Daily Cursor Work" requirements:
+  - archive filename: `YYYY-MM-DD-GitHub-Daily-Summary.md`
+  - email subject: `Daily Cursor Work - YYYY-MM-DD`
+  - no-work message: `No work today – hope you enjoyed the rest!`
+- Refactored summary layout to global repo ordering by commit count with conversational 3-5 bullet summaries per active repo
+- Added GitHub CLI integration fallback (`gh auth token`) for local automation runs without PAT_GITHUB env var
+- Synced workflow and directive/docs with the new output and delivery contract
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic
