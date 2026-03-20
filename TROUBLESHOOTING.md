@@ -11,6 +11,27 @@
 
 ## GitHub Actions
 
+### Issue: Integration Token Fails on `/user` Endpoint (403)
+
+**Problem:** Local/automation run shows:
+`Resource not accessible by integration` or `PAT_GITHUB has insufficient permissions` when calling authenticated user APIs.
+
+**Root Cause:** GitHub App integration tokens are often scoped to installation repositories and cannot access account-level `/user` endpoints.
+
+**Solution:**
+1. Preferred: set `PAT_GITHUB` secret/env with scopes `repo` + `read:user`
+2. Fallback implemented in `generate_summary.py`:
+   - Detect 403 on `get_user()`
+   - Query `installation/repositories` instead
+   - Continue summary generation for all repos the installation can access
+3. If you need all personal + org repos, install the integration on all target repos or use a PAT
+
+**Verification:** Run `python3 .github/scripts/generate_summary.py` and confirm logs include either:
+- `Authenticated as user: ...` (PAT mode), or
+- `Authenticated via installation token ... Found N repositories via installation scope` (fallback mode)
+
+---
+
 ### Issue: Workflow Not Triggering on Schedule
 
 **Problem:** Cron schedule doesn't fire, no workflow runs appear in Actions tab.
