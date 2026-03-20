@@ -25,6 +25,7 @@ locally with PAT_GITHUB set in environment or .env file.
 
 import os
 import re
+import requests
 import subprocess
 import sys
 import time
@@ -51,9 +52,11 @@ HTML_FONT_SIZE = "18px"
 NO_WORK_MESSAGE = "No work today – hope you enjoyed the rest!"
 ARCHIVE_FILENAME_TEMPLATE = "{date}-GitHub-Daily-Summary.md"
 EMAIL_HTML_DIR = "summaries"
+AUTH_TOKEN: str | None = None
 
 
 def get_github_client() -> Github:
+    global AUTH_TOKEN
     token = os.environ.get("PAT_GITHUB")
     if not token:
         try:
@@ -86,6 +89,7 @@ def get_github_client() -> Github:
         print("  Create token:   https://github.com/settings/tokens")
         sys.exit(1)
 
+    AUTH_TOKEN = token
     from github import Auth
     return Github(auth=Auth.Token(token), per_page=100)
 
@@ -165,7 +169,10 @@ def build_repo_bullets(messages: list[str]) -> list[str]:
 def fetch_commits_with_retry(repo, since, author, retries=MAX_RETRIES):
     for attempt in range(retries):
         try:
-            commits = list(repo.get_commits(since=since, author=author))
+            if author:
+                commits = list(repo.get_commits(since=since, author=author))
+            else:
+                commits = list(repo.get_commits(since=since))
             return commits
         except RateLimitExceededException:
             if attempt < retries - 1:
@@ -216,6 +223,36 @@ def get_target_repositories(g: Github, user) -> list:
 
     print(f"Found {len(by_full_name)} repositories (personal repos: {personal_count})")
     return sorted(by_full_name.values(), key=lambda r: r.full_name.lower())
+
+
+def get_installation_repositories(g: Github) -> list:
+    """Fallback for GitHub App integration tokens scoped to installation repos."""
+    if not AUTH_TOKEN:
+        return []
+
+    headers = {
+        "Authorization": f"Bearer {AUTH_TOKEN}",
+        "Accept": "application/vnd.github+json",
+    }
+    url = "https://api.github.com/installation/repositories?per_page=100"
+    full_names: list[str] = []
+    while url:
+        response = requests.get(url, headers=headers, timeout=30)
+        if response.status_code >= 400:
+            print(f"  Installation fallback unavailable: {response.status_code}")
+            return []
+        payload = response.json()
+        full_names.extend(repo["full_name"] for repo in payload.get("repositories", []))
+        url = response.links.get("next", {}).get("url")
+
+    repos = []
+    for full_name in sorted(set(full_names)):
+        try:
+            repos.append(g.get_repo(full_name))
+        except GithubException as exc:
+            print(f"  Could not load repo {full_name}: {exc.status}")
+    print(f"Found {len(repos)} repositories via installation scope")
+    return repos
 
 
 # AI provider config: (api_key_env, model). Gemini also accepts GEMINI_API_KEY.
@@ -338,8 +375,23 @@ def generate_summary() -> dict[str, Any]:
         repos (list of dicts), ai_summaries_text, has_commits
     """
     g = get_github_client()
-    user = g.get_user()
-    print(f"Authenticated as: {user.login}")
+    user_login: str | None = None
+    repos: list[Any]
+    try:
+        user = g.get_user()
+        user_login = user.login
+        print(f"Authenticated as user: {user_login}")
+        repos = get_target_repositories(g, user)
+    except GithubException as exc:
+        if exc.status != 403:
+            raise
+        print("Authenticated via installation token (user endpoint unavailable).")
+        repos = get_installation_repositories(g)
+        user_login = os.environ.get("GITHUB_ACTOR")
+        if user_login:
+            print(f"Filtering commits for actor: {user_login}")
+        else:
+            print("No actor username found; including all commits in accessible repos.")
 
     since = datetime.now(timezone.utc) - timedelta(hours=24)
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -347,9 +399,8 @@ def generate_summary() -> dict[str, Any]:
 
     repo_summaries: list[dict[str, Any]] = []
 
-    repos = get_target_repositories(g, user)
     for repo in repos:
-        commits = fetch_commits_with_retry(repo, since, user.login)
+        commits = fetch_commits_with_retry(repo, since, user_login)
         if commits:
             messages = [c.commit.message for c in commits]
             owner, repo_name = repo.full_name.split("/", 1)
