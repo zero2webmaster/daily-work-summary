@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.6] - 2026-03-21
+
+### Changed
+- Updated summary archive naming to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md` to match automation output requirements
+- Updated email subject format to `Daily Cursor Work - YYYY-MM-DD`
+- Updated no-commit fallback message to: `No work today - hope you enjoyed the rest!`
+- Refactored summary structure to conversational per-repo bullets (`**Repo Name**` + 3-5 bullets) sorted by most active repos first
+- Added dedicated `.tmp/YYYY-MM-DD-GitHub-Daily-Summary.html` output for email rendering while preserving markdown archive in `summaries/`
+- Workflow now consumes script outputs for markdown/html file paths (`summary_markdown_file`, `summary_html_file`) instead of hardcoded summary filename assumptions
+- Updated project docs/directive/rules to reflect current filename, subject, and no-commit message behavior
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
