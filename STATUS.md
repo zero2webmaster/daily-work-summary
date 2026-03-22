@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-03-22 (v1.5.0)
 
 ---
 
@@ -40,14 +40,17 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
 
+### Decision: Daily output contract aligned to "Daily Cursor Work"
+**Date:** 2026-03-22
+**Rationale:** The automation now emits repo-level accomplishment bullets (3-5), writes archive files named `YYYY-MM-DD-GitHub-Daily-Summary.md`, uses subject `Daily Cursor Work - YYYY-MM-DD`, and uses fallback text "No work today – hope you enjoyed the rest!" to match requested delivery format.
+
 ---
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Monitor next scheduled run for filename/subject compliance in live email
+2. Optionally update Slack/Discord wording to match new no-work fallback text
+3. Keep backward compatibility notes in docs if archive path conventions change again
 
 ---
 
@@ -66,6 +69,14 @@ None currently.
 - Workflow: added `SLACK_WEBHOOK_URL` + `DISCORD_WEBHOOK_URL`; email condition now uses `send_email` output
 - README: new Slack & Discord Integration section with step-by-step setup
 - Bumped to v1.4.0
+
+### Session: 2026-03-22 - Daily Cursor Work contract update (v1.5.0)
+- `generate_summary.py`: replaced per-commit output with 3-5 accomplishment bullets per repo (AI-first with deterministic fallback)
+- Maintains scan scope across all owner + organization_member repos and sorts by most active first
+- Archive filename now `YYYY-MM-DD-GitHub-Daily-Summary.md` and HTML companion file for email body
+- Workflow subject updated to `Daily Cursor Work - YYYY-MM-DD`; email step now uses script-provided HTML file output
+- No-commit fallback text updated to: "No work today – hope you enjoyed the rest!"
+- Directive, roadmap, changelog, and README version metadata updated for consistency
 
 ### Session: 2026-03-11 - Airtable Integration (v1.3.0)
 - Built `airtable_client.py` — full Airtable REST API client with retry logic

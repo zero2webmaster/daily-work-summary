@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-03-22
+
+### Changed
+- Daily archive file naming now matches automation contract: `YYYY-MM-DD-GitHub-Daily-Summary.md` (plus HTML companion for email body)
+- Email subject now matches required format: `Daily Cursor Work - [DATE]`
+- "No commits" message updated to: `No work today – hope you enjoyed the rest!`
+- Repo summary output now uses structured conversational accomplishment bullets (3-5 bullets per repo) instead of raw commit-message lists
+- Repo sections remain sorted by commit count (most active first), across all owned + organization-member repositories
+
+### Workflow
+- `generate_summary.py` now writes workflow outputs directly (`has_summary`, `send_email`, `summary_file`, `summary_html_file`)
+- `daily-summary.yml` now reads `summary_html_file` for `action-send-mail` HTML body input
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

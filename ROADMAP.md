@@ -138,3 +138,22 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 ---
 
 *Last Updated: 2026-03-11*
+
+---
+
+## Phase 6: Cursor Summary Contract Alignment ✅
+**Status:** Complete (2026-03-22)
+
+**Tasks:**
+- [x] Update summary format to per-repo 3-5 accomplishment bullets (conversational tone)
+- [x] Sort all repos globally by commit count (most active first)
+- [x] Update no-commit fallback text to: "No work today – hope you enjoyed the rest!"
+- [x] Update archive filename to `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- [x] Update email subject to `Daily Cursor Work - [DATE]`
+- [x] Emit workflow outputs directly from generator (`has_summary`, `send_email`, `summary_html_file`)
+
+**Verification:**
+```bash
+python3 -m py_compile .github/scripts/generate_summary.py
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+```
