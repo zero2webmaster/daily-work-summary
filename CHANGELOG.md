@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-03-23
+
+### Added
+- New daily archive filename format: `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- New email HTML staging file in `.tmp/` for SMTP delivery: `.tmp/YYYY-MM-DD-GitHub-Daily-Summary.email.html`
+- Repo-level smart bullet synthesis (3-5 conversational bullets per active repo) so summaries describe accomplishments instead of dumping raw commit lists
+- Timezone-aware summary date generation using `EMAIL_TIMEZONE` for both archive naming and subject consistency
+
+### Changed
+- Email subject updated to `Daily Cursor Work - YYYY-MM-DD`
+- "No commits" message updated to: `No work today – hope you enjoyed the rest!`
+- Workflow summary file detection aligned to the new archive filename format and timezone handling
+- Summary structure now sorts all active repos globally by commit count and renders each project as:
+  - `**Repo Name**`
+  - `• 3-5 accomplishment bullets`
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

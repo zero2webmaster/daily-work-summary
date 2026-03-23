@@ -32,13 +32,14 @@ jobs:
         env:
           EMAIL_TIMEZONE: ${{ vars.EMAIL_TIMEZONE }}
         run: |
-          SUBJECT_DATE=$(TZ="${EMAIL_TIMEZONE:-America/New_York}" date +'%a %b %d')
+          SUBJECT_DATE=$(TZ="${EMAIL_TIMEZONE:-America/New_York}" date +'%Y-%m-%d')
           echo "subject_date=$SUBJECT_DATE" >> $GITHUB_OUTPUT
 
       - name: Generate daily summary
         id: summary
         env:
           PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
+          EMAIL_TIMEZONE: ${{ vars.EMAIL_TIMEZONE }}
           AI_PROVIDER: ${{ vars.AI_PROVIDER }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -56,12 +57,11 @@ jobs:
           python .github/scripts/generate_summary.py
 
           # Check if summary was generated and has content
-          TODAY=$(date -u +%Y-%m-%d)
-          SUMMARY_FILE="summaries/daily-summary-${TODAY}.md"
+          TODAY=$(TZ="${EMAIL_TIMEZONE:-America/New_York}" date +%Y-%m-%d)
+          SUMMARY_FILE="summaries/${TODAY}-GitHub-Daily-Summary.md"
 
           if [ -f "$SUMMARY_FILE" ] && [ -s "$SUMMARY_FILE" ]; then
             echo "has_summary=true" >> $GITHUB_OUTPUT
-            echo "summary_file=$SUMMARY_FILE" >> $GITHUB_OUTPUT
           else
             echo "has_summary=false" >> $GITHUB_OUTPUT
             # send_email defaults to false when there is no summary
@@ -88,7 +88,7 @@ jobs:
           secure: true
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "Daily Work Summary — ${{ steps.date.outputs.subject_date }}"
+          subject: "Daily Cursor Work - ${{ steps.date.outputs.subject_date }}"
           to: kerry@zero2webmaster.com
           from: ${{ secrets.EMAIL_USERNAME }}
           html_body: file://${{ steps.summary.outputs.summary_file }}
