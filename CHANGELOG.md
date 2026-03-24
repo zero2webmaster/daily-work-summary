@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-03-24
+
+### Added
+- New per-repo conversational summary format in the generated daily report: each active repository now gets **3-5 bullets** that summarize accomplishments by work type (features, fixes, refactors, maintenance/docs), with optional AI "big picture" context when configured
+- New archive filename format for each run: `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- New workflow output `summary_file` emitted by `generate_summary.py` for reliable downstream email file targeting
+
+### Changed
+- Repository discovery now explicitly covers both:
+  - personal repositories owned by the authenticated user
+  - all repositories in the `zero2webmaster` organization
+- Summary output now matches requested no-work fallback exactly: `No work today – hope you enjoyed the rest!`
+- Email subject line updated to requested format:
+  - from `Daily Work Summary — [DATE]`
+  - to `Daily Cursor Work - [DATE]`
+- Workflow summary file detection now expects the new archive naming pattern
+- Markdown archive now stores true markdown content (email still sends rendered HTML via `html_body` from generated file)
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

@@ -130,11 +130,11 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 📋 **Pending** - Implement after core is stable:
 
-- [ ] Filter by repo patterns (WordPress vs AI projects)
+- [x] Filter by repo scope (zero2webmaster org + personal owner repos) — Completed 2026-03-24
 - [ ] Commit impact analysis (lines changed, files touched)
 - [ ] Weekly/monthly rollup summaries
 - [ ] VS Code/Cursor integration (sidebar widget)
 
 ---
 
-*Last Updated: 2026-03-11*
+*Last Updated: 2026-03-24*
