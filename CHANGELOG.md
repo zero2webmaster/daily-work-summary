@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-03-25
+
+### Added
+- New daily summary archive contract: generator now writes `YYYY-MM-DD-GitHub-Daily-Summary.md` in the repository root.
+- Conversational repository summaries with 3-5 bullets per active repo, designed for accomplishment-oriented daily recap.
+- Workflow outputs from `generate_summary.py` now include:
+  - `summary_markdown_file`
+  - `summary_html_file`
+  - `has_summary`
+  - `send_email`
+
+### Changed
+- Workflow email subject updated to exactly `Daily Cursor Work - [DATE]`.
+- Summary generation now sorts all active repositories globally by commit count (most active first), rather than grouping by owner.
+- No-commit message now matches requested wording: `No work today – hope you enjoyed the rest!`
+- Workflow commit step now stages the generated markdown file from script output instead of staging the entire `summaries/` directory.
+
+### Fixed
+- Removed mismatch between workflow expectation and script output paths by emitting dedicated markdown/html output files for archive + email usage.
+- Added timezone-safe local date handling for archive filename and display date using `EMAIL_TIMEZONE` with fallback to `America/New_York`.
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

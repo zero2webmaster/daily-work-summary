@@ -1,12 +1,12 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-03-25 (v1.5.0)
 
 ---
 
 ## 🚧 Blockers
 
-None currently.
+- Local dry-run blocked by GitHub integration token scope in this environment (`Resource not accessible by integration`, 403 on `/user`). Production workflow remains source of truth because it uses repository secrets.
 
 ---
 
@@ -20,7 +20,7 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Battle-tested GitHub Action for email. Gmail App Passwords provide secure auth without OAuth complexity. Supports HTML formatting for rich summaries.
 
-### Decision: Archive summaries in `summaries/` directory
+### Decision: Archive summaries in versioned markdown files
 **Date:** 2026-03-11
 **Rationale:** Git-committed markdown files provide a permanent, searchable history of daily work. Workflow auto-commits after each run.
 
@@ -40,24 +40,40 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
 
+### Decision: Use root-level dated archive filename
+**Date:** 2026-03-25
+**Rationale:** Automation requirement explicitly requests `YYYY-MM-DD-GitHub-Daily-Summary.md` in repo root. Workflow now stages the exact output file path exposed by script outputs.
+
+### Decision: Convert summary body to conversational 3-5 bullets/repo
+**Date:** 2026-03-25
+**Rationale:** Requirement shifted from raw per-commit bullet lists to high-level accomplishments by repo, sorted most-active-first across all repos.
+
 ---
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Trigger manual "Daily Work Summary" run from GitHub Actions to validate end-to-end email + archive creation with repo secrets
+2. Confirm new archive filename appears at repo root: `YYYY-MM-DD-GitHub-Daily-Summary.md`
+3. Verify subject reads `Daily Cursor Work - [DATE]`
 
 ---
 
 ## 🔧 Tech Debt
 
-- Version drift existed (VERSION=1.2.6, README=1.2.3) — fixed in v1.3.0
+- Webhook payload formatting still uses legacy "Daily Work Summary" phrasing; can be aligned to "Daily Cursor Work" in a follow-up if desired.
 
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-03-25 - Daily Cursor summary contract alignment (v1.5.0)
+- Refactored `.github/scripts/generate_summary.py` to produce conversational 3-5 bullets per active repo
+- Sorting updated to global repo activity order (most commits first), no owner grouping headers
+- No-work message updated to exact required text: "No work today – hope you enjoyed the rest!"
+- Archive output changed to repo-root `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Workflow updated to consume script outputs (`summary_markdown_file`, `summary_html_file`) and email subject changed to `Daily Cursor Work - [DATE]`
+- Verified syntax/parsing: `py_compile` and workflow YAML load checks passed
+- Local end-to-end run could not hit GitHub API due to integration token scope limits (documented blocker)
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic
@@ -75,13 +91,5 @@ None currently.
 - Updated workflow with `DELIVERY_METHOD` routing and Airtable env vars
 - Updated README with Airtable setup section, fixed version drift
 - Bumped to v1.3.0
-
-### Session: 2026-03-11 - Initial Setup (v1.0.0 → v1.2.6)
-- Created complete 3-layer architecture
-- Built GitHub Actions workflow with 10pm EST cron
-- Built smart summary script with intelligent commit grouping
-- Created README with production setup guide
-- Added 4 AI providers, email formatting, fork sync docs
-- All 3 core phases complete
 
 ---
