@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-03-26 (v1.4.6)
 
 ---
 
@@ -11,6 +11,14 @@ None currently.
 ---
 
 ## 🧭 Decisions
+
+### Decision: Store requested markdown filename at repo root
+**Date:** 2026-03-26
+**Rationale:** Automation requirement now explicitly asks for `YYYY-MM-DD-GitHub-Daily-Summary.md` in the repository root, while keeping HTML output for email delivery.
+
+### Decision: Per-repo summaries should be 3-5 accomplishment bullets
+**Date:** 2026-03-26
+**Rationale:** Daily summary readability is improved by concise, conversational accomplishment bullets instead of raw commit lists. AI summaries are used when configured, with deterministic fallback.
 
 ### Decision: Use GitHub Actions (not local cron)
 **Date:** 2026-03-11
@@ -44,10 +52,9 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Monitor next scheduled GitHub Actions run on `main` for production confirmation
+2. Optionally validate Slack/Discord rendering with the new repo bullet-summary format
+3. Consider aligning webhook no-work message text with email wording for consistency
 
 ---
 
@@ -58,6 +65,15 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-03-26 - Requested daily summary format alignment (v1.4.6)
+- Updated `.github/scripts/generate_summary.py` to output requested markdown file name format: `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Added parallel HTML file output to `summaries/daily-summary-YYYY-MM-DD.html` for email body compatibility
+- Changed summary structure to per-repo 3-5 conversational accomplishment bullets, sorted globally by repo activity
+- Updated no-work message to: "No work today – hope you enjoyed the rest!"
+- Workflow now stages and commits both generated files using script outputs
+- Email subject now matches requested format: `Daily Cursor Work - [DATE]`
+- Updated directive, `.cursorrules`, README, ROADMAP, and CHANGELOG to match implemented behavior
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic

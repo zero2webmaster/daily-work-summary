@@ -137,4 +137,26 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
-*Last Updated: 2026-03-11*
+## Phase 6: Requested Daily Summary Format Alignment ✅
+**Status:** Complete (2026-03-26)
+
+**Tasks:**
+- [x] Update summary script to produce root archive filename `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- [x] Keep separate HTML output for email body in `summaries/daily-summary-YYYY-MM-DD.html`
+- [x] Ensure repo sections are globally sorted by commit count (most active first)
+- [x] Add 3-5 conversational accomplishment bullets per repo (AI-first with deterministic fallback)
+- [x] Update no-work message to: "No work today – hope you enjoyed the rest!"
+- [x] Update workflow subject to: `Daily Cursor Work - [DATE]`
+- [x] Commit and stage both markdown + html files in workflow commit step
+- [x] Update directive and repo docs to match new output contract
+
+**Verification:**
+```bash
+python3 -m py_compile .github/scripts/generate_summary.py
+python3 -m py_compile .github/scripts/webhook_client.py
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+```
+
+---
+
+*Last Updated: 2026-03-26*

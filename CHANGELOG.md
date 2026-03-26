@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.6] - 2026-03-26
+
+### Changed
+- Aligned daily output with automation requirement:
+  - Markdown archive now saved as `YYYY-MM-DD-GitHub-Daily-Summary.md` in repository root
+  - Email subject now uses `Daily Cursor Work - [DATE]`
+  - No-work message updated to: `No work today – hope you enjoyed the rest!`
+- Summary generation now outputs **3-5 conversational bullets per repo** (AI-assisted when configured, deterministic fallback otherwise)
+- Repo ordering is now globally sorted by commit count (most active first) across owners
+- Workflow now consumes script outputs (`has_summary`, `summary_markdown_file`, `summary_file`) directly from `$GITHUB_OUTPUT`
+- Added HTML sidecar archive at `summaries/daily-summary-YYYY-MM-DD.html` for email body rendering
+- Updated directive and project rule docs to match current behavior and output paths
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
