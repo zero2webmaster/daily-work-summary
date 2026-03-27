@@ -22,6 +22,20 @@ All notable changes to this project will be documented in this file.
 - Workflow: `SLACK_WEBHOOK_URL` and `DISCORD_WEBHOOK_URL` env vars passed to generate step
 - README Variables table updated with full `DELIVERY_METHOD` options and examples table
 
+## [1.4.6] - 2026-03-27
+
+### Changed
+- Summary output now matches the requested daily recap style:
+  - Global sort by most active repositories (org + personal combined)
+  - Per-repo conversational recap with 3-5 bullets
+  - No-activity message updated to: `No work today - hope you enjoyed the rest!`
+- Archive naming switched to:
+  - `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md` (Markdown)
+  - `summaries/YYYY-MM-DD-GitHub-Daily-Summary.html` (email body artifact)
+- Email subject updated to: `Daily Cursor Work - [DATE]`
+- Workflow now forwards `EMAIL_TIMEZONE` into summary generation and uses the new summary filenames
+- Added deterministic fallback bullet generation for cases when AI provider keys are unavailable
+
 ## [1.3.0] - 2026-03-11
 
 ### Added

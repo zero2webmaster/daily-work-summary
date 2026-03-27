@@ -137,4 +137,27 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
-*Last Updated: 2026-03-11*
+## Phase 6: Cursor Daily Format Alignment ✅
+**Status:** Complete (2026-03-27)
+
+**Tasks:**
+- [x] Align archive filename to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- [x] Add matching HTML artifact for email body (`.html`)
+- [x] Update email subject format to `Daily Cursor Work - [DATE]`
+- [x] Refactor summary content to project-level 3-5 bullet recaps per active repo
+- [x] Ensure global repo sorting by commit count (most active first)
+- [x] Align no-commit message with requested wording
+- [x] Keep directive synchronized with behavior changes
+
+**Verification:**
+```bash
+python3 -m py_compile .github/scripts/generate_summary.py
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+PAT_GITHUB=... DELIVERY_METHOD=email python3 .github/scripts/generate_summary.py
+```
+
+**Dependencies:** Phases 1-5
+
+---
+
+*Last Updated: 2026-03-27*
