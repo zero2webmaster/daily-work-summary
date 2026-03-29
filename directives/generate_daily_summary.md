@@ -1,7 +1,7 @@
 # Directive: Generate Daily Work Summary
 
-**Version:** 1.2.0
-**Last Updated:** 2026-03-11
+**Version:** 1.3.0
+**Last Updated:** 2026-03-29
 **Owner:** Kerry Kriger
 
 ---
@@ -42,26 +42,22 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 - Collect: repo name, commit message (first line), SHA, timestamp
 
 ### Step 3: Generate Smart Summary
-- Group commits by repository owner (account)
-- Account header: `## owner` (e.g., `## zero2webmaster`)
-- Repo header: `### repo-name` (repo name only, not full owner/repo)
-- Sort repos by commit count (most active first)
-- Optional AI summary: If any AI key set (OPENROUTER_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY), generate one-sentence description per repo. Use AI_PROVIDER variable to choose: openrouter, anthropic, gemini, openai. Auto-detects from first available key if unset.
+- Build per-repo summaries and sort repos by commit count (most active first)
+- Repo header format: `**repo-name**` (project-centric, conversational tone)
+- Optional AI summary bullets: If any AI key is set, generate 3-5 concise bullets per repo. Use `AI_PROVIDER` to choose `openrouter`, `anthropic`, `gemini`, or `openai`; auto-detect from first available key if unset
+- Fallback bullets (no AI): derive 3-5 concise bullets from commit prefixes/categories
 - Format each repo section:
   ```
-  ### repo-name
-  *AI summary sentence* (if OPENAI_API_KEY set)
-  **N commits**
-  * commit message 1
-  * commit message 2
+  **repo-name**
+  • Bullet 1
+  • Bullet 2
+  • Bullet 3
   ...
   ```
-- One bullet per commit; show all commits (no truncation)
-- Truncate individual commit messages to 80 characters
-- If zero commits across all repos: "No commits today — well rested! ✅"
+- If zero commits across all repos: "No work today – hope you enjoyed the rest!"
 
 ### Step 4: Save Markdown Archive
-- Write to `summaries/daily-summary-YYYY-MM-DD.md`
+- Write to `YYYY-MM-DD-GitHub-Daily-Summary.md` in repo root
 - Git add + commit + push from within the workflow
 
 ### Step 5: Deliver Summary
@@ -70,9 +66,9 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 **Email** (when `email` is in the list):
 - Use `dawidd6/action-send-mail` GitHub Action
 - To: kerry@zero2webmaster.com
-- Subject: `Daily Work Summary — Day Mon DD`
+- Subject: `Daily Cursor Work - Day Mon DD`
 - Body: HTML-formatted summary
-- `generate_summary.py` outputs `send_email=true/false` to `$GITHUB_OUTPUT`; workflow email step is conditional on that value
+- `generate_summary.py` outputs `has_summary`, `archive_file`, `email_file`, `subject_date`, and `send_email` to `$GITHUB_OUTPUT`; workflow email step is conditional on these outputs
 
 **Airtable** (when `airtable` is in the list):
 - Find or create Repository records for each repo (by full_name)
@@ -95,7 +91,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 | Output | Location | Format |
 |--------|----------|--------|
 | Email | kerry@zero2webmaster.com | HTML (when `email` in DELIVERY_METHOD) |
-| Archive | `summaries/daily-summary-YYYY-MM-DD.md` | Markdown (always) |
+| Archive | `YYYY-MM-DD-GitHub-Daily-Summary.md` (repo root) | Markdown (always) |
 | Airtable | Daily Summaries + Repositories tables | Structured records (when `airtable` in DELIVERY_METHOD) |
 | Slack | Slack channel | Block Kit message (when `slack` in DELIVERY_METHOD) |
 | Discord | Discord channel | Rich embed (when `discord` in DELIVERY_METHOD) |
@@ -105,7 +101,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 
 | Scenario | Handling |
 |----------|----------|
-| No commits in 24h | "No commits today — well rested! ✅" |
+| No commits in 24h | "No work today – hope you enjoyed the rest!" |
 | Long commit message | Truncate to 80 chars with `...` |
 | 403 PAT error | Log clear error + link to token settings |
 | Empty repo (no commits ever) | Skip silently |
@@ -133,7 +129,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 
 - Check GitHub Actions → "Daily Work Summary" for run history
 - Failed runs trigger GitHub's built-in email notifications
-- Summary archive in `summaries/` provides historical record
+- Summary archive in root `YYYY-MM-DD-GitHub-Daily-Summary.md` files provides historical record
 
 ## Lessons Learned
 

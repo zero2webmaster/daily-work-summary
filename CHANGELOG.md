@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-03-29
+
+### Added
+- New daily archive format at repo root: `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- New summary rendering style with conversational, project-level bullets (3-5 bullets per active repo), sorted globally by most active repos first
+- Workflow output wiring from script (`archive_file`, `email_file`, `subject_date`) for cleaner subject/body handoff
+- Public fallback mode in `generate_summary.py` when PAT is unavailable, using `GITHUB_ACCOUNTS` (default `zero2webmaster`) for public repo scans
+
+### Changed
+- Email subject updated to `Daily Cursor Work - [DATE]`
+- Summary "no work" message updated to: `No work today – hope you enjoyed the rest!`
+- Workflow commit step now stages the generated archive file path emitted by the script instead of hardcoded `summaries/`
+- README, directive, and status docs updated to reflect new filename, subject, and summary format
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

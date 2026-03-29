@@ -1,7 +1,7 @@
 # Troubleshooting Guide
 
 **Project:** Daily Work Summary
-**Last Updated:** 2026-03-11
+**Last Updated:** 2026-03-29
 
 ---
 
@@ -10,6 +10,24 @@
 ---
 
 ## GitHub Actions
+
+### Issue: PAT_GITHUB Missing in Some Automation Contexts
+
+**Problem:** Daily run logs show `PAT_GITHUB not set` or cannot enumerate private/org repos.
+
+**Root Cause:** Some external automation runners do not inject repository secrets into the local execution environment.
+
+**Solution:**
+1. Keep `PAT_GITHUB` configured in GitHub Actions secrets for production cron runs.
+2. `generate_summary.py` now falls back to:
+   - `GITHUB_TOKEN`/`GH_TOKEN` if present, then
+   - public-account scan via `GITHUB_ACCOUNTS` when no token is available.
+3. For local/manual testing without PAT, set:
+   - `GITHUB_ACCOUNTS=zero2webmaster,personal-username`
+
+**Verification:** Run `python3 .github/scripts/generate_summary.py` and confirm it creates `YYYY-MM-DD-GitHub-Daily-Summary.md` even without PAT.
+
+---
 
 ### Issue: Workflow Not Triggering on Schedule
 

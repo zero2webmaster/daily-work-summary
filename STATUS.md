@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-03-29 (v1.5.0)
 
 ---
 
@@ -20,9 +20,9 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Battle-tested GitHub Action for email. Gmail App Passwords provide secure auth without OAuth complexity. Supports HTML formatting for rich summaries.
 
-### Decision: Archive summaries in `summaries/` directory
-**Date:** 2026-03-11
-**Rationale:** Git-committed markdown files provide a permanent, searchable history of daily work. Workflow auto-commits after each run.
+### Decision: Archive summary at repo root with dated filename
+**Date:** 2026-03-29
+**Rationale:** Automation requirement is explicit filename `YYYY-MM-DD-GitHub-Daily-Summary.md`; writing to repo root aligns output naming and simplifies commit step.
 
 ### Decision: Raw `requests` for Airtable client (not `pyairtable`)
 **Date:** 2026-03-11
@@ -44,10 +44,9 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Run manual workflow with PAT + Gmail secrets to validate full private/org coverage + email delivery
+2. Verify optional channels (`airtable`, `slack`, `discord`) still render correctly with repo bullet format
+3. Review bullet phrasing quality after a high-activity day; tune fallback heuristics if needed
 
 ---
 
@@ -66,6 +65,14 @@ None currently.
 - Workflow: added `SLACK_WEBHOOK_URL` + `DISCORD_WEBHOOK_URL`; email condition now uses `send_email` output
 - README: new Slack & Discord Integration section with step-by-step setup
 - Bumped to v1.4.0
+
+### Session: 2026-03-29 - Daily Cursor Work format update (v1.5.0)
+- Updated summary output format to project-focused conversational bullets (3-5 per repo), sorted by most active repos first
+- Added fallback GitHub mode when PAT is absent (public repos from `GITHUB_ACCOUNTS`, default `zero2webmaster`) to avoid hard failure
+- Changed archive filename to `YYYY-MM-DD-GitHub-Daily-Summary.md` at repository root
+- Updated workflow email subject to `Daily Cursor Work - [DATE]` and wired subject/body from script outputs
+- Updated README + directive docs to match new file naming, no-work message, and output structure
+- Bumped to v1.5.0
 
 ### Session: 2026-03-11 - Airtable Integration (v1.3.0)
 - Built `airtable_client.py` — full Airtable REST API client with retry logic
