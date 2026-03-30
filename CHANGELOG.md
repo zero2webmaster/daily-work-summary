@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-03-30
+
+### Added
+- Local GitHub auth fallback in `generate_summary.py`: when `PAT_GITHUB` is not set, the script now attempts `gh auth token` for local/automation runs.
+- New deterministic repo summary mode: generates **3-5 conversational bullets per repo** from commit messages when AI bullets are unavailable.
+- New workflow outputs from generator: `summary_file`, `email_html_file`, `has_summary`, and `send_email` for clearer step wiring.
+- Separate email HTML artifact in `.tmp/YYYY-MM-DD-GitHub-Daily-Summary.html` while keeping markdown archive in `summaries/`.
+
+### Changed
+- Daily archive naming now matches requested format: `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`.
+- Summary heading and style now match requested format:
+  - Title: `Daily Cursor Work - [DATE]`
+  - Per-repo sections use `**owner/repo**` followed by bullet lines using `•`.
+- Repositories are now sorted globally by commit count (most active first) across owner boundaries.
+- No-work copy now matches requested text: `No work today – hope you enjoyed the rest!`
+- Email subject now matches requested format: `Daily Cursor Work - [DATE]` (YYYY-MM-DD in configured timezone).
+- Workflow email step now uses the dedicated HTML file output instead of reading the markdown archive.
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

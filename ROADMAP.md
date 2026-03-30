@@ -137,4 +137,41 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
-*Last Updated: 2026-03-11*
+## Phase 6: Daily Cursor Work Format Update ✅
+**Status:** Complete (2026-03-30)
+**Estimated Time:** 30 minutes
+
+**Tasks:**
+- [x] Refactor summary output to repo-first format (`**owner/repo**` + `•` bullets)
+- [x] Generate 3-5 conversational bullets per repo (AI when available, deterministic fallback)
+- [x] Sort all repositories globally by commit count (most active first)
+- [x] Update no-work message to: "No work today – hope you enjoyed the rest!"
+- [x] Change archive naming to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- [x] Write separate HTML email artifact and wire workflow email step to it
+- [x] Update email subject format to `Daily Cursor Work - YYYY-MM-DD`
+- [x] Bump version and synchronize docs/directive updates
+
+**Verification:**
+```bash
+python3 -m py_compile .github/scripts/generate_summary.py
+python3 -m py_compile .github/scripts/airtable_client.py
+python3 -m py_compile .github/scripts/webhook_client.py
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+python3 - <<'PY'
+import importlib.util
+from pathlib import Path
+p = Path('/workspace/.github/scripts/generate_summary.py')
+spec = importlib.util.spec_from_file_location('gen', p)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+assert len(mod.build_repo_bullets(['feat: add x', 'fix: y', 'refactor: z'])) >= 3
+assert mod.parse_delivery_methods('email,slack,bad') == {'email', 'slack'}
+print('ok')
+PY
+```
+
+**Dependencies:** Phases 1-5
+
+---
+
+*Last Updated: 2026-03-30*

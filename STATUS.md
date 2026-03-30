@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-03-30 (v1.5.0)
 
 ---
 
@@ -11,6 +11,14 @@ None currently.
 ---
 
 ## 🧭 Decisions
+
+### Decision: Daily output format moved to repo bullets + explicit archive/email artifact split
+**Date:** 2026-03-30
+**Rationale:** The automation requirement is now repo-first with 3-5 conversational bullets per repo, exact no-work copy, and explicit archive/email formats (`summaries/YYYY-MM-DD-GitHub-Daily-Summary.md` + `.tmp/YYYY-MM-DD-GitHub-Daily-Summary.html`). This improves readability for end users and removes markdown-vs-HTML coupling.
+
+### Decision: Add local GitHub CLI token fallback for script execution
+**Date:** 2026-03-30
+**Rationale:** In automation/local contexts where `PAT_GITHUB` is not injected, the script can attempt `gh auth token` to avoid unnecessary hard failure. Workflow production path still uses `PAT_GITHUB` secrets.
 
 ### Decision: Use GitHub Actions (not local cron)
 **Date:** 2026-03-11
@@ -44,20 +52,31 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Validate next scheduled run output file uses new format (`summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`)
+2. Verify received email subject is `Daily Cursor Work - YYYY-MM-DD`
+3. If needed, update Slack/Discord formatting to consume `repo_bullets` (currently still commit-line oriented)
+4. Optional: add automated tests for summary formatting helper functions
 
 ---
 
 ## 🔧 Tech Debt
 
 - Version drift existed (VERSION=1.2.6, README=1.2.3) — fixed in v1.3.0
+- Slack/Discord formatter still expects commit-line sections and does not yet render new conversational `repo_bullets` directly
 
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-03-30 - Daily format + delivery contract update (v1.5.0)
+- Updated `generate_summary.py` to produce repo-first, 3-5 conversational bullet summaries
+- Added global repo sorting by commit count across owners
+- Updated no-work message to exact required copy: "No work today – hope you enjoyed the rest!"
+- Changed output file naming to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Added separate `.tmp` HTML email artifact and wired workflow email step to that file
+- Updated workflow email subject to `Daily Cursor Work - YYYY-MM-DD`
+- Added local `gh auth token` fallback for missing `PAT_GITHUB`
+- Updated README/directive docs and bumped version to 1.5.0
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic

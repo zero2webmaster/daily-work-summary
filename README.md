@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.4.0
+**Version:** 1.5.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -20,44 +20,33 @@ Automated daily email summaries of your GitHub development work across all repos
 
 1. **GitHub Actions** triggers on your schedule (default: 10 PM EST)
 2. **PyGithub** fetches every commit you made in the last 24 hours across all repos you own
-3. Commits are **grouped by account → repo**, sorted by activity (most commits first)
-4. **Optional AI** generates a one-sentence thematic summary per repo
-5. The result is saved as a **Markdown archive** in `summaries/` and emailed as HTML
+3. Repositories are sorted globally by activity (**most commits first**)
+4. Each repo is summarized into **3-5 conversational bullets** (`•`) with accomplishments and themes
+5. **Optional AI** helps generate those bullets when an AI key is configured (deterministic fallback is used otherwise)
+6. The result is saved as a **Markdown archive** in `summaries/` and emailed as HTML
 
 ---
 
-## How AI Summaries Work
+## Summary Format (Current)
 
-When an AI provider key is configured, each repo's commit messages are sent to your chosen model with this prompt:
-
-> *"In one sentence, describe the type of development work from these git commits. Be concise and professional. Do not list commits; summarize the overall theme."*
-
-**Without AI** — you get the raw commit list:
+Daily output is written in this structure:
 
 ```
-### my-website
-
-**3 commits**
-
-* Add DeepL caching for translations
-* Fix SEO meta tags on homepage
-* Refactor email queue handler
+**owner/repo-name**
+• Shipped feature work: ...
+• Fixed issues: ...
+• Refined internals: ...
 ```
 
-**With AI** — each repo gets a one-sentence summary above the commit list:
+- Each repository gets **3-5 bullets**
+- Repos with no commits in the last 24h are skipped
+- If no commits exist across all repos: `No work today – hope you enjoyed the rest!`
 
-```
-### my-website
-*Performance improvements, SEO fixes, and backend refactoring across translations and email.*
+## How AI Bullets Work
 
-**3 commits**
+When an AI provider key is configured, each repo's commit messages are sent to your chosen model to generate concise conversational bullets. If AI is unavailable, a deterministic rules-based bullet generator is used automatically.
 
-* Add DeepL caching for translations
-* Fix SEO meta tags on homepage
-* Refactor email queue handler
-```
-
-Each AI call uses a small/fast model (Claude 3.5 Haiku, GPT-4o-mini, or Gemini Flash), so costs are negligible — typically under $0.01/day even across many repos.
+Each AI call uses a small/fast model (Claude 3.5 Haiku, GPT-4o-mini, or Gemini Flash), so costs are typically minimal.
 
 ---
 
@@ -350,4 +339,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.4.0 | Last Updated: 2026-03-11*
+*Version: 1.5.0 | Last Updated: 2026-03-30*
