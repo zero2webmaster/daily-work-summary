@@ -1,12 +1,13 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-03-31 (v1.5.0)
 
 ---
 
 ## 🚧 Blockers
 
-None currently.
+Local automation runtime token cannot access authenticated GitHub user/repo endpoints (`/user`, `/user/repos`) and returns `403 Resource not accessible by integration`.
+Production GitHub Actions runs with `PAT_GITHUB` secret are expected to work normally.
 
 ---
 
@@ -20,9 +21,9 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Battle-tested GitHub Action for email. Gmail App Passwords provide secure auth without OAuth complexity. Supports HTML formatting for rich summaries.
 
-### Decision: Archive summaries in `summaries/` directory
+### Decision: Archive summaries as root-level dated files
 **Date:** 2026-03-11
-**Rationale:** Git-committed markdown files provide a permanent, searchable history of daily work. Workflow auto-commits after each run.
+**Rationale:** Git-committed markdown files provide a permanent, searchable history of daily work. Current format is `YYYY-MM-DD-GitHub-Daily-Summary.md` at repo root, auto-committed by workflow.
 
 ### Decision: Raw `requests` for Airtable client (not `pyairtable`)
 **Date:** 2026-03-11
@@ -40,20 +41,27 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
 
+### Decision: Align output format to automation contract
+**Date:** 2026-03-31
+**Rationale:** Updated generator/workflow to match required delivery contract exactly:
+- Archive file now `YYYY-MM-DD-GitHub-Daily-Summary.md` in repo root
+- Email subject now `Daily Cursor Work - YYYY-MM-DD`
+- No-work message now `No work today – hope you enjoyed the rest!`
+- Repo sections now use 3-5 conversational summary bullets instead of raw commit list
+
 ---
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Validate next scheduled GitHub Actions run produces `YYYY-MM-DD-GitHub-Daily-Summary.md` and sends email with subject `Daily Cursor Work - YYYY-MM-DD`
+2. Confirm production PAT scopes remain `repo` + `read:user`
+3. Optionally run manual workflow_dispatch smoke test after merge to main
 
 ---
 
 ## 🔧 Tech Debt
 
-- Version drift existed (VERSION=1.2.6, README=1.2.3) — fixed in v1.3.0
+- Local-cloud runtime does not expose `PAT_GITHUB`; script now falls back to `gh auth token`, but some integration tokens still cannot hit `/user` endpoints
 
 ---
 
@@ -83,5 +91,17 @@ None currently.
 - Created README with production setup guide
 - Added 4 AI providers, email formatting, fork sync docs
 - All 3 core phases complete
+
+### Session: 2026-03-31 - Automation contract alignment (v1.5.0)
+- Refactored `generate_summary.py` for requested format:
+  - root archive filename `YYYY-MM-DD-GitHub-Daily-Summary.md`
+  - repo-by-repo conversational 3–5 bullets
+  - exact no-work fallback text
+  - email HTML body written to `.tmp/daily-summary-email-YYYY-MM-DD.html`
+- Updated workflow:
+  - email subject `Daily Cursor Work - YYYY-MM-DD`
+  - commit only archive file in repo root
+  - output wiring for archive + email paths
+- Updated directive and project rules to keep docs synchronized with current behavior
 
 ---

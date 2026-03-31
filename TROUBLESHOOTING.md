@@ -1,7 +1,7 @@
 # Troubleshooting Guide
 
 **Project:** Daily Work Summary
-**Last Updated:** 2026-03-11
+**Last Updated:** 2026-03-31
 
 ---
 
@@ -70,7 +70,25 @@
 2. Select "Read and write permissions"
 3. Check "Allow GitHub Actions to create and approve pull requests" (optional)
 
-**Verification:** Run workflow manually, check that `summaries/` directory gets a new file
+**Verification:** Run workflow manually, check that a root-level `YYYY-MM-DD-GitHub-Daily-Summary.md` file is committed
+
+---
+
+### Issue: Local Automation Run Returns "Resource not accessible by integration"
+
+**Problem:** Running `.github/scripts/generate_summary.py` locally in cloud automation may fail with:
+`403 Resource not accessible by integration` for `/user` or `/user/repos`.
+
+**Root Cause:** The runtime's `gh` auth token can be an integration token that lacks authenticated-user repo access.
+
+**Solution:**
+1. Ensure `PAT_GITHUB` is provided (repo secret in GitHub Actions, env var for local runs)
+2. Keep required scopes: `repo`, `read:user`
+3. Use `gh auth token` fallback only as a convenience for local environments where it has sufficient scope
+
+**Verification:** In workflow logs, confirm:
+- "Authenticated as: <username>"
+- Archive file `YYYY-MM-DD-GitHub-Daily-Summary.md` is written
 
 ---
 

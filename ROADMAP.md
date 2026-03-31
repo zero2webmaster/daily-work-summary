@@ -130,6 +130,7 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 📋 **Pending** - Implement after core is stable:
 
+- [x] Align daily output format + subject + filename with automation requirements (2026-03-31)
 - [ ] Filter by repo patterns (WordPress vs AI projects)
 - [ ] Commit impact analysis (lines changed, files touched)
 - [ ] Weekly/monthly rollup summaries
@@ -137,4 +138,4 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
-*Last Updated: 2026-03-11*
+*Last Updated: 2026-03-31*

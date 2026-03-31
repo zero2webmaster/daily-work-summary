@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-03-31
+
+### Changed
+- Daily summary format now matches automation requirements:
+  - Per-repo conversational summary with **3-5 bullets** (features, fixes, refactors, accomplishments)
+  - Repos sorted globally by commit count (most active first)
+  - No-work fallback set to: **"No work today – hope you enjoyed the rest!"**
+- Archive file path changed from `summaries/daily-summary-YYYY-MM-DD.md` to root-level:
+  - `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Email body source changed to a temp HTML file:
+  - `.tmp/daily-summary-email-YYYY-MM-DD.html`
+- Email subject changed to:
+  - `Daily Cursor Work - YYYY-MM-DD`
+
+### Improved
+- Local automation resilience: when `PAT_GITHUB` is missing, `generate_summary.py` now attempts a `gh auth token` fallback for authenticated local runs.
+
+### Documentation
+- Updated directive (`directives/generate_daily_summary.md`) for new output format, file naming, and subject line.
+- Updated `.cursorrules` expected archive filename and no-work message.
+- Updated `README.md` archive format references and bumped version metadata to `1.5.0`.
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
