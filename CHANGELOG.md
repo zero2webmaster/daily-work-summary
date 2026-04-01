@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.6] - 2026-04-01
+
+### Added
+- New daily summary markdown archive naming: `YYYY-MM-DD-GitHub-Daily-Summary.md` at repo root (in addition to workflow delivery outputs)
+- Repo summary generation now creates 3-5 conversational accomplishment bullets per repository (AI-generated when configured, deterministic fallback otherwise)
+
+### Changed
+- Daily summary now scans both personal repositories and organization repositories the authenticated user can access, deduplicated by `owner/repo`
+- Daily summary output format aligned to project-style structure:
+  - `**Repo Name**`
+  - 3-5 `•` accomplishment bullets
+  - repos globally sorted by commit count (most active first)
+- No-commit fallback text changed to exactly: `No work today - hope you enjoyed the rest!`
+- Workflow email subject changed to exactly: `Daily Cursor Work - [DATE]` (YYYY-MM-DD in `EMAIL_TIMEZONE`)
+- Workflow commit step updated to add the new root-level summary filename pattern
+- Workflow email now sends markdown body from `body:` using the generated summary file path
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
