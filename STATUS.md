@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-04-02 (v1.4.6)
+**Last Updated:** 2026-04-02 (v1.5.0)
 
 ---
 
@@ -89,13 +89,13 @@ None currently.
 - All 3 core phases complete
 
 ---
-### Session: 2026-04-02 - Daily summary format alignment (v1.4.6)
+### Session: 2026-04-02 - Daily summary format alignment (v1.5.0)
 - Updated summary format to `**owner/repo**` with 3-5 conversational accomplishment bullets per repo
 - Enforced global repo sorting by commit count (most active first)
 - Updated "no work" fallback text to: "No work today – hope you enjoyed the rest!"
 - Changed archive output to `YYYY-MM-DD-GitHub-Daily-Summary.md` at repo root
 - Kept dedicated HTML output in `summaries/` for SMTP email step
 - Updated email subject to `Daily Cursor Work - YYYY-MM-DD`
-- Synced workflow/directive/docs and versioned release to v1.4.6
+- Synced workflow/directive/docs and versioned release to v1.5.0
 
 ---
