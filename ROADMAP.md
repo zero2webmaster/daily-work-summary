@@ -126,6 +126,29 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
+## Phase 6: Cursor-style Daily Summary Format ✅
+**Status:** Complete (2026-04-02)
+
+**Tasks:**
+- [x] Update generator output to use conversational 3-5 bullets per repo
+- [x] Sort active repos globally by commit count (most active first)
+- [x] Add exact no-work fallback text: "No work today – hope you enjoyed the rest!"
+- [x] Save root archive file as `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- [x] Update workflow subject to `Daily Cursor Work - YYYY-MM-DD`
+- [x] Ensure workflow commit step stages exact generated files
+- [x] Synchronize directive + project docs to new output contract
+
+**Verification:**
+```bash
+python3 -m py_compile .github/scripts/generate_summary.py
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+PAT_GITHUB=*** EMAIL_TIMEZONE=America/New_York DELIVERY_METHOD=email python3 .github/scripts/generate_summary.py
+```
+
+**Dependencies:** Phase 1-5 (extends summary format and delivery wiring)
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:
@@ -137,4 +160,4 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
-*Last Updated: 2026-03-11*
+*Last Updated: 2026-04-02*

@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-04-02 (v1.4.6)
 
 ---
 
@@ -20,9 +20,13 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Battle-tested GitHub Action for email. Gmail App Passwords provide secure auth without OAuth complexity. Supports HTML formatting for rich summaries.
 
-### Decision: Archive summaries in `summaries/` directory
-**Date:** 2026-03-11
-**Rationale:** Git-committed markdown files provide a permanent, searchable history of daily work. Workflow auto-commits after each run.
+### Decision: Archive filename standardized to `YYYY-MM-DD-GitHub-Daily-Summary.md`
+**Date:** 2026-04-02
+**Rationale:** Matches automation spec exactly and keeps summaries easy to scan chronologically at repo root. A companion HTML file is generated in `summaries/` for the email step.
+
+### Decision: Repo sections now use 3-5 accomplishment bullets
+**Date:** 2026-04-02
+**Rationale:** Better aligns with conversational executive summaries than listing raw commit bullets while still preserving per-repo activity themes and outcomes.
 
 ### Decision: Raw `requests` for Airtable client (not `pyairtable`)
 **Date:** 2026-03-11
@@ -44,8 +48,8 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
+1. Monitor next scheduled cron run on `main` to confirm end-to-end delivery
+2. Optionally tune bullet phrasing if preferred style examples are provided
 3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
 4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
 
@@ -83,5 +87,15 @@ None currently.
 - Created README with production setup guide
 - Added 4 AI providers, email formatting, fork sync docs
 - All 3 core phases complete
+
+---
+### Session: 2026-04-02 - Daily summary format alignment (v1.4.6)
+- Updated summary format to `**owner/repo**` with 3-5 conversational accomplishment bullets per repo
+- Enforced global repo sorting by commit count (most active first)
+- Updated "no work" fallback text to: "No work today – hope you enjoyed the rest!"
+- Changed archive output to `YYYY-MM-DD-GitHub-Daily-Summary.md` at repo root
+- Kept dedicated HTML output in `summaries/` for SMTP email step
+- Updated email subject to `Daily Cursor Work - YYYY-MM-DD`
+- Synced workflow/directive/docs and versioned release to v1.4.6
 
 ---

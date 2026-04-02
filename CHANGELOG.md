@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-04-02
+
+### Changed
+- Daily summary output now matches automation spec:
+  - Archive filename is now `YYYY-MM-DD-GitHub-Daily-Summary.md` in repo root
+  - Email subject is now `Daily Cursor Work - YYYY-MM-DD`
+  - "No commits" message updated to: `No work today – hope you enjoyed the rest!`
+- Summary structure updated to per-repo conversational accomplishment bullets (3-5 bullets per repo) sorted globally by repo activity.
+- Workflow now commits only the generated archive markdown and email HTML artifact from script outputs.
+- Script now resolves report date using `EMAIL_TIMEZONE` (default `America/New_York`) to align subject/date naming.
+- Directive and project rules updated to reflect the new filename, subject, and no-work wording.
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
