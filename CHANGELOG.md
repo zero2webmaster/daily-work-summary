@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-04-03
+
+### Changed
+- Summary content now follows a conversational per-repo format with **3-5 bullets per repository** focused on features, fixes, refactors, and accomplishments.
+- Repository ordering now prioritizes **most active repos first** across all included repositories.
+- Repository scan now explicitly includes **personal repositories + `zero2webmaster` organization repositories**, de-duplicated by `owner/repo`.
+- No-activity fallback message updated to: `No work today – hope you enjoyed the rest!`
+- Daily archive filename changed from `summaries/daily-summary-YYYY-MM-DD.md` to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`.
+- Workflow email subject changed to `Daily Cursor Work - [DATE]`.
+- Email body is now sourced from a generated `.tmp/YYYY-MM-DD-GitHub-Daily-Summary.html` file while keeping the markdown archive in `summaries/`.
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
