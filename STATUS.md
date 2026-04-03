@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-04-03 (v1.5.0)
 
 ---
 
@@ -40,14 +40,23 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
 
+### Decision: Summary format switched to conversational repo bullets
+**Date:** 2026-04-03
+**Rationale:** The daily automation now requires 3-5 natural-language bullets per active repository (features/fixes/refactors/accomplishments), sorted globally by activity, to make summaries easier to scan than raw commit bullet lists.
+
+### Decision: New archive + email output file split
+**Date:** 2026-04-03
+**Rationale:** To satisfy dual delivery needs, the workflow now stores markdown archives at `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md` and generates an HTML body file at `.tmp/YYYY-MM-DD-GitHub-Daily-Summary.html` for email transport.
+
 ---
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Trigger/monitor the next scheduled run on `main` to confirm real cross-repo summary output + email delivery subject `Daily Cursor Work - YYYY-MM-DD`
+2. Verify new archive naming in repo history: `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+3. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
+4. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
+5. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
 
 ---
 
@@ -58,6 +67,16 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-04-03 - Cron automation format alignment (v1.5.0)
+- Updated summary generator to scan personal + `zero2webmaster` org repos with de-duplication
+- Replaced raw commit-list sections with conversational 3-5 bullets per active repo
+- Kept sorting by most active repos first at global level
+- Changed no-activity fallback to: `No work today – hope you enjoyed the rest!`
+- Changed archive naming to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Added separate HTML output at `.tmp/YYYY-MM-DD-GitHub-Daily-Summary.html` for email body
+- Updated workflow email subject to `Daily Cursor Work - [DATE]`
+- Updated directive/README/changelog and bumped to v1.5.0
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic

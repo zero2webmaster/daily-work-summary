@@ -126,6 +126,32 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
+## Phase 6: Daily Cursor Work Format Alignment ✅
+**Status:** Complete (2026-04-03)
+
+**Tasks:**
+- [x] Update generator output to conversational 3-5 bullet summaries per active repo
+- [x] Ensure repo ordering is globally sorted by commit count (most active first)
+- [x] Include personal repositories and `zero2webmaster` org repositories in scan scope
+- [x] Update no-commit fallback copy to "No work today – hope you enjoyed the rest!"
+- [x] Change archive naming to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- [x] Change email subject to `Daily Cursor Work - YYYY-MM-DD`
+- [x] Route email HTML from generated `.tmp` file while preserving markdown archive
+- [x] Update directive + README + changelog + version for consistency
+
+**Verification:**
+```bash
+python3 -m py_compile .github/scripts/generate_summary.py
+python3 -m py_compile .github/scripts/webhook_client.py
+python3 -m py_compile .github/scripts/airtable_client.py
+python3 -m py_compile execution/setup_airtable.py
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+```
+
+**Dependencies:** Phases 1-5
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:
@@ -137,4 +163,4 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
-*Last Updated: 2026-03-11*
+*Last Updated: 2026-04-03*
