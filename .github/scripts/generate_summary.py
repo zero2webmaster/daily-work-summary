@@ -53,9 +53,11 @@ HTML_FONT_SIZE = "18px"
 SUMMARY_FILENAME_TEMPLATE = "{date}-GitHub-Daily-Summary.md"
 SUMMARY_HTML_FILENAME_TEMPLATE = "{date}-GitHub-Daily-Summary.html"
 NO_WORK_MESSAGE = "No work today - hope you enjoyed the rest!"
+AUTH_TOKEN: str | None = None
 
 
 def get_github_client() -> Github:
+    global AUTH_TOKEN
     token = os.environ.get("PAT_GITHUB")
     if not token:
         token = os.environ.get("GITHUB_TOKEN")
@@ -82,8 +84,45 @@ def get_github_client() -> Github:
         print("  Create token:   https://github.com/settings/tokens")
         sys.exit(1)
 
+    AUTH_TOKEN = token
     from github import Auth
     return Github(auth=Auth.Token(token), per_page=100)
+
+
+def list_installation_repositories() -> list[str]:
+    """Return full repo names accessible to a GitHub App installation token."""
+    if not AUTH_TOKEN:
+        return []
+
+    import requests
+
+    headers = {
+        "Authorization": f"Bearer {AUTH_TOKEN}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+
+    repo_full_names: list[str] = []
+    page = 1
+    while True:
+        url = f"https://api.github.com/installation/repositories?per_page=100&page={page}"
+        response = requests.get(url, headers=headers, timeout=30)
+        if response.status_code != 200:
+            print(f"  Integration repo listing failed: {response.status_code} {response.text}")
+            return repo_full_names
+
+        payload = response.json()
+        repos = payload.get("repositories", [])
+        for repo in repos:
+            full_name = repo.get("full_name")
+            if full_name:
+                repo_full_names.append(full_name)
+
+        if len(repos) < 100:
+            break
+        page += 1
+
+    return repo_full_names
 
 
 def truncate(msg: str, length: int = MAX_MSG_LENGTH) -> str:
@@ -197,10 +236,13 @@ def build_repo_bullets(messages: list[str], ai_theme: str | None = None) -> list
     return bullets[:5]
 
 
-def fetch_commits_with_retry(repo, since, author, retries=MAX_RETRIES):
+def fetch_commits_with_retry(repo, since, author: str | None, retries=MAX_RETRIES):
     for attempt in range(retries):
         try:
-            commits = list(repo.get_commits(since=since, author=author))
+            if author:
+                commits = list(repo.get_commits(since=since, author=author))
+            else:
+                commits = list(repo.get_commits(since=since))
             return commits
         except RateLimitExceededException:
             if attempt < retries - 1:
@@ -343,23 +385,38 @@ def generate_summary() -> dict[str, Any]:
         repos (list of dicts), ai_summaries_text, has_commits
     """
     g = get_github_client()
-    user = g.get_user()
-    print(f"Authenticated as: {user.login}")
+    author_login: str | None = None
+    repos = []
+
+    try:
+        user = g.get_user()
+        author_login = user.login
+        repos = list(user.get_repos(affiliation="owner,organization_member"))
+        print(f"Authenticated as: {user.login}")
+    except GithubException as exc:
+        if exc.status != 403:
+            raise
+        print("Authenticated with GitHub App integration token (installation mode).")
+        repo_full_names = list_installation_repositories()
+        repos = [g.get_repo(full_name) for full_name in repo_full_names]
+        author_login = os.environ.get("SUMMARY_AUTHOR") or os.environ.get("GITHUB_AUTHOR") or os.environ.get("GITHUB_ACTOR")
+        if author_login:
+            print(f"Filtering commits by author: {author_login}")
+        else:
+            print("WARNING: No SUMMARY_AUTHOR/GITHUB_AUTHOR/GITHUB_ACTOR set; including all authors in installation repos.")
 
     since = datetime.now(timezone.utc) - timedelta(hours=24)
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     print(f"Fetching commits since: {since.isoformat()}")
 
     active_repos: list[dict[str, Any]] = []
-
-    repos = list(user.get_repos(affiliation="owner,organization_member"))
     print(f"Found {len(repos)} repositories")
 
     for repo in repos:
         if repo.archived:
             continue
 
-        commits = fetch_commits_with_retry(repo, since, user.login)
+        commits = fetch_commits_with_retry(repo, since, author_login)
         if commits:
             messages = [c.commit.message for c in commits]
             owner, repo_name = repo.full_name.split("/", 1)
