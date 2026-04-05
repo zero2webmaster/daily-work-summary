@@ -24,6 +24,8 @@ locally with PAT_GITHUB set in environment or .env file.
 """
 
 import os
+import re
+import subprocess
 import sys
 import time
 from collections import defaultdict
@@ -46,11 +48,17 @@ except ImportError:
 MAX_MSG_LENGTH = 80
 MAX_RETRIES = 3
 SUMMARY_DIR = "summaries"
+TEMP_DIR = ".tmp"
 HTML_FONT_SIZE = "18px"
+SUMMARY_FILENAME_TEMPLATE = "{date}-GitHub-Daily-Summary.md"
+SUMMARY_HTML_FILENAME_TEMPLATE = "{date}-GitHub-Daily-Summary.html"
+NO_WORK_MESSAGE = "No work today - hope you enjoyed the rest!"
 
 
 def get_github_client() -> Github:
     token = os.environ.get("PAT_GITHUB")
+    if not token:
+        token = os.environ.get("GITHUB_TOKEN")
     if not token:
         try:
             from dotenv import load_dotenv
@@ -60,8 +68,16 @@ def get_github_client() -> Github:
             pass
 
     if not token:
+        try:
+            # Cursor cloud runners have gh auth configured even when PAT env vars are absent.
+            token = subprocess.check_output(["gh", "auth", "token"], text=True, stderr=subprocess.DEVNULL).strip()
+        except Exception:
+            token = None
+
+    if not token:
         print("ERROR: PAT_GITHUB not set.")
         print("  GitHub Actions: Add PAT_GITHUB to repository secrets")
+        print("  Cursor Cloud:   Ensure gh is authenticated (gh auth status)")
         print("  Local testing:  export PAT_GITHUB=ghp_your_token")
         print("  Create token:   https://github.com/settings/tokens")
         sys.exit(1)
@@ -75,6 +91,110 @@ def truncate(msg: str, length: int = MAX_MSG_LENGTH) -> str:
     if len(first_line) <= length:
         return first_line
     return first_line[: length - 3] + "..."
+
+
+def normalize_subject(msg: str) -> str:
+    """Return a cleaned single-line commit subject."""
+    subject = msg.split("\n")[0].strip()
+    return re.sub(r"\s+", " ", subject)
+
+
+def extract_topic(subject: str) -> str:
+    """Remove conventional-commit prefixes and return a concise topic phrase."""
+    stripped = re.sub(r"^[a-zA-Z]+(?:\([^)]+\))?!?:\s*", "", subject).strip()
+    stripped = stripped.strip(".- ")
+    if not stripped:
+        stripped = subject.strip(".- ")
+    if len(stripped) > 70:
+        stripped = stripped[:67] + "..."
+    return stripped
+
+
+def categorize_subject(subject: str) -> str:
+    """Categorize commit subject into a coarse workstream bucket."""
+    s = subject.lower()
+    if re.search(r"\b(feat|feature|add|implement|introduce|launch|build)\b", s):
+        return "feature"
+    if re.search(r"\b(fix|bug|hotfix|patch|resolve|repair)\b", s):
+        return "fix"
+    if re.search(r"\b(refactor|cleanup|clean up|restructure|simplify|optimi[sz]e)\b", s):
+        return "refactor"
+    if re.search(r"\b(test|spec|qa|assert)\b", s):
+        return "test"
+    if re.search(r"\b(docs?|readme|guide|comment)\b", s):
+        return "docs"
+    if re.search(r"\b(ci|workflow|deploy|release|chore|deps?|dependency|bump)\b", s):
+        return "ops"
+    return "misc"
+
+
+def unique_in_order(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for item in items:
+        key = item.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(item)
+    return out
+
+
+def join_topics(topics: list[str], max_items: int = 2) -> str:
+    deduped = unique_in_order(topics)
+    if not deduped:
+        return "core project areas"
+    selected = deduped[:max_items]
+    if len(selected) == 1:
+        return selected[0]
+    if len(selected) == 2:
+        return f"{selected[0]} and {selected[1]}"
+    return ", ".join(selected[:-1]) + f", and {selected[-1]}"
+
+
+def build_repo_bullets(messages: list[str], ai_theme: str | None = None) -> list[str]:
+    """Create 3-5 conversational bullets summarizing recent repo work."""
+    categorized_topics: dict[str, list[str]] = defaultdict(list)
+    cleaned_subjects: list[str] = []
+
+    for raw_msg in messages:
+        subject = normalize_subject(raw_msg)
+        cleaned_subjects.append(subject)
+        topic = extract_topic(subject)
+        categorized_topics[categorize_subject(subject)].append(topic)
+
+    bullets: list[str] = []
+    if ai_theme:
+        bullets.append(f"Big picture: {ai_theme.rstrip('.')}.")
+
+    if categorized_topics["feature"]:
+        bullets.append(f"Shipped feature work around {join_topics(categorized_topics['feature'])}.")
+    if categorized_topics["fix"]:
+        bullets.append(f"Closed out bug fixes in {join_topics(categorized_topics['fix'])}.")
+    if categorized_topics["refactor"]:
+        bullets.append(f"Refactored {join_topics(categorized_topics['refactor'])} to keep things cleaner and easier to maintain.")
+    if categorized_topics["test"]:
+        bullets.append(f"Improved confidence with test coverage updates around {join_topics(categorized_topics['test'])}.")
+    if categorized_topics["docs"]:
+        bullets.append(f"Documented and clarified {join_topics(categorized_topics['docs'])} for smoother handoffs.")
+    if categorized_topics["ops"]:
+        bullets.append(f"Handled operational updates touching {join_topics(categorized_topics['ops'])}.")
+
+    # If we still have fewer than 3 bullets, add concise highlights from raw commit subjects.
+    highlights = unique_in_order([extract_topic(s) for s in cleaned_subjects if extract_topic(s)])
+    while len(bullets) < 3 and highlights:
+        topic = highlights.pop(0)
+        bullets.append(f"Advanced {topic} with concrete implementation progress.")
+
+    if len(bullets) < 3:
+        bullets.append("Kept steady momentum with focused improvements across the repo.")
+    if len(bullets) < 3:
+        bullets.append(f"Activity snapshot: {len(messages)} commits landed in the last 24 hours.")
+
+    if len(bullets) < 5:
+        bullets.append(f"Total activity: {len(messages)} commits in the last 24 hours.")
+
+    return bullets[:5]
 
 
 def fetch_commits_with_retry(repo, since, author, retries=MAX_RETRIES):
@@ -230,8 +350,7 @@ def generate_summary() -> dict[str, Any]:
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     print(f"Fetching commits since: {since.isoformat()}")
 
-    owner_repos: dict[str, dict[str, list[str]]] = defaultdict(dict)
-    repo_urls: dict[str, str] = {}
+    active_repos: list[dict[str, Any]] = []
 
     repos = list(user.get_repos(affiliation="owner,organization_member"))
     print(f"Found {len(repos)} repositories")
@@ -244,23 +363,38 @@ def generate_summary() -> dict[str, Any]:
         if commits:
             messages = [c.commit.message for c in commits]
             owner, repo_name = repo.full_name.split("/", 1)
-            owner_repos[owner][repo_name] = messages
-            repo_urls[repo.full_name] = repo.html_url
+            active_repos.append({
+                "full_name": repo.full_name,
+                "url": repo.html_url,
+                "owner": owner,
+                "repo_name": repo_name,
+                "messages": messages,
+                "commits": len(messages),
+            })
             print(f"  {repo.full_name}: {len(commits)} commits")
 
     # No commits — return minimal result
-    if not owner_repos:
-        msg = "No commits today — well rested! ✅"
+    if not active_repos:
+        msg = NO_WORK_MESSAGE
+        markdown_body = "\n".join([
+            f"# Daily Cursor Work - {today}",
+            "",
+            msg,
+            "",
+            f"*Generated at {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}*",
+            "",
+        ])
+        html_content = markdown_lib.markdown(markdown_body, extensions=["nl2br"])
         footer = (
             "<p>Daily Work Summary initially created by "
             '<a href="https://zero2webmaster.com/kerry-kriger">Zero2Webmaster Founder Dr. Kerry Kriger</a></p>'
             '<p>Contribute to the public repository at: '
             '<a href="https://github.com/zero2webmaster/daily-work-summary">github.com/zero2webmaster/daily-work-summary</a></p>'
         )
-        html = f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;"><p>{msg}</p>{footer}</div>'
+        html = f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;">{html_content}{footer}</div>'
         return {
             "html": html,
-            "markdown": msg,
+            "markdown": markdown_body,
             "date": today,
             "total_commits": 0,
             "total_repos": 0,
@@ -269,15 +403,14 @@ def generate_summary() -> dict[str, Any]:
             "has_commits": False,
         }
 
-    total_commits = sum(
-        len(msgs) for per_owner in owner_repos.values() for msgs in per_owner.values()
-    )
-    total_repos = sum(len(r) for r in owner_repos.values())
+    active_repos.sort(key=lambda r: (-r["commits"], r["full_name"].lower()))
+    total_commits = sum(r["commits"] for r in active_repos)
+    total_repos = len(active_repos)
 
     lines = [
-        f"# Daily Work Summary — {datetime.now(timezone.utc).strftime('%a %b %d, %Y')}",
+        f"# Daily Cursor Work - {datetime.now(timezone.utc).strftime('%a %b %d, %Y')}",
         "",
-        f"**{total_commits} commits** across **{total_repos} repos**",
+        f"Reviewed **{total_commits} commits** across **{total_repos} active repos**.",
         "",
         "---",
         "",
@@ -286,41 +419,32 @@ def generate_summary() -> dict[str, Any]:
     structured_repos: list[dict[str, Any]] = []
     ai_summary_bullets: list[str] = []
 
-    for owner in sorted(owner_repos.keys()):
-        repos_data = owner_repos[owner]
-        sorted_repos_list = sorted(
-            repos_data.items(), key=lambda x: len(x[1]), reverse=True
-        )
+    for repo_info in active_repos:
+        repo_name = repo_info["repo_name"]
+        full_name = repo_info["full_name"]
+        count = repo_info["commits"]
+        messages = repo_info["messages"]
 
-        lines.append(f"## {owner}")
+        ai_summary = generate_ai_repo_summary(messages)
+        bullets = build_repo_bullets(messages, ai_summary=ai_summary)
+        lines.append(f"**{repo_name}**")
+        lines.append(f"_[{full_name}]({repo_info['url']}) · {count} commit{'s' if count != 1 else ''}_")
+        for bullet in bullets:
+            lines.append(f"• {bullet}")
         lines.append("")
 
-        for repo_name, messages in sorted_repos_list:
-            full_name = f"{owner}/{repo_name}"
-            count = len(messages)
-            commit_label = f"{count} commit{'s' if count != 1 else ''}"
+        if ai_summary:
+            ai_summary_bullets.append(f"- {repo_name}: {ai_summary}")
 
-            ai_summary = generate_ai_repo_summary(messages)
-            lines.append(f"### {repo_name} ({commit_label})")
-            if ai_summary:
-                lines.append(f"*{ai_summary}*")
-                ai_summary_bullets.append(f"- {repo_name}: {ai_summary}")
-            lines.append("")
-
-            for msg in messages:
-                bullet = truncate(msg)
-                lines.append(f"* {bullet}")
-
-            lines.append("")
-
-            structured_repos.append({
-                "full_name": full_name,
-                "url": repo_urls.get(full_name, f"https://github.com/{full_name}"),
-                "owner": owner,
-                "commits": count,
-                "messages": messages,
-                "ai_summary": ai_summary,
-            })
+        structured_repos.append({
+            "full_name": full_name,
+            "url": repo_info["url"],
+            "owner": repo_info["owner"],
+            "commits": count,
+            "messages": messages,
+            "ai_summary": ai_summary,
+            "bullets": bullets,
+        })
 
     lines.append("---")
     lines.append("")
@@ -597,11 +721,17 @@ def main():
     delivery_methods = parse_delivery_methods(os.environ.get("DELIVERY_METHOD"))
     print(f"\nDelivery methods: {', '.join(sorted(delivery_methods))}")
 
-    # Write summary file (always, for the archive and email step)
+    # Write summary files:
+    # - markdown archive (committed)
+    # - html body (used by email step)
     Path(SUMMARY_DIR).mkdir(exist_ok=True)
-    summary_path = Path(SUMMARY_DIR) / f"daily-summary-{summary_data['date']}.md"
-    summary_path.write_text(summary_data["html"])
-    print(f"Summary written to: {summary_path}")
+    Path(TEMP_DIR).mkdir(exist_ok=True)
+    summary_path = Path(SUMMARY_DIR) / SUMMARY_FILENAME_TEMPLATE.format(date=summary_data["date"])
+    summary_html_path = Path(TEMP_DIR) / SUMMARY_HTML_FILENAME_TEMPLATE.format(date=summary_data["date"])
+    summary_path.write_text(summary_data["markdown"], encoding="utf-8")
+    summary_html_path.write_text(summary_data["html"], encoding="utf-8")
+    print(f"Markdown summary written to: {summary_path}")
+    print(f"HTML summary written to: {summary_html_path}")
 
     # Airtable delivery
     if "airtable" in delivery_methods and summary_data["has_commits"]:
@@ -629,9 +759,12 @@ def main():
     if github_output:
         with open(github_output, "a") as fh:
             fh.write(f"send_email={'true' if send_email else 'false'}\n")
+            fh.write("has_summary=true\n")
+            fh.write(f"summary_file={summary_path}\n")
+            fh.write(f"summary_html_file={summary_html_path}\n")
 
     print(f"\n{'=' * 50}")
-    print(summary_data["html"])
+    print(summary_data["markdown"])
 
 
 if __name__ == "__main__":
