@@ -483,7 +483,7 @@ def generate_summary() -> dict[str, Any]:
         messages = repo_info["messages"]
 
         ai_summary = generate_ai_repo_summary(messages)
-        bullets = build_repo_bullets(messages, ai_summary=ai_summary)
+        bullets = build_repo_bullets(messages, ai_theme=ai_summary)
         lines.append(f"**{repo_name}**")
         lines.append(f"_[{full_name}]({repo_info['url']}) · {count} commit{'s' if count != 1 else ''}_")
         for bullet in bullets:
