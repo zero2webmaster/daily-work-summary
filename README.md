@@ -105,6 +105,8 @@ Set these under **Settings → Secrets and variables → Actions → Variables**
 | `AIRTABLE_BASE_ID` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
 | `AIRTABLE_TABLE_SUMMARIES` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
 | `AIRTABLE_TABLE_REPOS` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
+| `GITHUB_SUMMARY_OWNERS` | *(Optional)* Comma-separated owners to scan when token can't access `/user` (example: `zero2webmaster,kerrykriger`) | Auto: `zero2webmaster,<active-gh-login>` |
+| `GITHUB_COMMIT_AUTHOR` | *(Optional)* GitHub login to filter commits by. Use `all` to include all authors in restricted-token fallback mode. | Active login (or all when explicitly set) |
 
 **`DELIVERY_METHOD` examples:**
 

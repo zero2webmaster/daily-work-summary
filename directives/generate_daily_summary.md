@@ -24,6 +24,8 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 | Email credentials | `EMAIL_USERNAME`, `EMAIL_PASSWORD` secrets | Gmail App Password |
 | Time window | Last 24 hours from run time | Uses `datetime.utcnow() - timedelta(hours=24)` |
 | Delivery method | `DELIVERY_METHOD` variable | Comma-separated: `email` (default), `airtable`, `slack`, `discord`. `both` = `email,airtable` |
+| Optional fallback owners | `GITHUB_SUMMARY_OWNERS` env | Comma-separated owner list (e.g. `zero2webmaster,kerrykriger`) when token cannot access `/user` |
+| Optional commit author override | `GITHUB_COMMIT_AUTHOR` env | GitHub login to filter commits by, or `all` to include all authors |
 | Airtable PAT | `AIRTABLE_PAT` secret | Required when delivery includes `airtable` |
 | Airtable IDs | `AIRTABLE_BASE_ID`, `AIRTABLE_TABLE_SUMMARIES`, `AIRTABLE_TABLE_REPOS` variables | All IDs (`appXXX`, `tblXXX`), never names |
 | Slack webhook | `SLACK_WEBHOOK_URL` secret | Required when delivery includes `slack` |
@@ -33,12 +35,16 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 
 ### Step 1: Authenticate & Fetch Repos
 - Authenticate with PyGithub using `PAT_GITHUB`
-- Fetch ALL repos the authenticated user owns (including private)
-- Skip forks (optional — currently included)
+- Preferred path: fetch all repos using authenticated user context (including org memberships)
+- Fallback path (restricted integration token): if `/user` is forbidden, read owners from `GITHUB_SUMMARY_OWNERS` and list repos by owner
+- Skip archived repos
 
 ### Step 2: Collect Commits
 - For each repo, query commits from last 24 hours
-- Filter to commits authored by the authenticated user
+- Filter strategy:
+  - default: commits authored by authenticated user
+  - override: `GITHUB_COMMIT_AUTHOR=<login>`
+  - all-author mode: `GITHUB_COMMIT_AUTHOR=all` (no author filter)
 - Collect: repo name, commit message (first line), SHA, timestamp
 
 ### Step 3: Generate Smart Summary
@@ -104,6 +110,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 | No commits in 24h | "No work today – hope you enjoyed the rest!" |
 | Long commit message | Truncate to 80 chars with `...` |
 | 403 PAT error | Log clear error + link to token settings |
+| Token cannot access `/user` | Use owner fallback via `GITHUB_SUMMARY_OWNERS` |
 | Empty repo (no commits ever) | Skip silently |
 | API rate limit (5000/hr) | Exponential backoff, max 3 retries |
 | Archived repo | Skip (no recent commits) |

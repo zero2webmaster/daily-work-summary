@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - Archive now stores Markdown content directly instead of HTML-in-Markdown files
 - Date handling now respects `EMAIL_TIMEZONE` for summary date naming
+- Restricted-token fallback mode now uses explicit owner list + optional all-author commit scan when `/user` is forbidden
 
 ## [1.4.0] - 2026-03-11
 
