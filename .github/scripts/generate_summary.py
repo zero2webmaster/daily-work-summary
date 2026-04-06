@@ -143,10 +143,13 @@ def truncate(msg: str, length: int = MAX_MSG_LENGTH) -> str:
     return first_line[: length - 3] + "..."
 
 
-def fetch_commits_with_retry(repo, since, author, retries=MAX_RETRIES):
+def fetch_commits_with_retry(repo, since, author: str | None, retries=MAX_RETRIES):
     for attempt in range(retries):
         try:
-            commits = list(repo.get_commits(since=since, author=author))
+            params = {"since": since}
+            if author:
+                params["author"] = author
+            commits = list(repo.get_commits(**params))
             return commits
         except RateLimitExceededException:
             if attempt < retries - 1:
@@ -369,32 +372,41 @@ def generate_summary() -> dict[str, Any]:
     """
     g = get_github_client()
     repos = []
-    commit_author = None
+    commit_author: str | None = None
+    commit_author_override = (os.environ.get("GITHUB_COMMIT_AUTHOR") or "").strip()
+    include_all_authors = commit_author_override.lower() in {"all", "any", "*"}
 
     try:
         user = g.get_user()
-        commit_author = user.login
-        print(f"Authenticated as: {commit_author}")
+        commit_author = None if include_all_authors else user.login
+        if commit_author:
+            print(f"Authenticated as: {commit_author}")
+        else:
+            print("Authenticated token ready (including commits from all authors)")
         repos = list(user.get_repos(affiliation="owner,organization_member"))
     except GithubException as exc:
         if exc.status != 403:
             raise
 
         print("WARNING: Token cannot read /user endpoint; using owner-based fallback mode.")
-        fallback_login = (
-            os.environ.get("GITHUB_COMMIT_AUTHOR")
-            or get_fallback_login_from_gh_cli()
-        )
-        if not fallback_login:
+        fallback_login = get_fallback_login_from_gh_cli()
+        if not fallback_login and not include_all_authors and not commit_author_override:
             print("ERROR: Could not determine commit author login for fallback mode.")
             sys.exit(1)
 
-        commit_author = fallback_login
+        if include_all_authors:
+            commit_author = None
+        elif commit_author_override:
+            commit_author = commit_author_override
+        else:
+            commit_author = fallback_login
+
+        owner_fallback = fallback_login or "zero2webmaster"
         owners_env = os.environ.get("GITHUB_SUMMARY_OWNERS", "").strip()
         if owners_env:
             owners = [o.strip() for o in owners_env.split(",") if o.strip()]
         else:
-            owners = ["zero2webmaster", fallback_login]
+            owners = ["zero2webmaster", owner_fallback]
         owners = list(dict.fromkeys(owners))  # preserve order, remove duplicates
 
         print(f"Fallback owners: {', '.join(owners)}")
@@ -412,6 +424,10 @@ def generate_summary() -> dict[str, Any]:
 
     active_repos: list[dict[str, Any]] = []
     print(f"Found {len(repos)} repositories")
+    if commit_author:
+        print(f"Filtering commits by author: {commit_author}")
+    else:
+        print("Filtering commits by author: all authors")
 
     for repo in repos:
         if repo.archived:
