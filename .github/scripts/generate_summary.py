@@ -472,10 +472,13 @@ def generate_summary() -> dict[str, Any]:
     total_commits = sum(r["commits"] for r in active_repos)
     total_repos = len(active_repos)
 
+    total_commit_label = f"{total_commits} commit{'s' if total_commits != 1 else ''}"
+    total_repo_label = f"{total_repos} active repo{'s' if total_repos != 1 else ''}"
+
     lines = [
         f"# Daily Cursor Work - {today_display}",
         "",
-        f"Here’s what moved in the last 24 hours: **{total_commits} commits** across **{total_repos} active repos**.",
+        f"Here’s what moved in the last 24 hours: **{total_commit_label}** across **{total_repo_label}**.",
         "",
         "---",
         "",
