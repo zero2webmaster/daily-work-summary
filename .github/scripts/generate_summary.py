@@ -26,6 +26,7 @@ locally with PAT_GITHUB set in environment or .env file.
 import os
 import re
 import smtplib
+import subprocess
 import sys
 import time
 from datetime import datetime, timedelta, timezone
@@ -95,6 +96,44 @@ def get_github_client() -> Github:
 
     from github import Auth
     return Github(auth=Auth.Token(token), per_page=100)
+
+
+def get_fallback_login_from_gh_cli() -> str | None:
+    """Best-effort parse of active gh account login."""
+    try:
+        result = subprocess.run(
+            ["gh", "auth", "status"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=10,
+        )
+    except Exception:
+        return None
+
+    if result.returncode != 0:
+        return None
+
+    match = re.search(r"Logged in to github\.com account\s+([^\s(]+)", result.stdout)
+    if match:
+        return match.group(1).strip()
+    return None
+
+
+def get_repos_for_owner(g: Github, owner: str):
+    """Return repos for a user/org owner name. Returns [] on access errors."""
+    try:
+        return list(g.get_organization(owner).get_repos())
+    except GithubException:
+        pass
+    except Exception:
+        pass
+
+    try:
+        return list(g.get_user(owner).get_repos())
+    except Exception as exc:
+        print(f"  WARNING: Could not list repos for owner '{owner}': {exc}")
+        return []
 
 
 def truncate(msg: str, length: int = MAX_MSG_LENGTH) -> str:
@@ -329,8 +368,42 @@ def generate_summary() -> dict[str, Any]:
         repos (list of dicts), ai_summaries_text, has_commits
     """
     g = get_github_client()
-    user = g.get_user()
-    print(f"Authenticated as: {user.login}")
+    repos = []
+    commit_author = None
+
+    try:
+        user = g.get_user()
+        commit_author = user.login
+        print(f"Authenticated as: {commit_author}")
+        repos = list(user.get_repos(affiliation="owner,organization_member"))
+    except GithubException as exc:
+        if exc.status != 403:
+            raise
+
+        print("WARNING: Token cannot read /user endpoint; using owner-based fallback mode.")
+        fallback_login = (
+            os.environ.get("GITHUB_COMMIT_AUTHOR")
+            or get_fallback_login_from_gh_cli()
+        )
+        if not fallback_login:
+            print("ERROR: Could not determine commit author login for fallback mode.")
+            sys.exit(1)
+
+        commit_author = fallback_login
+        owners_env = os.environ.get("GITHUB_SUMMARY_OWNERS", "").strip()
+        if owners_env:
+            owners = [o.strip() for o in owners_env.split(",") if o.strip()]
+        else:
+            owners = ["zero2webmaster", fallback_login]
+        owners = list(dict.fromkeys(owners))  # preserve order, remove duplicates
+
+        print(f"Fallback owners: {', '.join(owners)}")
+        for owner in owners:
+            repos.extend(get_repos_for_owner(g, owner))
+
+    # De-duplicate repos by owner/name
+    unique_repos = {repo.full_name: repo for repo in repos}
+    repos = list(unique_repos.values())
 
     since = datetime.now(timezone.utc) - timedelta(hours=24)
     today = get_local_date_iso()
@@ -338,15 +411,13 @@ def generate_summary() -> dict[str, Any]:
     print(f"Fetching commits since: {since.isoformat()}")
 
     active_repos: list[dict[str, Any]] = []
-
-    repos = list(user.get_repos(affiliation="owner,organization_member"))
     print(f"Found {len(repos)} repositories")
 
     for repo in repos:
         if repo.archived:
             continue
 
-        commits = fetch_commits_with_retry(repo, since, user.login)
+        commits = fetch_commits_with_retry(repo, since, commit_author)
         if commits:
             messages = [c.commit.message for c in commits]
             owner, repo_name = repo.full_name.split("/", 1)
