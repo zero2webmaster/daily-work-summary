@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-04-06 (v1.5.0)
 
 ---
 
@@ -40,6 +40,14 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
 
+### Decision: Repo-first conversational summaries
+**Date:** 2026-04-06
+**Rationale:** Daily email readability is better with 3-5 accomplishment bullets per repo sorted by activity, instead of long raw commit lists grouped by owner.
+
+### Decision: Local SMTP fallback for cron automation
+**Date:** 2026-04-06
+**Rationale:** Cursor/local cron runs do not execute GitHub Actions email steps, so `generate_summary.py` now sends email directly when running outside Actions and `DELIVERY_METHOD` includes `email`.
+
 ---
 
 ## ✅ Next Actions
@@ -58,6 +66,14 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-04-06 - Daily Cursor Work Format + Local SMTP (v1.5.0)
+- Updated summary format to repo-first sections with 3-5 conversational bullets per active repo (AI + deterministic fallback)
+- Added exact no-work message text: "No work today – hope you enjoyed the rest!"
+- Changed archive filename to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Added local Gmail SMTP email sending path in `generate_summary.py` for non-GitHub-Actions runs
+- Updated workflow subject to `Daily Cursor Work - YYYY-MM-DD` and wired new filename/date handling
+- Synced docs: directive + README + CHANGELOG + VERSION
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic

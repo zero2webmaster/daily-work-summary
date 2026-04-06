@@ -27,13 +27,15 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Set date for email subject
+      - name: Set local summary date
         id: date
         env:
           EMAIL_TIMEZONE: ${{ vars.EMAIL_TIMEZONE }}
         run: |
-          SUBJECT_DATE=$(TZ="${EMAIL_TIMEZONE:-America/New_York}" date +'%a %b %d')
+          SUBJECT_DATE=$(TZ="${EMAIL_TIMEZONE:-America/New_York}" date +'%Y-%m-%d')
+          SUMMARY_DATE=$(TZ="${EMAIL_TIMEZONE:-America/New_York}" date +'%Y-%m-%d')
           echo "subject_date=$SUBJECT_DATE" >> $GITHUB_OUTPUT
+          echo "summary_date=$SUMMARY_DATE" >> $GITHUB_OUTPUT
 
       - name: Generate daily summary
         id: summary
@@ -46,6 +48,7 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DELIVERY_METHOD: ${{ vars.DELIVERY_METHOD }}
+          EMAIL_TIMEZONE: ${{ vars.EMAIL_TIMEZONE }}
           AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID || vars.AIRTABLE_BASE_ID }}
           AIRTABLE_TABLE_SUMMARIES: ${{ secrets.AIRTABLE_TABLE_SUMMARIES || vars.AIRTABLE_TABLE_SUMMARIES }}
@@ -56,8 +59,7 @@ jobs:
           python .github/scripts/generate_summary.py
 
           # Check if summary was generated and has content
-          TODAY=$(date -u +%Y-%m-%d)
-          SUMMARY_FILE="summaries/daily-summary-${TODAY}.md"
+          SUMMARY_FILE="summaries/${{ steps.date.outputs.summary_date }}-GitHub-Daily-Summary.md"
 
           if [ -f "$SUMMARY_FILE" ] && [ -s "$SUMMARY_FILE" ]; then
             echo "has_summary=true" >> $GITHUB_OUTPUT
@@ -88,7 +90,7 @@ jobs:
           secure: true
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "Daily Work Summary — ${{ steps.date.outputs.subject_date }}"
+          subject: "Daily Cursor Work - ${{ steps.date.outputs.subject_date }}"
           to: kerry@zero2webmaster.com
           from: ${{ secrets.EMAIL_USERNAME }}
-          html_body: file://${{ steps.summary.outputs.summary_file }}
+          body: file://${{ steps.summary.outputs.summary_file }}

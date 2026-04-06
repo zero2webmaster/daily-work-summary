@@ -42,36 +42,32 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 - Collect: repo name, commit message (first line), SHA, timestamp
 
 ### Step 3: Generate Smart Summary
-- Group commits by repository owner (account)
-- Account header: `## owner` (e.g., `## zero2webmaster`)
-- Repo header: `### repo-name` (repo name only, not full owner/repo)
-- Sort repos by commit count (most active first)
-- Optional AI summary: If any AI key set (OPENROUTER_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY), generate one-sentence description per repo. Use AI_PROVIDER variable to choose: openrouter, anthropic, gemini, openai. Auto-detects from first available key if unset.
-- Format each repo section:
+- Build a repo-first summary (no owner sections), sorted globally by commit count (most active first)
+- Format each repo section as:
   ```
-  ### repo-name
-  *AI summary sentence* (if OPENAI_API_KEY set)
-  **N commits**
-  * commit message 1
-  * commit message 2
-  ...
+  **owner/repo-name** (N commits)
+  • bullet 1
+  • bullet 2
+  • bullet 3
   ```
-- One bullet per commit; show all commits (no truncation)
-- Truncate individual commit messages to 80 characters
-- If zero commits across all repos: "No commits today — well rested! ✅"
+- Generate **3-5 conversational bullets per repo** focused on features, refactors, fixes, and accomplishments
+- Prefer AI bullet generation when configured (`OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY` + optional `AI_PROVIDER`)
+- If AI is unavailable/fails, fall back to deterministic bullet synthesis from commit messages
+- If zero commits across all repos: "No work today – hope you enjoyed the rest!"
 
 ### Step 4: Save Markdown Archive
-- Write to `summaries/daily-summary-YYYY-MM-DD.md`
+- Write to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
 - Git add + commit + push from within the workflow
 
 ### Step 5: Deliver Summary
 Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 
 **Email** (when `email` is in the list):
-- Use `dawidd6/action-send-mail` GitHub Action
+- In GitHub Actions: use `dawidd6/action-send-mail`
+- In local/Cursor runtime: send directly via Gmail SMTP (`EMAIL_USERNAME`, `EMAIL_PASSWORD`)
 - To: kerry@zero2webmaster.com
-- Subject: `Daily Work Summary — Day Mon DD`
-- Body: HTML-formatted summary
+- Subject: `Daily Cursor Work - YYYY-MM-DD`
+- Body: archive markdown file (workflow) or multipart plain+HTML (local SMTP)
 - `generate_summary.py` outputs `send_email=true/false` to `$GITHUB_OUTPUT`; workflow email step is conditional on that value
 
 **Airtable** (when `airtable` is in the list):
@@ -95,7 +91,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 | Output | Location | Format |
 |--------|----------|--------|
 | Email | kerry@zero2webmaster.com | HTML (when `email` in DELIVERY_METHOD) |
-| Archive | `summaries/daily-summary-YYYY-MM-DD.md` | Markdown (always) |
+| Archive | `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md` | Markdown (always) |
 | Airtable | Daily Summaries + Repositories tables | Structured records (when `airtable` in DELIVERY_METHOD) |
 | Slack | Slack channel | Block Kit message (when `slack` in DELIVERY_METHOD) |
 | Discord | Discord channel | Rich embed (when `discord` in DELIVERY_METHOD) |
@@ -105,7 +101,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 
 | Scenario | Handling |
 |----------|----------|
-| No commits in 24h | "No commits today — well rested! ✅" |
+| No commits in 24h | "No work today – hope you enjoyed the rest!" |
 | Long commit message | Truncate to 80 chars with `...` |
 | 403 PAT error | Log clear error + link to token settings |
 | Empty repo (no commits ever) | Skip silently |

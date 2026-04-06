@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-04-06
+
+### Added
+- Local SMTP email delivery path for Cursor/local automation runs when `DELIVERY_METHOD` includes `email`
+- Repo bullet summarization mode: 3-5 conversational bullets per active repo with AI-first generation and deterministic fallback
+- New archive filename format: `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+
+### Changed
+- Daily summary output is now repo-first and globally sorted by commit count (most active first), without owner-group headers
+- No-work message standardized to: `No work today – hope you enjoyed the rest!`
+- Workflow email subject updated to `Daily Cursor Work - YYYY-MM-DD`
+- Workflow now checks for the new archive filename pattern and passes `EMAIL_TIMEZONE` into the generator step
+
+### Fixed
+- Archive now stores Markdown content directly instead of HTML-in-Markdown files
+- Date handling now respects `EMAIL_TIMEZONE` for summary date naming
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
