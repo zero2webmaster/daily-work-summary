@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-04-07
+
+### Added
+- New daily archive naming format: `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Conversational 3-5 bullet project summaries per active repository (features, fixes, refactors, and accomplishments)
+- GH CLI integration fallback path when `PAT_GITHUB` cannot access `/user` in local/integration-only environments
+
+### Changed
+- Email subject updated to `Daily Cursor Work - YYYY-MM-DD`
+- Summary layout now uses `owner/repo` project sections sorted globally by commit count (most active first)
+- Generator now writes markdown archive and separate HTML email body file (`.tmp/YYYY-MM-DD-GitHub-Daily-Summary.html`)
+- Workflow consumes summary outputs directly from `generate_summary.py` via `$GITHUB_OUTPUT`
+
+### Fixed
+- No-work day message now matches product requirement exactly: `No work today – hope you enjoyed the rest!`
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

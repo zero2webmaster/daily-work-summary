@@ -24,8 +24,11 @@ locally with PAT_GITHUB set in environment or .env file.
 """
 
 import os
+import re
 import sys
 import time
+import json
+import subprocess
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -46,7 +49,9 @@ except ImportError:
 MAX_MSG_LENGTH = 80
 MAX_RETRIES = 3
 SUMMARY_DIR = "summaries"
+EMAIL_HTML_DIR = ".tmp"
 HTML_FONT_SIZE = "18px"
+NO_WORK_MESSAGE = "No work today – hope you enjoyed the rest!"
 
 
 def get_github_client() -> Github:
@@ -75,6 +80,69 @@ def truncate(msg: str, length: int = MAX_MSG_LENGTH) -> str:
     if len(first_line) <= length:
         return first_line
     return first_line[: length - 3] + "..."
+
+
+def _classify_commit(msg: str) -> str:
+    text = msg.lower()
+    if any(k in text for k in ("fix", "bug", "hotfix", "patch", "resolve")):
+        return "fixes"
+    if any(k in text for k in ("refactor", "cleanup", "restructure", "rename", "simplify")):
+        return "refactors"
+    if any(k in text for k in ("perf", "optimiz", "speed", "cache")):
+        return "performance"
+    if any(k in text for k in ("test", "spec", "coverage", "e2e")):
+        return "testing"
+    if any(k in text for k in ("doc", "readme", "guide", "roadmap", "status")):
+        return "docs"
+    return "features"
+
+
+def _bucket_prefix(bucket: str) -> str:
+    return {
+        "features": "Shipped:",
+        "fixes": "Fixed:",
+        "refactors": "Refactored:",
+        "performance": "Improved performance:",
+        "testing": "Strengthened testing:",
+        "docs": "Documented:",
+    }[bucket]
+
+
+def _format_bucket_summary(bucket: str, messages: list[str]) -> str:
+    top = [truncate(m) for m in messages[:2]]
+    summary = "; ".join(top)
+    if len(messages) > 2:
+        summary += f" (+{len(messages) - 2} more)"
+    return f"{_bucket_prefix(bucket)} {summary}"
+
+
+def build_repo_bullets(messages: list[str], ai_summary: str | None = None) -> list[str]:
+    """Build 3-5 conversational bullets from raw commit messages."""
+    buckets: dict[str, list[str]] = defaultdict(list)
+    for msg in messages:
+        buckets[_classify_commit(msg)].append(msg)
+
+    bullets: list[str] = []
+    if ai_summary:
+        bullets.append(ai_summary)
+
+    ordered_buckets = ["features", "fixes", "refactors", "performance", "testing", "docs"]
+    for bucket in ordered_buckets:
+        if buckets.get(bucket):
+            bullets.append(_format_bucket_summary(bucket, buckets[bucket]))
+        if len(bullets) >= 5:
+            return bullets[:5]
+
+    # Ensure we always return at least 3 bullets when there is commit activity.
+    if len(bullets) < 3:
+        for msg in messages:
+            line = f"Also tackled: {truncate(msg)}"
+            if line not in bullets:
+                bullets.append(line)
+            if len(bullets) >= 3:
+                break
+
+    return bullets[:5]
 
 
 def fetch_commits_with_retry(repo, since, author, retries=MAX_RETRIES):
@@ -215,42 +283,11 @@ Commits:
         return None
 
 
-def generate_summary() -> dict[str, Any]:
-    """Fetch commits, generate summary, and return structured data.
-
-    Returns a dict with keys:
-        html, markdown, date, total_commits, total_repos,
-        repos (list of dicts), ai_summaries_text, has_commits
-    """
-    g = get_github_client()
-    user = g.get_user()
-    print(f"Authenticated as: {user.login}")
-
-    since = datetime.now(timezone.utc) - timedelta(hours=24)
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    print(f"Fetching commits since: {since.isoformat()}")
-
-    owner_repos: dict[str, dict[str, list[str]]] = defaultdict(dict)
-    repo_urls: dict[str, str] = {}
-
-    repos = list(user.get_repos(affiliation="owner,organization_member"))
-    print(f"Found {len(repos)} repositories")
-
-    for repo in repos:
-        if repo.archived:
-            continue
-
-        commits = fetch_commits_with_retry(repo, since, user.login)
-        if commits:
-            messages = [c.commit.message for c in commits]
-            owner, repo_name = repo.full_name.split("/", 1)
-            owner_repos[owner][repo_name] = messages
-            repo_urls[repo.full_name] = repo.html_url
-            print(f"  {repo.full_name}: {len(commits)} commits")
-
+def _build_summary_from_active_repos(active_repos: list[dict[str, Any]], today: str) -> dict[str, Any]:
+    """Render markdown/html and metadata from collected active repos."""
     # No commits — return minimal result
-    if not owner_repos:
-        msg = "No commits today — well rested! ✅"
+    if not active_repos:
+        msg = NO_WORK_MESSAGE
         footer = (
             "<p>Daily Work Summary initially created by "
             '<a href="https://zero2webmaster.com/kerry-kriger">Zero2Webmaster Founder Dr. Kerry Kriger</a></p>'
@@ -269,15 +306,16 @@ def generate_summary() -> dict[str, Any]:
             "has_commits": False,
         }
 
-    total_commits = sum(
-        len(msgs) for per_owner in owner_repos.values() for msgs in per_owner.values()
-    )
-    total_repos = sum(len(r) for r in owner_repos.values())
+    total_commits = sum(repo_info["commits"] for repo_info in active_repos)
+    total_repos = len(active_repos)
+    sorted_repos = sorted(active_repos, key=lambda r: r["commits"], reverse=True)
 
     lines = [
-        f"# Daily Work Summary — {datetime.now(timezone.utc).strftime('%a %b %d, %Y')}",
+        f"# Daily Cursor Work - {today}",
         "",
-        f"**{total_commits} commits** across **{total_repos} repos**",
+        "Here is your daily GitHub recap across personal and zero2webmaster repositories.",
+        "",
+        f"**{total_commits} commits** across **{total_repos} active repos** in the last 24 hours.",
         "",
         "---",
         "",
@@ -286,41 +324,32 @@ def generate_summary() -> dict[str, Any]:
     structured_repos: list[dict[str, Any]] = []
     ai_summary_bullets: list[str] = []
 
-    for owner in sorted(owner_repos.keys()):
-        repos_data = owner_repos[owner]
-        sorted_repos_list = sorted(
-            repos_data.items(), key=lambda x: len(x[1]), reverse=True
-        )
+    for repo_info in sorted_repos:
+        full_name = repo_info["full_name"]
+        count = repo_info["commits"]
+        messages = repo_info["messages"]
+        ai_summary = generate_ai_repo_summary(messages)
+        repo_bullets = build_repo_bullets(messages, ai_summary=ai_summary)
 
-        lines.append(f"## {owner}")
+        lines.append(f"## {full_name}")
+        lines.append(f"*{count} commit{'s' if count != 1 else ''}*")
+        lines.append("")
+        for bullet in repo_bullets:
+            lines.append(f"- {bullet}")
         lines.append("")
 
-        for repo_name, messages in sorted_repos_list:
-            full_name = f"{owner}/{repo_name}"
-            count = len(messages)
-            commit_label = f"{count} commit{'s' if count != 1 else ''}"
+        if ai_summary:
+            ai_summary_bullets.append(f"- {full_name}: {ai_summary}")
 
-            ai_summary = generate_ai_repo_summary(messages)
-            lines.append(f"### {repo_name} ({commit_label})")
-            if ai_summary:
-                lines.append(f"*{ai_summary}*")
-                ai_summary_bullets.append(f"- {repo_name}: {ai_summary}")
-            lines.append("")
-
-            for msg in messages:
-                bullet = truncate(msg)
-                lines.append(f"* {bullet}")
-
-            lines.append("")
-
-            structured_repos.append({
-                "full_name": full_name,
-                "url": repo_urls.get(full_name, f"https://github.com/{full_name}"),
-                "owner": owner,
-                "commits": count,
-                "messages": messages,
-                "ai_summary": ai_summary,
-            })
+        structured_repos.append({
+            "full_name": full_name,
+            "url": repo_info["url"],
+            "owner": repo_info["owner"],
+            "commits": count,
+            "messages": messages,
+            "ai_summary": ai_summary,
+            "summary_bullets": repo_bullets,
+        })
 
     lines.append("---")
     lines.append("")
@@ -345,6 +374,45 @@ def generate_summary() -> dict[str, Any]:
         "ai_summaries_text": "\n".join(ai_summary_bullets),
         "has_commits": True,
     }
+
+
+def generate_summary() -> dict[str, Any]:
+    """Fetch commits, generate summary, and return structured data.
+
+    Returns a dict with keys:
+        html, markdown, date, total_commits, total_repos,
+        repos (list of dicts), ai_summaries_text, has_commits
+    """
+    g = get_github_client()
+    user = g.get_user()
+    print(f"Authenticated as: {user.login}")
+
+    since = datetime.now(timezone.utc) - timedelta(hours=24)
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    print(f"Fetching commits since: {since.isoformat()}")
+
+    active_repos: list[dict[str, Any]] = []
+
+    repos = list(user.get_repos(affiliation="owner,organization_member"))
+    print(f"Found {len(repos)} repositories")
+
+    for repo in repos:
+        if repo.archived:
+            continue
+
+        commits = fetch_commits_with_retry(repo, since, user.login)
+        if commits:
+            messages = [c.commit.message for c in commits]
+            print(f"  {repo.full_name}: {len(commits)} commits")
+            active_repos.append({
+                "full_name": repo.full_name,
+                "url": repo.html_url,
+                "owner": repo.owner.login,
+                "commits": len(commits),
+                "messages": messages,
+            })
+
+    return _build_summary_from_active_repos(active_repos, today)
 
 
 # ------------------------------------------------------------------
@@ -569,6 +637,78 @@ def _find_or_create_repo(
         return None
 
 
+def _gh_cli_json(args: list[str]) -> Any:
+    """Run `gh api ...` and parse JSON output."""
+    cmd = ["gh", "api", *args]
+    output = subprocess.check_output(cmd, text=True)
+    return json.loads(output)
+
+
+def _gh_cli_login_from_status() -> str:
+    """Best-effort parse of authenticated login from `gh auth status` output."""
+    status = subprocess.check_output(
+        ["gh", "auth", "status"], stderr=subprocess.STDOUT, text=True
+    )
+    match = re.search(r"Logged in to github\.com account (\S+)", status)
+    return match.group(1) if match else "integration"
+
+
+def generate_summary_via_gh_cli() -> dict[str, Any]:
+    """Fallback summary generation using GH CLI integration scope."""
+    since = datetime.now(timezone.utc) - timedelta(hours=24)
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    login = _gh_cli_login_from_status()
+    print(f"Using GH CLI fallback mode (account: {login})")
+    print(f"Fetching commits since: {since.isoformat()}")
+
+    try:
+        install_data = _gh_cli_json(["/installation/repositories"])
+    except subprocess.CalledProcessError as exc:
+        print(f"ERROR: Unable to list installation repositories with GH CLI: {exc}")
+        return _build_summary_from_active_repos([], today)
+
+    repos = install_data.get("repositories", [])
+    print(f"Found {len(repos)} installation repositories")
+
+    active_repos: list[dict[str, Any]] = []
+    for repo in repos:
+        if repo.get("archived"):
+            continue
+
+        full_name = repo["full_name"]
+        try:
+            commits = _gh_cli_json([
+                f"/repos/{full_name}/commits",
+                "-f", f"since={since.isoformat()}",
+                "-f", "per_page=100",
+            ])
+        except subprocess.CalledProcessError as exc:
+            print(f"  Error fetching commits for {full_name}: {exc}")
+            continue
+
+        messages: list[str] = []
+        for commit in commits:
+            author_login = ((commit.get("author") or {}).get("login") or "").lower()
+            committer_login = ((commit.get("committer") or {}).get("login") or "").lower()
+            if login.lower() not in (author_login, committer_login):
+                continue
+            message = ((commit.get("commit") or {}).get("message") or "").strip()
+            if message:
+                messages.append(message)
+
+        if messages:
+            print(f"  {full_name}: {len(messages)} commits")
+            active_repos.append({
+                "full_name": full_name,
+                "url": repo.get("html_url", f"https://github.com/{full_name}"),
+                "owner": full_name.split("/", 1)[0],
+                "commits": len(messages),
+                "messages": messages,
+            })
+
+    return _build_summary_from_active_repos(active_repos, today)
+
+
 # ------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------
@@ -586,22 +726,15 @@ def main():
             print("  Regenerate at: https://github.com/settings/tokens")
             sys.exit(1)
         elif e.status == 403:
-            print("ERROR: PAT_GITHUB has insufficient permissions.")
-            print("  Required scopes: repo, read:user")
-            print("  Update at: https://github.com/settings/tokens")
-            sys.exit(1)
+            print("WARNING: PAT_GITHUB has insufficient permissions for /user.")
+            print("  Falling back to GH CLI integration scope.")
+            summary_data = generate_summary_via_gh_cli()
         else:
             raise
 
     # Determine delivery methods (comma-separated, 'both' = email+airtable)
     delivery_methods = parse_delivery_methods(os.environ.get("DELIVERY_METHOD"))
     print(f"\nDelivery methods: {', '.join(sorted(delivery_methods))}")
-
-    # Write summary file (always, for the archive and email step)
-    Path(SUMMARY_DIR).mkdir(exist_ok=True)
-    summary_path = Path(SUMMARY_DIR) / f"daily-summary-{summary_data['date']}.md"
-    summary_path.write_text(summary_data["html"])
-    print(f"Summary written to: {summary_path}")
 
     # Airtable delivery
     if "airtable" in delivery_methods and summary_data["has_commits"]:
@@ -618,7 +751,16 @@ def main():
         print("\n--- Discord Delivery ---")
         send_to_discord(summary_data)
 
-    # Tell the workflow whether to run the email step
+    Path(SUMMARY_DIR).mkdir(exist_ok=True)
+    Path(EMAIL_HTML_DIR).mkdir(exist_ok=True)
+    archive_path = Path(SUMMARY_DIR) / f"{summary_data['date']}-GitHub-Daily-Summary.md"
+    email_html_path = Path(EMAIL_HTML_DIR) / f"{summary_data['date']}-GitHub-Daily-Summary.html"
+
+    archive_path.write_text(summary_data["markdown"])
+    email_html_path.write_text(summary_data["html"])
+    print(f"Archive written to: {archive_path}")
+    print(f"Email HTML written to: {email_html_path}")
+
     send_email = "email" in delivery_methods
     if not send_email:
         active = ", ".join(sorted(delivery_methods - {"email"}))
@@ -628,10 +770,13 @@ def main():
     github_output = os.environ.get("GITHUB_OUTPUT")
     if github_output:
         with open(github_output, "a") as fh:
+            fh.write("has_summary=true\n")
+            fh.write(f"archive_file={archive_path.as_posix()}\n")
+            fh.write(f"summary_file={email_html_path.as_posix()}\n")
             fh.write(f"send_email={'true' if send_email else 'false'}\n")
 
     print(f"\n{'=' * 50}")
-    print(summary_data["html"])
+    print(summary_data["markdown"])
 
 
 if __name__ == "__main__":

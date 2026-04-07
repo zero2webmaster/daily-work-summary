@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-04-07 (v1.5.0)
 
 ---
 
@@ -40,14 +40,18 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
 
+### Decision: Daily archive + email format aligned to "Daily Cursor Work"
+**Date:** 2026-04-07
+**Rationale:** The automation now needs a consistent archive filename (`YYYY-MM-DD-GitHub-Daily-Summary.md`), conversational 3-5 bullet repo recaps, and subject line `Daily Cursor Work - [DATE]` so output style is predictable across file and email delivery.
+
 ---
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Run workflow on `main` with production PAT_GITHUB and confirm multi-repo commit collection succeeds.
+2. Verify email subject/body in production inbox: `Daily Cursor Work - YYYY-MM-DD`.
+3. Verify archive artifact naming and content format in `summaries/`.
+4. Re-test optional Slack/Discord + Airtable routes after format changes.
 
 ---
 
@@ -58,6 +62,13 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-04-07 - Daily Cursor Work Format Alignment (v1.5.0)
+- Updated summary output format to project-by-project conversational bullets (3-5 bullets per active repo)
+- Changed archive naming to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Updated workflow email subject to `Daily Cursor Work - YYYY-MM-DD`
+- Added generator outputs (`has_summary`, `archive_file`, `summary_file`, `send_email`) directly from script
+- Added GH CLI fallback path for integration-scoped environments where `/user` is not accessible
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic
