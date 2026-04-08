@@ -45,6 +45,11 @@ except ImportError:
     print("ERROR: markdown not installed. Run: pip install markdown")
     sys.exit(1)
 
+try:
+    import requests
+except ImportError:
+    requests = None
+
 MAX_MSG_LENGTH = 80
 MAX_RETRIES = 3
 SUMMARY_DIR = "summaries"
@@ -400,8 +405,9 @@ def generate_summary_via_gh_integration() -> dict[str, Any]:
             continue
         owner, repo_name = full_name.split("/", 1)
 
+        commits: list[dict[str, Any]] = []
         try:
-            commits = _run_gh_api_json(
+            gh_commits = _run_gh_api_json(
                 [
                     f"/repos/{full_name}/commits",
                     "-f",
@@ -410,9 +416,28 @@ def generate_summary_via_gh_integration() -> dict[str, Any]:
                     "per_page=100",
                 ]
             )
+            if isinstance(gh_commits, list):
+                commits = gh_commits
         except Exception as exc:
-            print(f"  Warning: failed to fetch commits for {full_name}: {exc}")
-            continue
+            print(f"  Warning: gh integration commit fetch failed for {full_name}: {exc}")
+
+        # Fallback to unauthenticated/public API for public repos.
+        if not commits and requests and not repo.get("private", False):
+            try:
+                since_iso = since.strftime("%Y-%m-%dT%H:%M:%SZ")
+                response = requests.get(
+                    f"https://api.github.com/repos/{full_name}/commits",
+                    params={"since": since_iso, "per_page": 100},
+                    timeout=20,
+                )
+                if response.status_code == 200:
+                    payload = response.json()
+                    if isinstance(payload, list):
+                        commits = payload
+                else:
+                    print(f"  Warning: public API commit fetch failed for {full_name}: HTTP {response.status_code}")
+            except Exception as exc:
+                print(f"  Warning: public API commit fetch failed for {full_name}: {exc}")
 
         if not isinstance(commits, list) or not commits:
             continue
