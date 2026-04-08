@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 - New daily archive filename format in repo root: `YYYY-MM-DD-GitHub-Daily-Summary.md`
 - Conversational 3-5 bullet project summaries per active repo, with deterministic fallbacks when AI is unavailable
 - Workflow output wiring for `summary_file` and `email_html_file` from `generate_summary.py`
+- `gh` integration fallback path for environments where `PAT_GITHUB` is not available
 
 ### Changed
 - Summary scope now explicitly covers all personal repos plus all `zero2webmaster` organization repos
@@ -15,6 +16,7 @@ All notable changes to this project will be documented in this file.
 - Repo ordering is now global by activity (most active repos first)
 - Email subject updated to `Daily Cursor Work - [DATE]`
 - Markdown archive content is now true markdown (not HTML saved with `.md` extension)
+- Generator now falls back to installation-scoped repositories via `gh api` when PAT auth cannot access `/user`
 
 ## [1.4.0] - 2026-03-11
 

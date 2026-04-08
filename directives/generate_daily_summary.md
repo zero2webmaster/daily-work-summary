@@ -21,6 +21,7 @@ Generate a conversational daily summary of all GitHub commits across every zero2
 | Input | Source | Notes |
 |-------|--------|-------|
 | GitHub PAT | `PAT_GITHUB` secret | Scopes: `repo`, `read:user` |
+| GitHub integration token | `gh` authenticated context | Fallback when PAT is unavailable in local/automation environments (installation-scoped repos only) |
 | Email credentials | `EMAIL_USERNAME`, `EMAIL_PASSWORD` secrets | Gmail App Password |
 | Time window | Last 24 hours from run time | Uses `datetime.utcnow() - timedelta(hours=24)` |
 | Delivery method | `DELIVERY_METHOD` variable | Comma-separated: `email` (default), `airtable`, `slack`, `discord`. `both` = `email,airtable` |
@@ -105,6 +106,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 | No commits in 24h | `No work today - hope you enjoyed the rest!` |
 | Long commit message | Truncate to 80 chars with `...` |
 | 403 PAT error | Log clear error + link to token settings |
+| PAT missing in local automation | Fallback to `gh api /installation/repositories` scope and continue generation |
 | Empty repo (no commits ever) | Skip silently |
 | API rate limit (5000/hr) | Exponential backoff, max 3 retries |
 | Archived repo | Skip (no recent commits) |

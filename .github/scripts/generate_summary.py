@@ -24,8 +24,10 @@ locally with PAT_GITHUB set in environment or .env file.
 """
 
 import os
+import subprocess
 import sys
 import time
+import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -300,50 +302,13 @@ def build_repo_bullets(messages: list[str], commit_count: int) -> list[str]:
     return _fallback_repo_bullets(messages, commit_count)
 
 
-def generate_summary() -> dict[str, Any]:
-    """Fetch commits, generate summary, and return structured data.
-
-    Returns a dict with keys:
-        html, markdown, date, total_commits, total_repos,
-        repos (list of dicts), ai_summaries_text, has_commits
-    """
-    g = get_github_client()
-    user = g.get_user()
-    print(f"Authenticated as: {user.login}")
-
-    now_utc = datetime.now(timezone.utc)
-    since = now_utc - timedelta(hours=24)
-    tz = get_run_timezone()
-    today = now_utc.astimezone(tz).strftime("%Y-%m-%d")
-    display_date = now_utc.astimezone(tz).strftime("%a %b %d, %Y")
-    print(f"Fetching commits since: {since.isoformat()}")
-
-    repos = get_target_repositories(g, user.login)
-    structured_repos: list[dict[str, Any]] = []
-
-    for repo in repos:
-        if repo.archived:
-            continue
-
-        commits = fetch_commits_with_retry(repo, since)
-        if commits:
-            messages = [c.commit.message for c in commits]
-            print(f"  {repo.full_name}: {len(commits)} commits")
-            owner, repo_name = repo.full_name.split("/", 1)
-            count = len(commits)
-            bullets = build_repo_bullets(messages, count)
-            structured_repos.append({
-                "full_name": repo.full_name,
-                "url": repo.html_url,
-                "owner": owner,
-                "repo_name": repo_name,
-                "commits": count,
-                "messages": messages,
-                "bullets": bullets,
-                "ai_summary": bullets[0] if bullets else None,
-            })
-
-    # No commits — return minimal conversational result
+def build_summary_payload(
+    structured_repos: list[dict[str, Any]],
+    today: str,
+    display_date: str,
+    now_utc: datetime,
+) -> dict[str, Any]:
+    """Build markdown/html payload from structured repo data."""
     if not structured_repos:
         markdown_body = f"# Daily Cursor Work - {display_date}\n\n{NO_WORK_MESSAGE}\n"
         html_content = markdown_lib.markdown(markdown_body, extensions=["nl2br"])
@@ -403,6 +368,124 @@ def generate_summary() -> dict[str, Any]:
         "ai_summaries_text": "\n".join(ai_summary_bullets),
         "has_commits": True,
     }
+
+
+def _run_gh_api_json(args: list[str]) -> Any:
+    cmd = ["gh", "api", *args]
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "gh api call failed")
+    return json.loads(result.stdout)
+
+
+def generate_summary_via_gh_integration() -> dict[str, Any]:
+    """Fallback mode when PAT_GITHUB is unavailable in this environment."""
+    print("PAT_GITHUB unavailable/insufficient; falling back to GitHub integration token via gh CLI.")
+    now_utc = datetime.now(timezone.utc)
+    since = now_utc - timedelta(hours=24)
+    tz = get_run_timezone()
+    today = now_utc.astimezone(tz).strftime("%Y-%m-%d")
+    display_date = now_utc.astimezone(tz).strftime("%a %b %d, %Y")
+
+    installation = _run_gh_api_json(["/installation/repositories"])
+    repos = installation.get("repositories", [])
+    print(f"Integration has access to {len(repos)} repositories.")
+
+    structured_repos: list[dict[str, Any]] = []
+    for repo in repos:
+        if repo.get("archived"):
+            continue
+        full_name = repo.get("full_name")
+        if not full_name:
+            continue
+        owner, repo_name = full_name.split("/", 1)
+
+        try:
+            commits = _run_gh_api_json(
+                [
+                    f"/repos/{full_name}/commits",
+                    "-f",
+                    f"since={since.isoformat()}",
+                    "-f",
+                    "per_page=100",
+                ]
+            )
+        except Exception as exc:
+            print(f"  Warning: failed to fetch commits for {full_name}: {exc}")
+            continue
+
+        if not isinstance(commits, list) or not commits:
+            continue
+
+        messages = []
+        for commit in commits:
+            msg = commit.get("commit", {}).get("message")
+            if msg:
+                messages.append(msg)
+        if not messages:
+            continue
+
+        count = len(messages)
+        bullets = build_repo_bullets(messages, count)
+        structured_repos.append({
+            "full_name": full_name,
+            "url": repo.get("html_url", f"https://github.com/{full_name}"),
+            "owner": owner,
+            "repo_name": repo_name,
+            "commits": count,
+            "messages": messages,
+            "bullets": bullets,
+            "ai_summary": bullets[0] if bullets else None,
+        })
+        print(f"  {full_name}: {count} commits")
+
+    return build_summary_payload(structured_repos, today, display_date, now_utc)
+
+
+def generate_summary() -> dict[str, Any]:
+    """Fetch commits, generate summary, and return structured data.
+
+    Returns a dict with keys:
+        html, markdown, date, total_commits, total_repos,
+        repos (list of dicts), ai_summaries_text, has_commits
+    """
+    g = get_github_client()
+    user = g.get_user()
+    print(f"Authenticated as: {user.login}")
+
+    now_utc = datetime.now(timezone.utc)
+    since = now_utc - timedelta(hours=24)
+    tz = get_run_timezone()
+    today = now_utc.astimezone(tz).strftime("%Y-%m-%d")
+    display_date = now_utc.astimezone(tz).strftime("%a %b %d, %Y")
+    print(f"Fetching commits since: {since.isoformat()}")
+
+    repos = get_target_repositories(g, user.login)
+    structured_repos: list[dict[str, Any]] = []
+
+    for repo in repos:
+        if repo.archived:
+            continue
+
+        commits = fetch_commits_with_retry(repo, since)
+        if commits:
+            messages = [c.commit.message for c in commits]
+            print(f"  {repo.full_name}: {len(commits)} commits")
+            owner, repo_name = repo.full_name.split("/", 1)
+            count = len(commits)
+            bullets = build_repo_bullets(messages, count)
+            structured_repos.append({
+                "full_name": repo.full_name,
+                "url": repo.html_url,
+                "owner": owner,
+                "repo_name": repo_name,
+                "commits": count,
+                "messages": messages,
+                "bullets": bullets,
+                "ai_summary": bullets[0] if bullets else None,
+            })
+
+    return build_summary_payload(structured_repos, today, display_date, now_utc)
 
 
 # ------------------------------------------------------------------
@@ -636,18 +719,26 @@ def main():
     print("Daily Work Summary Generator")
     print("=" * 50)
 
+    summary_data: dict[str, Any]
     try:
         summary_data = generate_summary()
+    except SystemExit:
+        # Local/automation environments may not provide PAT_GITHUB.
+        summary_data = generate_summary_via_gh_integration()
     except GithubException as e:
-        if e.status == 401:
-            print("ERROR: PAT_GITHUB is invalid or expired.")
-            print("  Regenerate at: https://github.com/settings/tokens")
-            sys.exit(1)
-        elif e.status == 403:
-            print("ERROR: PAT_GITHUB has insufficient permissions.")
-            print("  Required scopes: repo, read:user")
-            print("  Update at: https://github.com/settings/tokens")
-            sys.exit(1)
+        if e.status in (401, 403):
+            print("Primary PAT flow unavailable; trying gh integration fallback...")
+            try:
+                summary_data = generate_summary_via_gh_integration()
+            except Exception:
+                if e.status == 401:
+                    print("ERROR: PAT_GITHUB is invalid or expired.")
+                    print("  Regenerate at: https://github.com/settings/tokens")
+                else:
+                    print("ERROR: PAT_GITHUB has insufficient permissions.")
+                    print("  Required scopes: repo, read:user")
+                    print("  Update at: https://github.com/settings/tokens")
+                sys.exit(1)
         else:
             raise
 
