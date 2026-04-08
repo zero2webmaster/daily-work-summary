@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-04-08
+
+### Added
+- New daily archive filename format in repo root: `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Conversational 3-5 bullet project summaries per active repo, with deterministic fallbacks when AI is unavailable
+- Workflow output wiring for `summary_file` and `email_html_file` from `generate_summary.py`
+
+### Changed
+- Summary scope now explicitly covers all personal repos plus all `zero2webmaster` organization repos
+- Commit collection now includes all commits in the last 24 hours (not just one author)
+- Repo ordering is now global by activity (most active repos first)
+- Email subject updated to `Daily Cursor Work - [DATE]`
+- Markdown archive content is now true markdown (not HTML saved with `.md` extension)
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

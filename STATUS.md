@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-04-08 (v1.5.0)
 
 ---
 
@@ -40,14 +40,17 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
 
+### Decision: Align output contract with Cursor daily brief format
+**Date:** 2026-04-08
+**Rationale:** Automation requires a specific archive filename (`YYYY-MM-DD-GitHub-Daily-Summary.md`), a conversational bullet summary format, and the subject line `Daily Cursor Work - [DATE]`. The generator and workflow now emit those exact outputs.
+
 ---
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Monitor next scheduled run to confirm email + archive generation on v1.5.0
+2. (Optional) Enable Airtable delivery with `DELIVERY_METHOD=email,airtable`
+3. (Optional) Enable Slack/Discord webhooks for multi-channel delivery
 
 ---
 
@@ -58,6 +61,13 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-04-08 - Cursor Daily Format Alignment (v1.5.0)
+- Refactored summary output to produce per-repo conversational 3-5 bullet updates
+- Scope now includes all personal repos plus all `zero2webmaster` organization repos
+- Updated archive output to `YYYY-MM-DD-GitHub-Daily-Summary.md` in repo root
+- Updated workflow subject to `Daily Cursor Work - [DATE]`
+- Updated directives/README/changelog to match new behavior
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic
