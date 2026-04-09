@@ -338,6 +338,7 @@ def build_fallback_repo_bullets(messages: list[str]) -> list[str]:
         buckets[_categorize_commit(line)].append(line)
 
     bullets: list[str] = []
+    used_lines: set[str] = set()
     templates = [
         ("feature", "Moved feature work forward with: {msg}"),
         ("fix", "Addressed reliability and bug fixes including: {msg}"),
@@ -348,11 +349,15 @@ def build_fallback_repo_bullets(messages: list[str]) -> list[str]:
 
     for category, template in templates:
         if buckets.get(category):
-            bullets.append(template.format(msg=buckets[category][0]))
+            msg = buckets[category][0]
+            bullets.append(template.format(msg=msg))
+            used_lines.add(msg)
         if len(bullets) >= 5:
             break
 
     for line in first_lines:
+        if line in used_lines:
+            continue
         candidate = f"Completed additional project work: {line}"
         if candidate not in bullets:
             bullets.append(candidate)
