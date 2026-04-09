@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-04-09 (v1.5.0)
 
 ---
 
@@ -20,9 +20,9 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Battle-tested GitHub Action for email. Gmail App Passwords provide secure auth without OAuth complexity. Supports HTML formatting for rich summaries.
 
-### Decision: Archive summaries in `summaries/` directory
+### Decision: Archive summaries in repo root with date-first naming
 **Date:** 2026-03-11
-**Rationale:** Git-committed markdown files provide a permanent, searchable history of daily work. Workflow auto-commits after each run.
+**Rationale:** Git-committed markdown files provide a permanent, searchable history of daily work. Date-first naming (`YYYY-MM-DD-GitHub-Daily-Summary.md`) keeps files sortable and easy to scan in the repository.
 
 ### Decision: Raw `requests` for Airtable client (not `pyairtable`)
 **Date:** 2026-03-11
@@ -44,10 +44,9 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Run Daily Work Summary workflow manually to validate new markdown filename and email subject
+2. Confirm generated archive appears as `YYYY-MM-DD-GitHub-Daily-Summary.md` in repo root
+3. Verify email body renders 3-5 bullets per repo and no-work copy on low-activity days
 
 ---
 
@@ -66,6 +65,13 @@ None currently.
 - Workflow: added `SLACK_WEBHOOK_URL` + `DISCORD_WEBHOOK_URL`; email condition now uses `send_email` output
 - README: new Slack & Discord Integration section with step-by-step setup
 - Bumped to v1.4.0
+
+### Session: 2026-04-09 - Daily Cursor Work format + naming (v1.5.0)
+- Updated summary generation format to global repo sort with conversational 3-5 bullets per active repo
+- Added AI bullet generation with deterministic fallback bullet synthesis when AI keys are unavailable
+- Updated archive filename to `YYYY-MM-DD-GitHub-Daily-Summary.md` and email HTML staging file in `.tmp/`
+- Updated workflow subject to `Daily Cursor Work - Day Mon DD` and commit step to track new archive file
+- Synced docs and project metadata (`README`, directive, `.cursorrules`, `CHANGELOG`, `VERSION`) to v1.5.0
 
 ### Session: 2026-03-11 - Airtable Integration (v1.3.0)
 - Built `airtable_client.py` — full Airtable REST API client with retry logic

@@ -125,14 +125,14 @@ def send_slack(webhook_url: str, summary_data: dict[str, Any]) -> bool:
     blocks: list[dict] = [
         {
             "type": "header",
-            "text": {"type": "plain_text", "text": f"📋 Daily Work Summary — {date}"},
+            "text": {"type": "plain_text", "text": f"📋 Daily Cursor Work — {date}"},
         }
     ]
 
     if not has_commits:
         blocks.append({
             "type": "section",
-            "text": {"type": "mrkdwn", "text": "No commits today — well rested! ✅"},
+            "text": {"type": "mrkdwn", "text": "No work today – hope you enjoyed the rest!"},
         })
     else:
         # Stats bar
@@ -188,7 +188,7 @@ def send_slack(webhook_url: str, summary_data: dict[str, Any]) -> bool:
         "elements": [
             {
                 "type": "mrkdwn",
-                "text": f"<{Z2W_URL}|Daily Work Summary> • <{REPO_URL}|View on GitHub>",
+                "text": f"<{Z2W_URL}|Daily Cursor Work> • <{REPO_URL}|View on GitHub>",
             }
         ],
     })
@@ -196,7 +196,7 @@ def send_slack(webhook_url: str, summary_data: dict[str, Any]) -> bool:
     payload = {
         "blocks": blocks,
         # Fallback plain text for notifications
-        "text": f"Daily Work Summary — {date}: {total_commits} commit(s) across {total_repos} repo(s)",
+        "text": f"Daily Cursor Work — {date}: {total_commits} commit(s) across {total_repos} repo(s)",
     }
 
     return _post_with_retry(webhook_url, payload, "Slack")
@@ -242,12 +242,12 @@ def send_discord(webhook_url: str, summary_data: dict[str, Any]) -> bool:
     color = 0x2ECC71 if has_commits else 0x95A5A6  # emerald green / concrete grey
 
     if not has_commits:
-        description = "No commits today — well rested! ✅"
+        description = "No work today – hope you enjoyed the rest!"
     else:
         description = _build_discord_description(repos)
 
     embed: dict[str, Any] = {
-        "title": f"📋 Daily Work Summary — {date}",
+        "title": f"📋 Daily Cursor Work — {date}",
         "description": description,
         "color": color,
         "footer": {

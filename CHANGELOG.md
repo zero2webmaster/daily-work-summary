@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-04-09
+
+### Changed
+- Summary output now follows the "Daily Cursor Work" format:
+  - global repo sorting by commit activity
+  - per-repo conversational 3-5 bullet project summaries
+  - no-work copy updated to: `No work today – hope you enjoyed the rest!`
+- Archive filename changed to `YYYY-MM-DD-GitHub-Daily-Summary.md` in repo root
+- Email subject changed to `Daily Cursor Work - Day Mon DD`
+- Workflow now uses `.tmp/YYYY-MM-DD-GitHub-Daily-Summary-email.html` for HTML email body while keeping a markdown archive
+- Webhook message headings and no-work text aligned with "Daily Cursor Work" wording
+
+### Fixed
+- Version metadata drift resolved by aligning VERSION, README, directive docs, and changelog on the same release version
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
