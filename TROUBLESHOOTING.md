@@ -1,7 +1,7 @@
 # Troubleshooting Guide
 
 **Project:** Daily Work Summary
-**Last Updated:** 2026-03-11
+**Last Updated:** 2026-04-11
 
 ---
 
@@ -39,6 +39,21 @@
 4. Classic tokens: check expiration date
 
 **Verification:** Run workflow manually, check logs for "Authenticated as: <username>"
+
+---
+
+### Issue: Local automation token returns "Resource not accessible by integration"
+
+**Problem:** Running `generate_summary.py` locally with `PAT_GITHUB="$(gh auth token)"` fails on `GET /user` with HTTP 403.
+
+**Root Cause:** The Cursor Cloud `gh` token is an installation/integration token, not a full user PAT. It can be scoped to only one repository and may not include `read:user` or broad `repo` access required for cross-repo scans.
+
+**Solution:**
+1. Do **not** use the local integration token for full cross-repo production runs
+2. Run via GitHub Actions where `PAT_GITHUB` secret is configured with `repo` + `read:user`
+3. For local testing, export a user PAT with required scopes before executing the script
+
+**Verification:** In local shell, `gh api /user` will 403 for integration tokens; in workflow run logs, authentication should succeed and list all accessible repositories.
 
 ---
 

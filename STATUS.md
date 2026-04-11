@@ -6,7 +6,7 @@
 
 ## 🚧 Blockers
 
-None currently.
+- Local Cursor Cloud token is installation-scoped and cannot access `GET /user` (`Resource not accessible by integration`), so full cross-repo execution verification must run in GitHub Actions with `PAT_GITHUB`.
 
 ---
 
@@ -51,6 +51,7 @@ None currently.
 1. Monitor next scheduled run and confirm delivery includes new root archive filename
 2. Validate bullet quality across low-commit and high-commit repos
 3. (Optional) Tune AI prompt if summaries become too generic
+4. Confirm cron run uses PAT secret (not integration token) and sends email with new subject line
 
 ---
 
