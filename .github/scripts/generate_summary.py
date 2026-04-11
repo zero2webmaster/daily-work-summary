@@ -24,9 +24,9 @@ locally with PAT_GITHUB set in environment or .env file.
 """
 
 import os
+import re
 import sys
 import time
-from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -142,25 +142,13 @@ def _get_ai_client_and_key() -> tuple[str | None, str | None, str | None]:
     return provider, api_key, model
 
 
-def generate_ai_repo_summary(messages: list[str]) -> str | None:
-    """Generate a one-sentence summary of the type of work from commit messages."""
+def _call_ai_prompt(prompt: str, max_tokens: int) -> str | None:
+    """Call the configured AI provider with a plain-text prompt."""
     provider, api_key, model = _get_ai_client_and_key()
     if not provider or not api_key:
         print("  AI summary: skipped (no provider key configured)")
         return None
     print(f"  AI summary: using {provider}/{model}")
-
-    commit_list = "\n".join(truncate(m) for m in messages[:20])
-    prompt = f"""In one sentence, summarize the theme of development work from these git commits. Be concise and professional.
-
-Rules:
-- Do NOT list or enumerate commits (e.g., never say "2 changes: X; Y" or "3 commits: A, B, C")
-- Do NOT say how many commits there were
-- Describe the TYPE of work and WHAT area it touched (e.g., "Authentication refactor and UI polish across the login and dashboard flows.")
-- If there is only one commit, still describe the theme, not the commit itself
-
-Commits:
-{commit_list}"""
 
     try:
         if provider == "openrouter":
@@ -172,7 +160,7 @@ Commits:
             response = client.chat.completions.create(
                 model=model,
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=80,
+                max_tokens=max_tokens,
             )
             summary = response.choices[0].message.content.strip()
 
@@ -182,7 +170,7 @@ Commits:
             response = client.chat.completions.create(
                 model=model,
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=80,
+                max_tokens=max_tokens,
             )
             summary = response.choices[0].message.content.strip()
 
@@ -191,7 +179,7 @@ Commits:
             client = anthropic.Anthropic(api_key=api_key)
             response = client.messages.create(
                 model=model,
-                max_tokens=80,
+                max_tokens=max_tokens,
                 messages=[{"role": "user", "content": prompt}],
             )
             summary = response.content[0].text.strip()
@@ -202,17 +190,102 @@ Commits:
             model_obj = genai.GenerativeModel(model)
             response = model_obj.generate_content(
                 prompt,
-                generation_config=genai.types.GenerationConfig(max_output_tokens=80),
+                generation_config=genai.types.GenerationConfig(max_output_tokens=max_tokens),
             )
             summary = response.text.strip()
 
         else:
             return None
 
-        return summary.rstrip(".")
+        return summary
     except Exception as e:
         print(f"  AI summary error ({provider}): {e}")
         return None
+
+
+def generate_ai_repo_summary(messages: list[str]) -> str | None:
+    """Generate a one-sentence summary of the type of work from commit messages."""
+    commit_list = "\n".join(truncate(m) for m in messages[:20])
+    prompt = f"""In one sentence, summarize the theme of development work from these git commits. Be concise and professional.
+
+Rules:
+- Do NOT list or enumerate commits (e.g., never say "2 changes: X; Y" or "3 commits: A, B, C")
+- Do NOT say how many commits there were
+- Describe the TYPE of work and WHAT area it touched (e.g., "Authentication refactor and UI polish across the login and dashboard flows.")
+- If there is only one commit, still describe the theme, not the commit itself
+
+Commits:
+{commit_list}"""
+    summary = _call_ai_prompt(prompt, max_tokens=80)
+    if not summary:
+        return None
+    return summary.rstrip(".")
+
+
+def _normalize_ai_bullets(raw_text: str) -> list[str]:
+    bullets: list[str] = []
+    for line in raw_text.splitlines():
+        cleaned = line.strip()
+        if not cleaned:
+            continue
+
+        # Accept common bullet styles and normalize.
+        cleaned = re.sub(r"^[-*•\d\.\)\s]+", "", cleaned).strip()
+        cleaned = cleaned.strip("\"' ")
+        if cleaned:
+            bullets.append(cleaned)
+
+    # Keep concise 3-5 bullet range.
+    if len(bullets) > 5:
+        return bullets[:5]
+    return bullets
+
+
+def _fallback_repo_bullets(messages: list[str]) -> list[str]:
+    bullets: list[str] = []
+    for msg in messages[:5]:
+        cleaned = truncate(msg)
+        cleaned = re.sub(
+            r"^(feat|fix|chore|docs|refactor|style|test|build|ci|perf)(\([^)]+\))?:\s*",
+            "",
+            cleaned,
+            flags=re.IGNORECASE,
+        ).strip()
+        if cleaned:
+            bullets.append(cleaned[0].upper() + cleaned[1:] if len(cleaned) > 1 else cleaned.upper())
+
+    while len(bullets) < 3:
+        bullets.append("Continued steady progress with focused repository improvements.")
+
+    return bullets[:5]
+
+
+def generate_ai_repo_bullets(repo_full_name: str, messages: list[str]) -> list[str]:
+    """Generate 3-5 conversational bullets describing repo accomplishments."""
+    commit_list = "\n".join(truncate(m) for m in messages[:25])
+    prompt = f"""Write 3 to 5 concise bullets for a daily engineering recap.
+
+Repository: {repo_full_name}
+
+Requirements:
+- Output only bullet lines (no intro/outro text)
+- Focus on accomplishments: features, bug fixes, refactors, and meaningful progress
+- Keep a conversational but professional tone
+- Do not mention commit counts
+- Do not invent details not implied by the commit messages
+- Each bullet should be one sentence
+
+Commit messages:
+{commit_list}"""
+
+    ai_text = _call_ai_prompt(prompt, max_tokens=260)
+    if not ai_text:
+        return _fallback_repo_bullets(messages)
+
+    bullets = _normalize_ai_bullets(ai_text)
+    if len(bullets) < 3:
+        return _fallback_repo_bullets(messages)
+    return bullets
 
 
 def generate_summary() -> dict[str, Any]:
@@ -230,7 +303,7 @@ def generate_summary() -> dict[str, Any]:
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     print(f"Fetching commits since: {since.isoformat()}")
 
-    owner_repos: dict[str, dict[str, list[str]]] = defaultdict(dict)
+    repo_commits: dict[str, list[str]] = {}
     repo_urls: dict[str, str] = {}
 
     repos = list(user.get_repos(affiliation="owner,organization_member"))
@@ -243,14 +316,13 @@ def generate_summary() -> dict[str, Any]:
         commits = fetch_commits_with_retry(repo, since, user.login)
         if commits:
             messages = [c.commit.message for c in commits]
-            owner, repo_name = repo.full_name.split("/", 1)
-            owner_repos[owner][repo_name] = messages
+            repo_commits[repo.full_name] = messages
             repo_urls[repo.full_name] = repo.html_url
             print(f"  {repo.full_name}: {len(commits)} commits")
 
     # No commits — return minimal result
-    if not owner_repos:
-        msg = "No commits today — well rested! ✅"
+    if not repo_commits:
+        msg = "No work today – hope you enjoyed the rest!"
         footer = (
             "<p>Daily Work Summary initially created by "
             '<a href="https://zero2webmaster.com/kerry-kriger">Zero2Webmaster Founder Dr. Kerry Kriger</a></p>'
@@ -270,14 +342,16 @@ def generate_summary() -> dict[str, Any]:
         }
 
     total_commits = sum(
-        len(msgs) for per_owner in owner_repos.values() for msgs in per_owner.values()
+        len(msgs) for msgs in repo_commits.values()
     )
-    total_repos = sum(len(r) for r in owner_repos.values())
+    total_repos = len(repo_commits)
 
     lines = [
-        f"# Daily Work Summary — {datetime.now(timezone.utc).strftime('%a %b %d, %Y')}",
+        f"# Daily Cursor Work Summary — {datetime.now(timezone.utc).strftime('%a %b %d, %Y')}",
         "",
-        f"**{total_commits} commits** across **{total_repos} repos**",
+        f"**{total_commits} commits** across **{total_repos} active repos** in the last 24 hours.",
+        "",
+        "Here's what moved forward today:",
         "",
         "---",
         "",
@@ -286,41 +360,34 @@ def generate_summary() -> dict[str, Any]:
     structured_repos: list[dict[str, Any]] = []
     ai_summary_bullets: list[str] = []
 
-    for owner in sorted(owner_repos.keys()):
-        repos_data = owner_repos[owner]
-        sorted_repos_list = sorted(
-            repos_data.items(), key=lambda x: len(x[1]), reverse=True
-        )
+    sorted_repos_list = sorted(
+        repo_commits.items(), key=lambda x: len(x[1]), reverse=True
+    )
 
-        lines.append(f"## {owner}")
+    for full_name, messages in sorted_repos_list:
+        owner, repo_name = full_name.split("/", 1)
+        count = len(messages)
+
+        recap_bullets = generate_ai_repo_bullets(full_name, messages)
+        ai_summary = recap_bullets[0].rstrip(".") if recap_bullets else None
+
+        lines.append(f"**{repo_name}** (`{full_name}`)")
+        for bullet in recap_bullets:
+            lines.append(f"• {bullet}")
         lines.append("")
 
-        for repo_name, messages in sorted_repos_list:
-            full_name = f"{owner}/{repo_name}"
-            count = len(messages)
-            commit_label = f"{count} commit{'s' if count != 1 else ''}"
+        if ai_summary:
+            ai_summary_bullets.append(f"- {repo_name}: {ai_summary}")
 
-            ai_summary = generate_ai_repo_summary(messages)
-            lines.append(f"### {repo_name} ({commit_label})")
-            if ai_summary:
-                lines.append(f"*{ai_summary}*")
-                ai_summary_bullets.append(f"- {repo_name}: {ai_summary}")
-            lines.append("")
-
-            for msg in messages:
-                bullet = truncate(msg)
-                lines.append(f"* {bullet}")
-
-            lines.append("")
-
-            structured_repos.append({
-                "full_name": full_name,
-                "url": repo_urls.get(full_name, f"https://github.com/{full_name}"),
-                "owner": owner,
-                "commits": count,
-                "messages": messages,
-                "ai_summary": ai_summary,
-            })
+        structured_repos.append({
+            "full_name": full_name,
+            "url": repo_urls.get(full_name, f"https://github.com/{full_name}"),
+            "owner": owner,
+            "commits": count,
+            "messages": messages,
+            "ai_summary": ai_summary,
+            "summary_bullets": recap_bullets,
+        })
 
     lines.append("---")
     lines.append("")
@@ -597,11 +664,16 @@ def main():
     delivery_methods = parse_delivery_methods(os.environ.get("DELIVERY_METHOD"))
     print(f"\nDelivery methods: {', '.join(sorted(delivery_methods))}")
 
-    # Write summary file (always, for the archive and email step)
-    Path(SUMMARY_DIR).mkdir(exist_ok=True)
-    summary_path = Path(SUMMARY_DIR) / f"daily-summary-{summary_data['date']}.md"
-    summary_path.write_text(summary_data["html"])
-    print(f"Summary written to: {summary_path}")
+    # Write archive markdown (requested daily deliverable)
+    archive_path = Path(f"{summary_data['date']}-GitHub-Daily-Summary.md")
+    archive_path.write_text(summary_data["markdown"])
+    print(f"Markdown archive written to: {archive_path}")
+
+    # Write HTML email body file for workflow email step.
+    Path(".tmp").mkdir(exist_ok=True)
+    email_body_path = Path(".tmp") / f"daily-summary-email-{summary_data['date']}.html"
+    email_body_path.write_text(summary_data["html"])
+    print(f"Email HTML body written to: {email_body_path}")
 
     # Airtable delivery
     if "airtable" in delivery_methods and summary_data["has_commits"]:
@@ -629,6 +701,9 @@ def main():
     if github_output:
         with open(github_output, "a") as fh:
             fh.write(f"send_email={'true' if send_email else 'false'}\n")
+            fh.write("has_summary=true\n")
+            fh.write(f"archive_file={archive_path}\n")
+            fh.write(f"email_html_file={email_body_path}\n")
 
     print(f"\n{'=' * 50}")
     print(summary_data["html"])

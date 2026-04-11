@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-04-11 (v1.5.0)
 
 ---
 
@@ -40,14 +40,17 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
 
+### Decision: Daily summary format aligned to Cursor report style
+**Date:** 2026-04-11
+**Rationale:** The automation requirement now favors project-level recap bullets over raw commit lists, with dual delivery expectations (`YYYY-MM-DD-GitHub-Daily-Summary.md` archive + "Daily Cursor Work - [DATE]" email subject). Updating generator/workflow together prevents format drift.
+
 ---
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Monitor next scheduled run and confirm delivery includes new root archive filename
+2. Validate bullet quality across low-commit and high-commit repos
+3. (Optional) Tune AI prompt if summaries become too generic
 
 ---
 
@@ -58,6 +61,14 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-04-11 - Cursor Daily Summary Alignment (v1.5.0)
+- Updated generator output to write `YYYY-MM-DD-GitHub-Daily-Summary.md` at repo root
+- Replaced owner-grouped raw commit sections with per-repo 3-5 conversational recap bullets
+- Added deterministic fallback bullets when AI output is unavailable or too short
+- Updated no-commit copy to "No work today – hope you enjoyed the rest!"
+- Updated workflow email subject to "Daily Cursor Work - [DATE]"
+- Workflow now consumes script outputs directly for archive/email body files
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic

@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-04-11
+
+### Added
+- New daily archive format: each run now writes `YYYY-MM-DD-GitHub-Daily-Summary.md` at repository root
+- New per-repo recap bullets: 3-5 conversational accomplishment bullets (features/fixes/refactors/progress) sorted by most active repos first
+- Workflow outputs now include `archive_file` and `email_html_file` from the generator script for cleaner handoff between steps
+
+### Changed
+- Summary layout now prioritizes project-level recaps over raw commit-by-commit bullets
+- "No commits" message updated to: `No work today – hope you enjoyed the rest!`
+- Email subject updated to: `Daily Cursor Work - [DATE]`
+- Email step now reads HTML body from script output file (`.tmp/daily-summary-email-YYYY-MM-DD.html`)
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

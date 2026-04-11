@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.4.0
+**Version:** 1.5.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -20,9 +20,9 @@ Automated daily email summaries of your GitHub development work across all repos
 
 1. **GitHub Actions** triggers on your schedule (default: 10 PM EST)
 2. **PyGithub** fetches every commit you made in the last 24 hours across all repos you own
-3. Commits are **grouped by account → repo**, sorted by activity (most commits first)
-4. **Optional AI** generates a one-sentence thematic summary per repo
-5. The result is saved as a **Markdown archive** in `summaries/` and emailed as HTML
+3. Repositories are sorted by activity (most commits first), skipping repos with no commits in the last 24 hours
+4. **Optional AI** generates 3-5 conversational accomplishment bullets per repo
+5. The result is saved as `YYYY-MM-DD-GitHub-Daily-Summary.md` in the repo root and emailed as HTML
 
 ---
 
@@ -350,4 +350,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.4.0 | Last Updated: 2026-03-11*
+*Version: 1.5.0 | Last Updated: 2026-04-11*
