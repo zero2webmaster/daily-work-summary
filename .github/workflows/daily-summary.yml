@@ -27,14 +27,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Set date for email subject
-        id: date
-        env:
-          EMAIL_TIMEZONE: ${{ vars.EMAIL_TIMEZONE }}
-        run: |
-          SUBJECT_DATE=$(TZ="${EMAIL_TIMEZONE:-America/New_York}" date +'%a %b %d')
-          echo "subject_date=$SUBJECT_DATE" >> $GITHUB_OUTPUT
-
       - name: Generate daily summary
         id: summary
         env:
@@ -46,6 +38,7 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DELIVERY_METHOD: ${{ vars.DELIVERY_METHOD }}
+          EMAIL_TIMEZONE: ${{ vars.EMAIL_TIMEZONE }}
           AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID || vars.AIRTABLE_BASE_ID }}
           AIRTABLE_TABLE_SUMMARIES: ${{ secrets.AIRTABLE_TABLE_SUMMARIES || vars.AIRTABLE_TABLE_SUMMARIES }}
@@ -55,26 +48,13 @@ jobs:
         run: |
           python .github/scripts/generate_summary.py
 
-          # Check if summary was generated and has content
-          TODAY=$(date -u +%Y-%m-%d)
-          SUMMARY_FILE="summaries/daily-summary-${TODAY}.md"
-
-          if [ -f "$SUMMARY_FILE" ] && [ -s "$SUMMARY_FILE" ]; then
-            echo "has_summary=true" >> $GITHUB_OUTPUT
-            echo "summary_file=$SUMMARY_FILE" >> $GITHUB_OUTPUT
-          else
-            echo "has_summary=false" >> $GITHUB_OUTPUT
-            # send_email defaults to false when there is no summary
-            echo "send_email=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Commit summary to repo
         if: steps.summary.outputs.has_summary == 'true'
         run: |
           git config user.name "Daily Summary Bot"
           git config user.email "daily-summary@users.noreply.github.com"
           git add summaries/
-          git diff --cached --quiet || git commit -m "Add daily summary for $(date -u +%Y-%m-%d)"
+          git diff --cached --quiet || git commit -m "Add daily summary for ${{ steps.summary.outputs.subject_date }}"
           git push
 
       - name: Send email
@@ -88,7 +68,7 @@ jobs:
           secure: true
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "Daily Work Summary — ${{ steps.date.outputs.subject_date }}"
+          subject: "Daily Cursor Work - ${{ steps.summary.outputs.subject_date }}"
           to: kerry@zero2webmaster.com
           from: ${{ secrets.EMAIL_USERNAME }}
-          html_body: file://${{ steps.summary.outputs.summary_file }}
+          html_body: file://${{ steps.summary.outputs.email_file }}

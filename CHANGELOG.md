@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-04-12
+
+### Changed
+- Summary output now matches the "Daily Cursor Work" format:
+  - global repo sorting by commit volume (most active first)
+  - per-repo conversational 3-5 accomplishment bullets
+  - no-activity message now reads: `No work today - hope you enjoyed the rest!`
+- Summary archive filename now uses `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Generator now writes a separate HTML email body file, so archive remains markdown while email remains rich HTML
+- Email subject changed to `Daily Cursor Work - YYYY-MM-DD`
+- Date handling now respects `EMAIL_TIMEZONE` for both archive naming and subject date
+- Repository scope now explicitly includes both personal repos and the `zero2webmaster` org (configurable via `TARGET_GITHUB_ORGS`)
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

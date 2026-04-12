@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-04-12 (v1.5.0)
 
 ---
 
@@ -40,14 +40,17 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
 
+### Decision: Align output to "Daily Cursor Work" format
+**Date:** 2026-04-12
+**Rationale:** Automation requirement changed to conversational per-repo bullets, global activity sorting, date-stamped archive naming (`YYYY-MM-DD-GitHub-Daily-Summary.md`), and subject line `Daily Cursor Work - YYYY-MM-DD`.
+
 ---
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Monitor next scheduled run on `main` to confirm archive commit + email delivery
+2. Optionally configure `TARGET_GITHUB_ORGS` for additional org scans
+3. Optionally tune AI provider for bullet style preference (`AI_PROVIDER`)
 
 ---
 
@@ -58,6 +61,16 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-04-12 - Daily Cursor Work Format (v1.5.0)
+- Updated `.github/scripts/generate_summary.py` to:
+  - fetch personal + zero2webmaster org repos
+  - sort active repos globally by commit volume
+  - generate conversational 3-5 repo bullets (AI with deterministic fallback)
+  - emit archive markdown + separate email HTML output files
+- Updated workflow subject to `Daily Cursor Work - YYYY-MM-DD`
+- Updated archive naming to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Updated directive + README + changelog + roadmap for new behavior
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic
