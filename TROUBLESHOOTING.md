@@ -42,6 +42,26 @@
 
 ---
 
+### Issue: Local Run Uses `gh` Token and Fails With 403
+
+**Problem:** Running `PAT_GITHUB="$(gh auth token)" python3 .github/scripts/generate_summary.py` fails with:
+`ERROR: PAT_GITHUB has insufficient permissions. Required scopes: repo, read:user`.
+
+**Root Cause:** The local GitHub CLI token is an automation token (often `ghs_...`) that does not carry the broad `repo` + `read:user` scopes needed by the summary script.
+
+**Solution:**
+1. Use a classic or fine-grained PAT with required scopes (`repo`, `read:user`)
+2. Export it explicitly before local run:
+   ```bash
+   export PAT_GITHUB=ghp_xxx
+   python3 .github/scripts/generate_summary.py
+   ```
+3. For scheduled production runs, rely on repository secret `PAT_GITHUB` in GitHub Actions
+
+**Verification:** Local script logs `Authenticated as: <your-username>` and writes summary files in `summaries/`.
+
+---
+
 ### Issue: Email Not Sending
 
 **Problem:** Workflow runs successfully but no email arrives.
