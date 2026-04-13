@@ -26,6 +26,7 @@ Thumbs.db
 # Temporary files
 .tmp/
 *.log
+summaries/*.html
 
 # Chat archives
 .chat_archive/

@@ -33,7 +33,8 @@ Generate a conversational daily summary of all GitHub commits across every zero2
 ## Process
 
 ### Step 1: Authenticate & Fetch Repos
-- Authenticate with PyGithub using `PAT_GITHUB`
+- Authenticate with PyGithub using `PAT_GITHUB` (preferred)
+- Fallback auth path: use `gh auth token` integration token if `PAT_GITHUB` is absent
 - Fetch ALL repos the authenticated user owns (including private)
 - Skip forks (optional — currently included)
 
@@ -98,7 +99,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 |----------|----------|
 | No commits in 24h | "No work today – hope you enjoyed the rest!" |
 | Long commit message | Truncate to 80 chars with `...` |
-| 403 PAT error | Log clear error + link to token settings |
+| 403 PAT error | Log clear error + link to token settings; if GitHub App token is used, run becomes repo-scope only |
 | Empty repo (no commits ever) | Skip silently |
 | API rate limit (5000/hr) | Exponential backoff, max 3 retries |
 | Archived repo | Skip (no recent commits) |

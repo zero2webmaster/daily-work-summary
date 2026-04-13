@@ -23,6 +23,7 @@ Runs as part of the GitHub Actions workflow, but can also be tested
 locally with PAT_GITHUB set in environment or .env file.
 """
 
+import json
 import os
 import re
 import subprocess
@@ -105,6 +106,65 @@ def get_github_client() -> Github:
 
     from github import Auth
     return Github(auth=Auth.Token(token), per_page=100)
+
+
+def _run_gh_api(endpoint: str) -> Any:
+    """Call gh api endpoint and return parsed JSON."""
+    proc = subprocess.run(
+        ["gh", "api", endpoint],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    return json.loads(proc.stdout)
+
+
+def _collect_activity_from_gh_integration(since: datetime) -> list[dict[str, Any]]:
+    """Fallback data collector for restricted integration tokens."""
+    print("Falling back to gh integration API collector")
+    repos_payload = _run_gh_api("installation/repositories?per_page=100")
+    repos = repos_payload.get("repositories", [])
+    print(f"Integration can access {len(repos)} repositories")
+
+    active_repos: list[dict[str, Any]] = []
+    since_iso = since.isoformat().replace("+00:00", "Z")
+
+    for repo in repos:
+        if repo.get("archived"):
+            continue
+        full_name = repo.get("full_name")
+        if not full_name:
+            continue
+
+        commits_payload = _run_gh_api(
+            f"repos/{full_name}/commits?since={since_iso}&per_page=100"
+        )
+        if not commits_payload:
+            continue
+
+        messages = [
+            c.get("commit", {}).get("message", "")
+            for c in commits_payload
+            if c.get("commit", {}).get("message")
+        ]
+        if not messages:
+            continue
+
+        owner, repo_name = full_name.split("/", 1)
+        active_repos.append(
+            {
+                "full_name": full_name,
+                "owner": owner,
+                "repo_name": repo_name,
+                "url": repo.get("html_url", f"https://github.com/{full_name}"),
+                "commits": len(messages),
+                "messages": messages,
+            }
+        )
+        print(f"  {full_name}: {len(messages)} commits")
+
+    return active_repos
 
 
 def truncate(msg: str, length: int = MAX_MSG_LENGTH) -> str:
@@ -358,39 +418,45 @@ def generate_summary() -> dict[str, Any]:
         html, markdown, date, total_commits, total_repos,
         repos (list of dicts), ai_summaries_text, has_commits
     """
-    g = get_github_client()
-    user = g.get_user()
-    print(f"Authenticated as: {user.login}")
-
     since = datetime.now(timezone.utc) - timedelta(hours=24)
     report_now = _get_report_now()
     today = report_now.strftime("%Y-%m-%d")
     print(f"Fetching commits since: {since.isoformat()}")
 
     active_repos: list[dict[str, Any]] = []
+    g = get_github_client()
 
-    repos = list(user.get_repos(affiliation="owner,organization_member"))
-    print(f"Found {len(repos)} repositories")
+    try:
+        user = g.get_user()
+        print(f"Authenticated as: {user.login}")
 
-    for repo in repos:
-        if repo.archived:
-            continue
+        repos = list(user.get_repos(affiliation="owner,organization_member"))
+        print(f"Found {len(repos)} repositories")
 
-        commits = fetch_commits_with_retry(repo, since, user.login)
-        if commits:
-            messages = [c.commit.message for c in commits]
-            owner, repo_name = repo.full_name.split("/", 1)
-            active_repos.append(
-                {
-                    "full_name": repo.full_name,
-                    "owner": owner,
-                    "repo_name": repo_name,
-                    "url": repo.html_url,
-                    "commits": len(messages),
-                    "messages": messages,
-                }
-            )
-            print(f"  {repo.full_name}: {len(commits)} commits")
+        for repo in repos:
+            if repo.archived:
+                continue
+
+            commits = fetch_commits_with_retry(repo, since, user.login)
+            if commits:
+                messages = [c.commit.message for c in commits]
+                owner, repo_name = repo.full_name.split("/", 1)
+                active_repos.append(
+                    {
+                        "full_name": repo.full_name,
+                        "owner": owner,
+                        "repo_name": repo_name,
+                        "url": repo.html_url,
+                        "commits": len(messages),
+                        "messages": messages,
+                    }
+                )
+                print(f"  {repo.full_name}: {len(commits)} commits")
+    except GithubException as exc:
+        if exc.status == 403:
+            active_repos = _collect_activity_from_gh_integration(since)
+        else:
+            raise
 
     # No commits — return minimal result
     if not active_repos:
@@ -710,20 +776,7 @@ def main():
     print("Daily Cursor Work Summary Generator")
     print("=" * 50)
 
-    try:
-        summary_data = generate_summary()
-    except GithubException as e:
-        if e.status == 401:
-            print("ERROR: PAT_GITHUB is invalid or expired.")
-            print("  Regenerate at: https://github.com/settings/tokens")
-            sys.exit(1)
-        elif e.status == 403:
-            print("ERROR: PAT_GITHUB has insufficient permissions.")
-            print("  Required scopes: repo, read:user")
-            print("  Update at: https://github.com/settings/tokens")
-            sys.exit(1)
-        else:
-            raise
+    summary_data = generate_summary()
 
     # Determine delivery methods (comma-separated, 'both' = email+airtable)
     delivery_methods = parse_delivery_methods(os.environ.get("DELIVERY_METHOD"))
