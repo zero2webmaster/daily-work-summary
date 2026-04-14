@@ -1,12 +1,13 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-04-14 (v1.5.0)
 
 ---
 
 ## 🚧 Blockers
 
-None currently.
+- Full-account cross-repo scan depends on `PAT_GITHUB` having `repo` + `read:user`.
+- Restricted GitHub App/integration tokens cannot access `/user`; fallback now scans installation-visible repos only.
 
 ---
 
@@ -40,24 +41,41 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
 
+### Decision: Daily output contract aligned to automation prompt
+**Date:** 2026-04-14
+**Rationale:** Summary output now matches required naming and tone contract: archive file `YYYY-MM-DD-GitHub-Daily-Summary.md`, subject `Daily Cursor Work - [DATE]`, and repo-level accomplishment bullets.
+
+### Decision: Add installation-token fallback path
+**Date:** 2026-04-14
+**Rationale:** Some automation environments provide restricted GitHub App tokens (`ghs_...`) that cannot call `/user`. Optional fallback allows cron runs to continue by scanning `/installation/repositories` and per-repo commit endpoints.
+
 ---
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Ensure production `PAT_GITHUB` secret has `repo` + `read:user` for full personal + org scan
+2. Run one manual GitHub Actions test to verify email content and subject in inbox
+3. If restricted integration token is expected in cron environment, set `ALLOW_INTEGRATION_INSTALLATION_FALLBACK=true`
+4. Optional: configure Airtable/Slack/Discord channels for multi-destination delivery testing
 
 ---
 
 ## 🔧 Tech Debt
 
 - Version drift existed (VERSION=1.2.6, README=1.2.3) — fixed in v1.3.0
+- Grammar polish opportunity: singular/plural wording for "1 commits" in generated summary header.
 
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-04-14 - Daily Contract Alignment + Fallback (v1.5.0)
+- Updated summary format to repo-level accomplishment bullets (3-5 target bullets)
+- Changed archive naming to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Changed email subject to `Daily Cursor Work - YYYY-MM-DD`
+- Standardized no-work message to `No work today - hope you enjoyed the rest!`
+- Added optional fallback for restricted GitHub integration tokens using installation repositories API
+- Generated and committed archive: `summaries/2026-04-13-GitHub-Daily-Summary.md`
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic
