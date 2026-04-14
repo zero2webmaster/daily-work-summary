@@ -100,7 +100,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 
 | Scenario | Handling |
 |----------|----------|
-| No commits in 24h | "No work today – hope you enjoyed the rest!" |
+| No commits in 24h | "No work today - hope you enjoyed the rest!" |
 | Long commit message | Truncate to 80 chars with `...` |
 | 403 PAT error | Log clear error + link to token settings |
 | Empty repo (no commits ever) | Skip silently |

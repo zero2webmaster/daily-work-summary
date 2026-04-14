@@ -25,6 +25,7 @@ locally with PAT_GITHUB set in environment or .env file.
 
 import os
 import re
+import subprocess
 import sys
 import time
 from datetime import datetime, timedelta, timezone
@@ -44,15 +45,22 @@ except ImportError:
     print("ERROR: markdown not installed. Run: pip install markdown")
     sys.exit(1)
 
+try:
+    import requests
+except ImportError:
+    print("ERROR: requests not installed. Run: pip install requests")
+    sys.exit(1)
+
 MAX_MSG_LENGTH = 80
 MAX_RETRIES = 3
 SUMMARY_DIR = "summaries"
 EMAIL_PREVIEW_DIR = ".tmp"
 HTML_FONT_SIZE = "18px"
 NO_WORK_MESSAGE = "No work today – hope you enjoyed the rest!"
+GITHUB_API_BASE = "https://api.github.com"
 
 
-def get_github_client() -> Github:
+def get_github_token() -> str:
     token = os.environ.get("PAT_GITHUB")
     if not token:
         try:
@@ -63,12 +71,26 @@ def get_github_client() -> Github:
             pass
 
     if not token:
+        try:
+            token = subprocess.check_output(
+                ["gh", "auth", "token"],
+                text=True,
+                stderr=subprocess.DEVNULL,
+            ).strip()
+        except Exception:
+            token = None
+
+    if not token:
         print("ERROR: PAT_GITHUB not set.")
         print("  GitHub Actions: Add PAT_GITHUB to repository secrets")
         print("  Local testing:  export PAT_GITHUB=ghp_your_token")
         print("  Create token:   https://github.com/settings/tokens")
         sys.exit(1)
 
+    return token
+
+
+def get_github_client(token: str) -> Github:
     from github import Auth
     return Github(auth=Auth.Token(token), per_page=100)
 
