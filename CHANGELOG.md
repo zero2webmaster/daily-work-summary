@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Archive filename format now matches `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
-- No-work message standardized to: `No work today – hope you enjoyed the rest!`
+- No-work message standardized to: `No work today - hope you enjoyed the rest!`
 - Email subject updated to: `Daily Cursor Work - YYYY-MM-DD`
 - Markdown archive now stores true markdown content (HTML email body written separately to `.tmp/`)
 - Repo sections are now sorted globally by commit count and rendered as project accomplishment bullets (instead of raw commit-by-commit lists)

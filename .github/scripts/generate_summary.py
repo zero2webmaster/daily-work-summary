@@ -56,7 +56,7 @@ MAX_RETRIES = 3
 SUMMARY_DIR = "summaries"
 EMAIL_PREVIEW_DIR = ".tmp"
 HTML_FONT_SIZE = "18px"
-NO_WORK_MESSAGE = "No work today – hope you enjoyed the rest!"
+NO_WORK_MESSAGE = "No work today - hope you enjoyed the rest!"
 GITHUB_API_BASE = "https://api.github.com"
 
 
@@ -126,6 +126,112 @@ def fetch_commits_with_retry(repo, since, author, retries=MAX_RETRIES):
                 print(f"  Error fetching {repo.full_name}: {e.status} {e.data}")
                 return []
     return []
+
+
+def _safe_json(response: "requests.Response") -> Any:
+    try:
+        return response.json()
+    except ValueError:
+        return {}
+
+
+def collect_repos_via_installation_api(token: str) -> list[dict[str, Any]]:
+    """Collect repositories available to a GitHub App installation token."""
+    repos: list[dict[str, Any]] = []
+    page = 1
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+    }
+    while True:
+        resp = requests.get(
+            f"{GITHUB_API_BASE}/installation/repositories",
+            headers=headers,
+            params={"per_page": 100, "page": page},
+            timeout=20,
+        )
+        if resp.status_code >= 400:
+            data = _safe_json(resp)
+            message = data.get("message", "Unknown error")
+            raise RuntimeError(
+                f"Installation repo listing failed (HTTP {resp.status_code}): {message}"
+            )
+
+        payload = _safe_json(resp)
+        repo_batch = payload.get("repositories", [])
+        repos.extend(repo_batch)
+        if len(repo_batch) < 100:
+            break
+        page += 1
+    return repos
+
+
+def fetch_commits_via_rest_with_retry(
+    token: str,
+    repo_full_name: str,
+    since: datetime,
+    author_login: str | None,
+    retries: int = MAX_RETRIES,
+) -> list[str]:
+    """Fetch commit messages via REST API for integration-token fallback."""
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+    }
+    since_iso = since.isoformat()
+    messages: list[str] = []
+
+    for attempt in range(retries):
+        try:
+            page = 1
+            messages.clear()
+            while True:
+                resp = requests.get(
+                    f"{GITHUB_API_BASE}/repos/{repo_full_name}/commits",
+                    headers=headers,
+                    params={"since": since_iso, "per_page": 100, "page": page},
+                    timeout=25,
+                )
+                if resp.status_code == 409:
+                    return []
+                if resp.status_code == 403 and attempt < retries - 1:
+                    wait = 2 ** (attempt + 1)
+                    print(f"  403 error on {repo_full_name}, retrying in {wait}s...")
+                    time.sleep(wait)
+                    break
+                if resp.status_code >= 400:
+                    data = _safe_json(resp)
+                    message = data.get("message", "Unknown error")
+                    print(f"  Error fetching {repo_full_name}: HTTP {resp.status_code} {message}")
+                    return []
+
+                commits = _safe_json(resp)
+                if not isinstance(commits, list):
+                    return []
+
+                for commit in commits:
+                    commit_author = (commit.get("author") or {}).get("login")
+                    if author_login and commit_author != author_login:
+                        continue
+                    msg = ((commit.get("commit") or {}).get("message") or "").strip()
+                    if msg:
+                        messages.append(msg)
+
+                if len(commits) < 100:
+                    return messages
+                page += 1
+            else:
+                return messages
+        except requests.RequestException as exc:
+            if attempt < retries - 1:
+                wait = 2 ** (attempt + 1)
+                print(f"  Network error on {repo_full_name} ({exc}), retrying in {wait}s...")
+                time.sleep(wait)
+            else:
+                print(f"  Failed fetching {repo_full_name} after {retries} retries: {exc}")
+                return []
+
+    return messages
 
 
 # AI provider config: (api_key_env, model). Gemini also accepts GEMINI_API_KEY.
@@ -312,36 +418,83 @@ def generate_summary() -> dict[str, Any]:
         html, markdown, date, total_commits, total_repos,
         repos (list of dicts), ai_summaries_text, has_commits
     """
-    g = get_github_client()
-    user = g.get_user()
-    print(f"Authenticated as: {user.login}")
-
+    token = get_github_token()
+    g = get_github_client(token)
     since = datetime.now(timezone.utc) - timedelta(hours=24)
     report_now_local, today = get_report_date()
     print(f"Fetching commits since: {since.isoformat()}")
 
     repo_summaries: list[dict[str, Any]] = []
+    allow_installation_fallback = (
+        os.environ.get("ALLOW_INTEGRATION_INSTALLATION_FALLBACK", "").lower() == "true"
+    )
 
-    repos = list(user.get_repos(affiliation="owner,organization_member"))
-    print(f"Found {len(repos)} repositories")
+    repos_data: list[dict[str, Any]] = []
+    author_login: str | None = None
+    using_installation_fallback = False
+    try:
+        user = g.get_user()
+        author_login = user.login
+        print(f"Authenticated as: {user.login}")
+        repos = list(user.get_repos(affiliation="owner,organization_member"))
+        print(f"Found {len(repos)} repositories")
+        for repo in repos:
+            repos_data.append({
+                "full_name": repo.full_name,
+                "repo_name": repo.name,
+                "url": repo.html_url,
+                "owner": repo.owner.login,
+                "archived": bool(repo.archived),
+                "repo_obj": repo,
+            })
+    except GithubException as exc:
+        if exc.status != 403 or not allow_installation_fallback:
+            raise
+        print("GitHub token cannot access /user endpoint; using installation repository fallback")
+        using_installation_fallback = True
+        repos = collect_repos_via_installation_api(token)
+        print(f"Found {len(repos)} installation repositories")
+        author_login = (os.environ.get("SUMMARY_AUTHOR_LOGIN") or "").strip() or None
+        for repo in repos:
+            full_name = repo.get("full_name")
+            if not full_name:
+                continue
+            owner, repo_name = full_name.split("/", 1)
+            repos_data.append({
+                "full_name": full_name,
+                "repo_name": repo_name,
+                "url": repo.get("html_url", f"https://github.com/{full_name}"),
+                "owner": owner,
+                "archived": bool(repo.get("archived")),
+            })
 
-    for repo in repos:
-        if repo.archived:
+    for repo_data in repos_data:
+        if repo_data.get("archived"):
             continue
 
-        commits = fetch_commits_with_retry(repo, since, user.login)
-        if commits:
+        if using_installation_fallback:
+            messages = fetch_commits_via_rest_with_retry(
+                token=token,
+                repo_full_name=repo_data["full_name"],
+                since=since,
+                author_login=author_login,
+            )
+        else:
+            commits = fetch_commits_with_retry(repo_data["repo_obj"], since, author_login)
             messages = [c.commit.message for c in commits]
-            owner, repo_name = repo.full_name.split("/", 1)
-            repo_summaries.append({
-                "full_name": repo.full_name,
-                "repo_name": repo_name,
-                "url": repo.html_url,
-                "owner": owner,
-                "commits": len(messages),
-                "messages": messages,
-            })
-            print(f"  {repo.full_name}: {len(commits)} commits")
+
+        if not messages:
+            continue
+
+        repo_summaries.append({
+            "full_name": repo_data["full_name"],
+            "repo_name": repo_data["repo_name"],
+            "url": repo_data["url"],
+            "owner": repo_data["owner"],
+            "commits": len(messages),
+            "messages": messages,
+        })
+        print(f"  {repo_data['full_name']}: {len(messages)} commits")
 
     # No commits — return minimal result
     if not repo_summaries:

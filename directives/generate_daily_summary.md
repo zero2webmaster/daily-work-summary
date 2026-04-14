@@ -53,7 +53,7 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
   ```
 - Deterministic fallback uses cleaned commit first-lines if AI is unavailable
 - Truncate individual commit messages to 80 characters before summarization
-- If zero commits across all repos: "No work today – hope you enjoyed the rest!"
+- If zero commits across all repos: "No work today - hope you enjoyed the rest!"
 
 ### Step 4: Save Markdown Archive
 - Write to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
