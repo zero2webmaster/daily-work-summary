@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-04-14
+
+### Added
+- Per-repository accomplishment summaries now target 3-5 bullets in a conversational/professional tone
+- AI summarization prompt updated to generate accomplishment bullets directly (with deterministic fallback when no AI key is configured)
+- Workflow output fields from `generate_summary.py`: `has_summary`, `summary_file`, and `archive_file`
+
+### Changed
+- Archive filename format now matches `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- No-work message standardized to: `No work today – hope you enjoyed the rest!`
+- Email subject updated to: `Daily Cursor Work - YYYY-MM-DD`
+- Markdown archive now stores true markdown content (HTML email body written separately to `.tmp/`)
+- Repo sections are now sorted globally by commit count and rendered as project accomplishment bullets (instead of raw commit-by-commit lists)
+- Report date now honors `EMAIL_TIMEZONE` for filename and subject alignment
+
+### Fixed
+- Corrected workflow summary-file detection by reading script outputs directly instead of hardcoded path assumptions
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
