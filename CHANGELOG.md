@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-04-15
+
+### Changed
+- Daily archive filename now follows `YYYY-MM-DD-GitHub-Daily-Summary.md` in repo root
+- Email subject now follows `Daily Cursor Work - YYYY-MM-DD`
+- Summary body format now lists repos globally (most active first) with 3-5 conversational highlight bullets per repo
+- No-commit message updated to: `No work today - hope you enjoyed the rest!`
+- Workflow now reads summary outputs directly from `generate_summary.py` (`has_summary`, `summary_file`, `archive_file`)
+
+### Added
+- HTML email body output file: `summaries/daily-summary-YYYY-MM-DD.html`
+- AI-powered per-repo highlight generation for 3-5 bullet summaries with deterministic fallback when AI keys are unavailable
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
