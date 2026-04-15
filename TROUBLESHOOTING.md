@@ -1,7 +1,7 @@
 # Troubleshooting Guide
 
 **Project:** Daily Work Summary
-**Last Updated:** 2026-03-11
+**Last Updated:** 2026-04-15
 
 ---
 
@@ -39,6 +39,24 @@
 4. Classic tokens: check expiration date
 
 **Verification:** Run workflow manually, check logs for "Authenticated as: <username>"
+
+---
+
+### Issue: Local Cursor Run Uses Repo-Scoped Token
+
+**Problem:** Running `generate_summary.py` locally in Cursor with `PAT_GITHUB="$(gh auth token)"` fails with:
+`Request GET /user failed with 403: Forbidden`
+
+**Root Cause:** The Cursor `gh` integration token is repository-scoped and does not include broad `read:user` + `repo` access to all personal/org repositories.
+
+**Solution:**
+1. Prefer running daily generation in GitHub Actions where `PAT_GITHUB` secret has required scopes
+2. For local/manual runs, export a classic or fine-grained token with:
+   - `repo` access to all needed repositories
+   - `read:user`
+3. Keep `gh` token usage for read-only repo operations (logs, runs, metadata), not cross-account summary generation
+
+**Verification:** `python3 .github/scripts/generate_summary.py` logs `Authenticated as: <your-login>` and scans expected repo count.
 
 ---
 
