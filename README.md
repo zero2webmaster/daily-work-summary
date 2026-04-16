@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.4.0
+**Version:** 1.5.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -19,42 +19,36 @@ Automated daily email summaries of your GitHub development work across all repos
 ## How It Works
 
 1. **GitHub Actions** triggers on your schedule (default: 10 PM EST)
-2. **PyGithub** fetches every commit you made in the last 24 hours across all repos you own
-3. Commits are **grouped by account → repo**, sorted by activity (most commits first)
-4. **Optional AI** generates a one-sentence thematic summary per repo
-5. The result is saved as a **Markdown archive** in `summaries/` and emailed as HTML
+2. **PyGithub** fetches every commit you made in the last 24 hours across all repos you own (PAT or GitHub CLI integration fallback)
+3. Repos are sorted globally by activity (most commits first)
+4. Each active repo gets **3-5 conversational bullets** (AI when configured, deterministic fallback otherwise)
+5. The result is saved as `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md` and emailed as HTML
 
 ---
 
 ## How AI Summaries Work
 
-When an AI provider key is configured, each repo's commit messages are sent to your chosen model with this prompt:
+When an AI provider key is configured, each repo's commit messages are sent to your chosen model to produce 3-5 concise accomplishment bullets:
 
-> *"In one sentence, describe the type of development work from these git commits. Be concise and professional. Do not list commits; summarize the overall theme."*
+> *"Create 3-5 concise bullets describing accomplishments from these commits, focusing on feature delivery, refactors, bug fixes, and outcomes."*
 
-**Without AI** — you get the raw commit list:
-
-```
-### my-website
-
-**3 commits**
-
-* Add DeepL caching for translations
-* Fix SEO meta tags on homepage
-* Refactor email queue handler
-```
-
-**With AI** — each repo gets a one-sentence summary above the commit list:
+**Without AI** — deterministic fallback still creates 3-5 summary bullets:
 
 ```
-### my-website
-*Performance improvements, SEO fixes, and backend refactoring across translations and email.*
+## my-org/my-website
+- Feature progress: Added DeepL caching for translation responses
+- Bug-fix progress: Fixed SEO meta tags and canonical handling
+- Refactor progress: Reworked email queue internals for reliability
+- Accomplishment: shipped 3 commits in the last 24 hours
+```
 
-**3 commits**
+**With AI** — each repo gets polished conversational bullet summaries:
 
-* Add DeepL caching for translations
-* Fix SEO meta tags on homepage
-* Refactor email queue handler
+```
+## my-org/my-website
+- Translation performance improved via DeepL caching and smarter retries
+- SEO stability improved with meta/hreflang fixes
+- Queue internals were refactored to reduce delivery edge-case failures
 ```
 
 Each AI call uses a small/fast model (Claude 3.5 Haiku, GPT-4o-mini, or Gemini Flash), so costs are negligible — typically under $0.01/day even across many repos.
@@ -350,4 +344,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.4.0 | Last Updated: 2026-03-11*
+*Version: 1.5.0 | Last Updated: 2026-04-16*

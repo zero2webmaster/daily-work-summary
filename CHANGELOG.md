@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-04-16
+
+### Added
+- GitHub CLI integration fallback (`gh auth token`) for local/automation runs where `PAT_GITHUB` is not injected as an environment variable
+- New summary archive outputs per run:
+  - `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md` (markdown)
+  - `summaries/YYYY-MM-DD-GitHub-Daily-Summary.html` (email HTML source)
+- Workflow output fields from generator: `has_summary`, `summary_markdown_file`, `summary_html_file`
+
+### Changed
+- Summary format now matches the Daily Cursor Work spec:
+  - Header: `Daily Cursor Work - [DATE]`
+  - Per-repo structure: `## owner/repo` with **3-5 conversational bullets**
+  - Repos globally sorted by commit count (most active first)
+- No-commit message now reads: `No work today – hope you enjoyed the rest!`
+- Email subject changed to `Daily Cursor Work - [DATE]`
+- Workflow now reads generated summary file paths from script outputs instead of reconstructing legacy file names
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

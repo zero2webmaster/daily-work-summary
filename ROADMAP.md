@@ -137,4 +137,29 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
-*Last Updated: 2026-03-11*
+## Phase 6: Daily Cursor Work Format Alignment ✅
+**Status:** Complete (2026-04-16)
+**Estimated Time:** 15 minutes
+
+**Tasks:**
+- [x] Switch summary generation to produce per-repo 3-5 conversational accomplishment bullets
+- [x] Keep repos sorted by commit count and skip repos with zero commits
+- [x] Add GitHub CLI token fallback so automation can run with integration auth when PAT isn't injected
+- [x] Save archive file as `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- [x] Add HTML companion file for email body and update workflow outputs
+- [x] Update workflow email subject to `Daily Cursor Work - [DATE]`
+
+**Verification:**
+```bash
+python3 -m py_compile .github/scripts/generate_summary.py
+python3 -m py_compile .github/scripts/webhook_client.py
+python3 -m py_compile .github/scripts/airtable_client.py
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+python3 .github/scripts/generate_summary.py
+```
+
+**Dependencies:** Phases 1-5 (format and delivery refinement)
+
+---
+
+*Last Updated: 2026-04-16*

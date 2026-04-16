@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-04-16 (v1.5.0)
 
 ---
 
@@ -44,10 +44,9 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Monitor next scheduled run on `main` to confirm end-to-end delivery in production context
+2. Optionally configure AI provider key to improve bullet quality from deterministic fallback to model-generated summaries
+3. Verify Airtable table field fit for expanded conversational bullets in `Summary` field
 
 ---
 
@@ -58,6 +57,15 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-04-16 - Daily Cursor Work Format + GH CLI Fallback (v1.5.0)
+- Updated `.github/scripts/generate_summary.py` to support GitHub CLI token fallback (`gh auth token`) when `PAT_GITHUB` is not injected in local automation environments
+- Changed output format to conversational per-repo bullets (3–5 bullets each), sorted globally by commit volume
+- Implemented no-work response text per request: `No work today – hope you enjoyed the rest!`
+- Added dual file output with requested naming: `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md` and `.html`
+- Updated workflow email subject to requested format: `Daily Cursor Work - [DATE]`
+- Updated workflow summary-file handling to use script outputs instead of hardcoded legacy filename pattern
+- Updated directive documentation and roadmap with completed Step 6
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic
