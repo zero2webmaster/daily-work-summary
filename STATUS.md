@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-04-19 (v1.5.0)
 
 ---
 
@@ -58,6 +58,13 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-04-19 - Daily Automation Output Format Alignment (v1.5.0)
+- Updated summary output format to match automation requirements: flat repo sections sorted by commit count, 3-5 conversational bullets, and exact no-work message text
+- Updated archive path to repository root with filename format `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Updated workflow subject to `Daily Cursor Work - [DATE]` using script-provided date output
+- Updated workflow commit step to add only the generated summary archive file
+- Updated directive/README roadmap docs to reflect new archive naming and subject format
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic

@@ -137,4 +137,25 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
-*Last Updated: 2026-03-11*
+## Phase 6: Daily Summary Format Alignment ✅
+**Status:** Complete (2026-04-19)
+**Estimated Time:** 20 minutes
+
+**Tasks:**
+- [x] Update archive naming to root-level `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- [x] Ensure markdown archive is plain markdown while email uses HTML output
+- [x] Format per-repo sections as conversational bullets (3-5), sorted by commit count descending
+- [x] Set no-work message to exact phrase: "No work today – hope you enjoyed the rest!"
+- [x] Update workflow subject format to `Daily Cursor Work - [DATE]`
+
+**Verification:**
+```bash
+python3 -m py_compile .github/scripts/generate_summary.py
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+```
+
+**Dependencies:** Phases 1-5
+
+---
+
+*Last Updated: 2026-04-19*

@@ -22,6 +22,17 @@ All notable changes to this project will be documented in this file.
 - Workflow: `SLACK_WEBHOOK_URL` and `DISCORD_WEBHOOK_URL` env vars passed to generate step
 - README Variables table updated with full `DELIVERY_METHOD` options and examples table
 
+## [1.5.0] - 2026-04-19
+
+### Changed
+- Summary archive filename now matches automation requirement: `YYYY-MM-DD-GitHub-Daily-Summary.md` in the repository root
+- `generate_summary.py` now writes markdown archives (for git history) and separate HTML files in `.tmp/` for email delivery
+- Daily summary format now uses flat, repo-first sections sorted by commit count with 3-5 conversational bullets per repository
+- No-commit output now uses the exact required phrase: "No work today – hope you enjoyed the rest!"
+- Email subject updated to `Daily Cursor Work - YYYY-MM-DD`
+- Workflow now stages only the generated daily markdown archive instead of an entire directory
+- Summary script now emits `has_summary`, `summary_file`, `summary_html_file`, and `subject_date` outputs directly for workflow consumption
+
 ## [1.3.0] - 2026-03-11
 
 ### Added
