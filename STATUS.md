@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-04-29 (v1.4.6)
 
 ---
 
@@ -44,10 +44,10 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Monitor next scheduled GitHub Actions run on `main` to confirm `PAT_GITHUB` and Gmail secrets deliver the summary email.
+2. Test with `DELIVERY_METHOD=both` via manual workflow run if Airtable delivery is still desired.
+3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`.
+4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`.
 
 ---
 
@@ -58,6 +58,14 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-04-29 - Cursor Daily Summary Format (v1.4.6)
+- Updated archive naming to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Archive files are now Markdown, with a temporary `.tmp/*.html` body for email delivery
+- Email subject now matches `Daily Cursor Work - [DATE]`
+- Summary output now uses globally most-active repo order and 3-5 conversational bullets per repo
+- No-work days now say: "No work today – hope you enjoyed the rest!"
+- Local cloud run could not access user-wide GitHub data because the available `gh` token is repository-scoped; the scheduled workflow must use configured `PAT_GITHUB`/email secrets.
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.6] - 2026-04-29
+
+### Changed
+- Daily archive filename now matches the cron automation request: `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Summary archives are written as Markdown, with a separate temporary HTML file used for email delivery
+- Email subject changed to `Daily Cursor Work - [DATE]`
+- Repos are sorted globally by commit count, not nested under owner headers
+- Repo sections now use 3-5 conversational bullets summarizing features, refactors, bug fixes, and accomplishments
+- No-work message changed to: "No work today – hope you enjoyed the rest!"
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

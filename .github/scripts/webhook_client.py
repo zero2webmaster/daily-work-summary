@@ -99,10 +99,8 @@ def _build_slack_repo_text(repos: list[dict[str, Any]]) -> str:
         repo_name = repo["full_name"].split("/", 1)[-1]
         url = repo.get("url", "")
         lines.append(f"*<{url}|{repo_name}>* ({label})")
-        if repo.get("ai_summary"):
-            lines.append(f"_{repo['ai_summary']}_")
-        for msg in repo["messages"]:
-            first_line = msg.split("\n")[0].strip()
+        for bullet in repo.get("summary_bullets") or repo["messages"]:
+            first_line = bullet.split("\n")[0].strip()
             if len(first_line) > 80:
                 first_line = first_line[:77] + "..."
             lines.append(f"• {first_line}")
@@ -153,12 +151,10 @@ def send_slack(webhook_url: str, summary_data: dict[str, Any]) -> bool:
             url = repo.get("url", "")
 
             header_text = f"*<{url}|{repo_name}>* ({label})"
-            if repo.get("ai_summary"):
-                header_text += f"\n_{repo['ai_summary']}_"
 
             commit_lines = []
-            for msg in repo["messages"]:
-                first_line = msg.split("\n")[0].strip()
+            for bullet in repo.get("summary_bullets") or repo["messages"]:
+                first_line = bullet.split("\n")[0].strip()
                 if len(first_line) > 80:
                     first_line = first_line[:77] + "..."
                 commit_lines.append(f"• {first_line}")
@@ -215,10 +211,8 @@ def _build_discord_description(repos: list[dict[str, Any]]) -> str:
         url = repo.get("url", "")
         full_name = repo["full_name"]
         lines.append(f"**[{full_name}]({url})** ({label})")
-        if repo.get("ai_summary"):
-            lines.append(f"*{repo['ai_summary']}*")
-        for msg in repo["messages"]:
-            first_line = msg.split("\n")[0].strip()
+        for bullet in repo.get("summary_bullets") or repo["messages"]:
+            first_line = bullet.split("\n")[0].strip()
             if len(first_line) > 80:
                 first_line = first_line[:77] + "..."
             lines.append(f"• {first_line}")
