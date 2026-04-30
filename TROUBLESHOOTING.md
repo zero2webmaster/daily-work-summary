@@ -1,7 +1,7 @@
 # Troubleshooting Guide
 
 **Project:** Daily Work Summary
-**Last Updated:** 2026-03-11
+**Last Updated:** 2026-04-30
 
 ---
 
@@ -42,6 +42,21 @@
 
 ---
 
+### Issue: Cursor/GitHub App Token Can Only See This Repository
+
+**Problem:** Running the daily summary from a Cursor Cloud automation with `PAT_GITHUB="$(gh auth token)"` fails on `GET /user` with `403 Forbidden`, or `gh repo list zero2webmaster` only returns `zero2webmaster/daily-work-summary`.
+
+**Root Cause:** The Cursor GitHub integration token is a repository-scoped GitHub App token. It is sufficient for git operations in this repo, but it does not have the account-wide `repo` + `read:user` access needed to enumerate all personal and Zero2Webmaster repositories.
+
+**Solution:**
+1. Run the production GitHub Actions workflow with the `PAT_GITHUB` repository secret configured.
+2. Use a classic PAT or fine-grained token that can read all target personal and organization repositories.
+3. Do not rely on the local `gh auth token` inside Cursor Cloud for the all-repos scan.
+
+**Verification:** The workflow log should show `Authenticated as: <github-user>` followed by `Found <N> repositories`, where `N` is more than just this repository.
+
+---
+
 ### Issue: Email Not Sending
 
 **Problem:** Workflow runs successfully but no email arrives.
@@ -79,6 +94,7 @@
 | Error | Likely Cause | Quick Fix |
 |-------|-------------|-----------|
 | 403 on API calls | PAT expired/wrong scopes | Regenerate PAT with `repo` + `read:user` |
+| `gh auth token` sees one repo | Cursor GitHub App token is repo-scoped | Use `PAT_GITHUB` workflow secret instead |
 | No email received | Wrong App Password | Regenerate at myaccount.google.com/apppasswords |
 | Push fails in workflow | Missing write permissions | Settings → Actions → "Read and write permissions" |
 | Cron not firing | Workflow not on `main` | Merge to `main` branch |
@@ -92,5 +108,6 @@
 - GitHub cron uses UTC time: `0 3 * * *` = 3:00 AM UTC = 10:00 PM EST
 - PyGithub's `get_commits(since=...)` is inclusive of the `since` timestamp
 - `workflow_dispatch` is essential for testing without waiting for cron
+- Cursor Cloud's built-in GitHub token is not a replacement for the account-wide `PAT_GITHUB` secret.
 
 ---

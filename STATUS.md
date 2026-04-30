@@ -6,7 +6,7 @@
 
 ## 🚧 Blockers
 
-None currently.
+- Local Cloud run cannot generate the all-repo summary or send email because only the restricted Cursor GitHub token is available. `gh auth token` returns 403 on `GET /user` and can only see `zero2webmaster/daily-work-summary`; no `PAT_GITHUB`, `EMAIL_USERNAME`, or `EMAIL_PASSWORD` env vars are present in the Cloud shell. The production GitHub Actions workflow still expects repo secrets to provide these values.
 
 ---
 
@@ -44,10 +44,11 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Ensure the repository has `PAT_GITHUB` with `repo` + `read:user`, plus `EMAIL_USERNAME` and `EMAIL_PASSWORD`, before expecting Cloud-local or Actions email delivery
+2. Manually run the Daily Work Summary workflow after merging v1.4.6 to verify the new filename and subject with repository secrets
+3. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
+4. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
+5. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
 
 ---
 
@@ -64,6 +65,8 @@ None currently.
 - Email subject now uses `Daily Cursor Work - YYYY-MM-DD`
 - Generator writes Markdown for the archive and separate HTML for email rendering
 - Repo sections now use 3-5 summary bullets per project, sorted globally by commit count
+- Verification passed: Python compile checks and workflow YAML parse
+- Live Cloud generation blocked by the restricted Cursor GitHub token and absent SMTP secrets; production workflow must use configured repo secrets
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic
