@@ -733,6 +733,7 @@ def main():
     github_output = os.environ.get("GITHUB_OUTPUT")
     if github_output:
         with open(github_output, "a") as fh:
+            fh.write(f"has_summary={'true' if summary_path.exists() and summary_path.stat().st_size > 0 else 'false'}\n")
             fh.write(f"send_email={'true' if send_email else 'false'}\n")
             fh.write(f"summary_file={summary_path}\n")
             fh.write(f"html_file={html_path}\n")
