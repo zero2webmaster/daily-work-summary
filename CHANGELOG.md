@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.6] - 2026-04-30
+
+### Changed
+- Daily archive filename now matches the cron request: `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`.
+- Markdown archives are saved as Markdown, with a separate generated `.html` companion file used for email rendering.
+- Email subject now uses `Daily Cursor Work - YYYY-MM-DD`.
+- Repo sections are sorted globally by commit count and use 3-5 conversational summary bullets per project.
+- No-commit output now reads: `No work today – hope you enjoyed the rest!`
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

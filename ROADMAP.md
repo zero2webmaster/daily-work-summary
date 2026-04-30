@@ -8,8 +8,6 @@
 
 ## Phase 1: Core GitHub Actions Workflow ✅
 **Status:** Complete (2026-03-11)
-**Estimated Time:** 15 minutes
-
 **Tasks:**
 - [x] Create `.github/workflows/daily-summary.yml` with cron schedule (`0 3 * * *` UTC = 10pm EST)
 - [x] Configure permissions: `contents: write`
@@ -30,8 +28,6 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ## Phase 2: Smart Summary Script ✅
 **Status:** Complete (2026-03-11)
-**Estimated Time:** 10 minutes
-
 **Tasks:**
 - [x] Create `.github/scripts/generate_summary.py`
 - [x] Fetch ALL repos (zero2webmaster/* + personal) via PyGithub
@@ -55,8 +51,6 @@ PAT_GITHUB=ghp_xxx python3 .github/scripts/generate_summary.py
 
 ## Phase 3: Production Setup Guide ✅
 **Status:** Complete (2026-03-11)
-**Estimated Time:** 5 minutes
-
 **Tasks:**
 - [x] README.md with exact secret setup steps
 - [x] PAT_GITHUB: Required scopes (`repo`, `read:user`)
@@ -76,8 +70,6 @@ grep -c "PAT_GITHUB\|EMAIL_PASSWORD\|App Password" README.md
 
 ## Phase 4: Airtable Integration ✅
 **Status:** Complete (2026-03-11)
-**Estimated Time:** 30 minutes
-
 **Tasks:**
 - [x] Create `airtable_client.py` — Python Airtable REST API client (ID-based, modeled on PHP class)
 - [x] Create `execution/setup_airtable.py` — one-time table creation via Meta API
@@ -103,8 +95,6 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ## Phase 5: Slack / Discord Delivery ✅
 **Status:** Complete (2026-03-11)
-**Estimated Time:** 45 minutes
-
 **Tasks:**
 - [x] Create `webhook_client.py` — Slack Block Kit + Discord embed delivery with retry logic
 - [x] Add `send_to_slack()` + `send_to_discord()` functions to `generate_summary.py`
