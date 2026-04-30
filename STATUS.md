@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-04-30 (v1.4.6)
 
 ---
 
@@ -58,6 +58,12 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-04-30 - Daily Cron Output Alignment (v1.4.6)
+- Aligned archive naming with the cron automation request: `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Email subject now uses `Daily Cursor Work - YYYY-MM-DD`
+- Generator writes Markdown for the archive and separate HTML for email rendering
+- Repo sections now use 3-5 summary bullets per project, sorted globally by commit count
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic
