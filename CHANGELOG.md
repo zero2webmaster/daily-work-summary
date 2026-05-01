@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.5] - 2026-05-01
+
+### Changed
+- Daily archive now writes to the requested root-level filename: `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Email subject now uses `Daily Cursor Work - [DATE]`
+- Active repos are sorted globally by commit count instead of within owner groups
+- Repo sections now use a concise 3-5 bullet format, with overflow noted when a repo has more than five commits
+- No-work output now says: "No work today – hope you enjoyed the rest!"
+
+### Fixed
+- Workflow now commits the requested Markdown archive and uses a temporary generated HTML companion for the email body
+- README version drift synchronized with `VERSION` at 1.4.5
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

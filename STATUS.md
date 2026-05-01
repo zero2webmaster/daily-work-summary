@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-05-01 (v1.4.5)
 
 ---
 
@@ -40,12 +40,16 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
 
+### Decision: Root-level requested Markdown archive filename
+**Date:** 2026-05-01
+**Rationale:** The cron automation contract requires `YYYY-MM-DD-GitHub-Daily-Summary.md` in this repo. The workflow uses a temporary HTML file only for email rendering.
+
 ---
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
+1. Confirm the next scheduled GitHub Actions run sends subject `Daily Cursor Work - [DATE]`
+2. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
 3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
 4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
 
@@ -58,6 +62,13 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-05-01 - Daily Cursor Work Contract (v1.4.5)
+- Matched cron output contract: root archive `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Added temporary HTML rendering for the email body without changing the requested Markdown archive
+- Updated email subject to `Daily Cursor Work - [DATE]`
+- Updated no-work copy to "No work today – hope you enjoyed the rest!"
+- Sorted all active repos globally by commit count instead of grouping by owner first
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic
