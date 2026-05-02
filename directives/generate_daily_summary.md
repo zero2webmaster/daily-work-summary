@@ -60,7 +60,7 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 
 ### Step 4: Save Markdown Archive
 - Write Markdown to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
-- Write rendered email HTML to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.html`
+- Write rendered email HTML to `.tmp/YYYY-MM-DD-GitHub-Daily-Summary.html` for the workflow email step
 - Git add + commit + push from within the workflow
 
 ### Step 5: Deliver Summary
@@ -95,7 +95,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 |--------|----------|--------|
 | Email | kerry@zero2webmaster.com | HTML (when `email` in DELIVERY_METHOD) |
 | Archive | `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md` | Markdown (always) |
-| Email HTML | `summaries/YYYY-MM-DD-GitHub-Daily-Summary.html` | HTML body for email delivery |
+| Email HTML | `.tmp/YYYY-MM-DD-GitHub-Daily-Summary.html` | Temporary HTML body for email delivery |
 | Airtable | Daily Summaries + Repositories tables | Structured records (when `airtable` in DELIVERY_METHOD) |
 | Slack | Slack channel | Block Kit message (when `slack` in DELIVERY_METHOD) |
 | Discord | Discord channel | Rich embed (when `discord` in DELIVERY_METHOD) |
