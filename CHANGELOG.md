@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-05-03
+
+### Changed
+- Daily archive files now save at the repo root as `YYYY-MM-DD-GitHub-Daily-Summary.md`.
+- Email subjects now use `Daily Cursor Work - [DATE]`.
+- Summary output now uses conversational 3-5 bullet project sections sorted by most active repos first.
+- No-commit days now say: "No work today – hope you enjoyed the rest!"
+- Local/manual runs can fall back to the authenticated GitHub CLI token when `PAT_GITHUB` is not set.
+- Workflow email delivery now uses a generated HTML companion file while preserving the Markdown archive as Markdown.
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

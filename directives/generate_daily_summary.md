@@ -1,7 +1,7 @@
 # Directive: Generate Daily Work Summary
 
-**Version:** 1.2.0
-**Last Updated:** 2026-03-11
+**Version:** 1.3.0
+**Last Updated:** 2026-05-03
 **Owner:** Kerry Kriger
 
 ---
@@ -32,7 +32,7 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 ## Process
 
 ### Step 1: Authenticate & Fetch Repos
-- Authenticate with PyGithub using `PAT_GITHUB`
+- Authenticate with PyGithub using `PAT_GITHUB`; local automation runs may fall back to the active GitHub CLI token
 - Fetch ALL repos the authenticated user owns (including private)
 - Skip forks (optional — currently included)
 
@@ -42,26 +42,24 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 - Collect: repo name, commit message (first line), SHA, timestamp
 
 ### Step 3: Generate Smart Summary
-- Group commits by repository owner (account)
-- Account header: `## owner` (e.g., `## zero2webmaster`)
-- Repo header: `### repo-name` (repo name only, not full owner/repo)
-- Sort repos by commit count (most active first)
-- Optional AI summary: If any AI key set (OPENROUTER_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY), generate one-sentence description per repo. Use AI_PROVIDER variable to choose: openrouter, anthropic, gemini, openai. Auto-detects from first available key if unset.
+- Flatten all active repositories and sort by commit count (most active first)
+- Repo header: readable project name (repo slug title-cased)
+- Optional AI summary: If any AI key set (OPENROUTER_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY), generate 3-5 conversational accomplishment bullets per repo. Use AI_PROVIDER variable to choose: openrouter, anthropic, gemini, openai. Auto-detects from first available key if unset.
 - Format each repo section:
   ```
-  ### repo-name
-  *AI summary sentence* (if OPENAI_API_KEY set)
-  **N commits**
-  * commit message 1
-  * commit message 2
-  ...
+  ## Repo Name
+  *owner/repo-name - N commits*
+
+  - Feature/refactor/fix/accomplishment bullet
+  - Feature/refactor/fix/accomplishment bullet
   ```
-- One bullet per commit; show all commits (no truncation)
-- Truncate individual commit messages to 80 characters
-- If zero commits across all repos: "No commits today — well rested! ✅"
+- If no AI key is configured, fall back to 3-5 distinct commit-message bullets
+- Truncate fallback bullets to 120 characters and AI bullets to 140 characters
+- If zero commits across all repos: "No work today – hope you enjoyed the rest!"
 
 ### Step 4: Save Markdown Archive
-- Write to `summaries/daily-summary-YYYY-MM-DD.md`
+- Write Markdown to root-level `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Write an HTML companion in `.tmp/` for the email action
 - Git add + commit + push from within the workflow
 
 ### Step 5: Deliver Summary
@@ -70,9 +68,9 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 **Email** (when `email` is in the list):
 - Use `dawidd6/action-send-mail` GitHub Action
 - To: kerry@zero2webmaster.com
-- Subject: `Daily Work Summary — Day Mon DD`
+- Subject: `Daily Cursor Work - [DATE]`
 - Body: HTML-formatted summary
-- `generate_summary.py` outputs `send_email=true/false` to `$GITHUB_OUTPUT`; workflow email step is conditional on that value
+- `generate_summary.py` outputs `send_email`, `has_summary`, `summary_file`, `html_file`, and `subject_date` to `$GITHUB_OUTPUT`; workflow email step is conditional on those values
 
 **Airtable** (when `airtable` is in the list):
 - Find or create Repository records for each repo (by full_name)
@@ -95,7 +93,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 | Output | Location | Format |
 |--------|----------|--------|
 | Email | kerry@zero2webmaster.com | HTML (when `email` in DELIVERY_METHOD) |
-| Archive | `summaries/daily-summary-YYYY-MM-DD.md` | Markdown (always) |
+| Archive | `YYYY-MM-DD-GitHub-Daily-Summary.md` | Markdown (always) |
 | Airtable | Daily Summaries + Repositories tables | Structured records (when `airtable` in DELIVERY_METHOD) |
 | Slack | Slack channel | Block Kit message (when `slack` in DELIVERY_METHOD) |
 | Discord | Discord channel | Rich embed (when `discord` in DELIVERY_METHOD) |
@@ -105,7 +103,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 
 | Scenario | Handling |
 |----------|----------|
-| No commits in 24h | "No commits today — well rested! ✅" |
+| No commits in 24h | "No work today – hope you enjoyed the rest!" |
 | Long commit message | Truncate to 80 chars with `...` |
 | 403 PAT error | Log clear error + link to token settings |
 | Empty repo (no commits ever) | Skip silently |
@@ -133,7 +131,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 
 - Check GitHub Actions → "Daily Work Summary" for run history
 - Failed runs trigger GitHub's built-in email notifications
-- Summary archive in `summaries/` provides historical record
+- Root-level `YYYY-MM-DD-GitHub-Daily-Summary.md` archives provide historical records
 
 ## Lessons Learned
 

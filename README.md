@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.4.0
+**Version:** 1.5.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -20,41 +20,36 @@ Automated daily email summaries of your GitHub development work across all repos
 
 1. **GitHub Actions** triggers on your schedule (default: 10 PM EST)
 2. **PyGithub** fetches every commit you made in the last 24 hours across all repos you own
-3. Commits are **grouped by account → repo**, sorted by activity (most commits first)
-4. **Optional AI** generates a one-sentence thematic summary per repo
-5. The result is saved as a **Markdown archive** in `summaries/` and emailed as HTML
+3. Repos are sorted by activity (most commits first)
+4. **Optional AI** groups commit messages into 3-5 conversational accomplishment bullets per repo
+5. The result is saved as a root-level `YYYY-MM-DD-GitHub-Daily-Summary.md` archive and emailed as HTML
 
 ---
 
 ## How AI Summaries Work
 
-When an AI provider key is configured, each repo's commit messages are sent to your chosen model with this prompt:
+When an AI provider key is configured, each repo's commit messages are sent to your chosen model and returned as 3-5 accomplishment-focused bullets.
 
-> *"In one sentence, describe the type of development work from these git commits. Be concise and professional. Do not list commits; summarize the overall theme."*
-
-**Without AI** — you get the raw commit list:
+**Without AI** — you get deduplicated commit-message bullets:
 
 ```
-### my-website
+## My Website
+*zero2webmaster/my-website - 3 commits*
 
-**3 commits**
-
-* Add DeepL caching for translations
-* Fix SEO meta tags on homepage
-* Refactor email queue handler
+- Add DeepL caching for translations
+- Fix SEO meta tags on homepage
+- Refactor email queue handler
 ```
 
-**With AI** — each repo gets a one-sentence summary above the commit list:
+**With AI** — related commits are grouped into conversational accomplishment bullets:
 
 ```
-### my-website
-*Performance improvements, SEO fixes, and backend refactoring across translations and email.*
+## My Website
+*zero2webmaster/my-website - 3 commits*
 
-**3 commits**
-
-* Add DeepL caching for translations
-* Fix SEO meta tags on homepage
-* Refactor email queue handler
+- DeepL translation caching landed, reducing reliance on paid translation SaaS
+- Hreflang SEO fixes improved multilingual page discovery
+- Email queue handling was refactored for cleaner background processing
 ```
 
 Each AI call uses a small/fast model (Claude 3.5 Haiku, GPT-4o-mini, or Gemini Flash), so costs are negligible — typically under $0.01/day even across many repos.
@@ -259,6 +254,7 @@ Both handle message length limits gracefully — long summaries are truncated wi
 | `EMAIL_USERNAME` | Your Gmail address |
 | `EMAIL_PASSWORD` | Your Gmail App Password |
 | `OPENROUTER_API_KEY` | *(Optional)* Your OpenRouter key |
+| `AI_PROVIDER` | *(Optional)* `openrouter` if using OpenRouter via secret instead of variable |
 | `ANTHROPIC_API_KEY` | *(Optional)* Your Anthropic key |
 | `GOOGLE_API_KEY` | *(Optional)* Your Google AI key |
 | `OPENAI_API_KEY` | *(Optional)* Your OpenAI key |
@@ -313,7 +309,7 @@ Open `.github/workflows/daily-summary.yml` and update the `cron:` line. See the 
 │       ├── generate_summary.py        # Summary generator + delivery routing
 │       ├── airtable_client.py         # Airtable REST API client
 │       └── webhook_client.py          # Slack + Discord webhook delivery
-├── summaries/                         # Daily archives (auto-generated)
+├── YYYY-MM-DD-GitHub-Daily-Summary.md # Daily archives (auto-generated)
 ├── directives/                        # SOPs
 ├── execution/
 │   ├── setup_airtable.py             # Airtable table creation (used by setup workflow)
@@ -350,4 +346,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.4.0 | Last Updated: 2026-03-11*
+*Version: 1.5.0 | Last Updated: 2026-05-03*

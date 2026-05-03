@@ -1,12 +1,12 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-05-03 (v1.5.0)
 
 ---
 
 ## 🚧 Blockers
 
-None currently.
+- Cloud-agent runtime cannot generate/send the live daily summary directly because only the Cursor GitHub App token is exposed; `gh api user` and PyGithub `/user` return 403, and SMTP secrets are not available outside GitHub Actions. The updated workflow will use repository secrets (`PAT_GITHUB`, `EMAIL_USERNAME`, `EMAIL_PASSWORD`) when run in GitHub Actions.
 
 ---
 
@@ -20,9 +20,9 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Battle-tested GitHub Action for email. Gmail App Passwords provide secure auth without OAuth complexity. Supports HTML formatting for rich summaries.
 
-### Decision: Archive summaries in `summaries/` directory
-**Date:** 2026-03-11
-**Rationale:** Git-committed markdown files provide a permanent, searchable history of daily work. Workflow auto-commits after each run.
+### Decision: Archive daily summaries at repository root
+**Date:** 2026-05-03
+**Rationale:** The automation request expects `YYYY-MM-DD-GitHub-Daily-Summary.md` in this repo. Workflow auto-commits that Markdown archive while writing temporary HTML email bodies under `.tmp/`.
 
 ### Decision: Raw `requests` for Airtable client (not `pyairtable`)
 **Date:** 2026-03-11
@@ -44,10 +44,9 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Verify GitHub Actions secrets include `PAT_GITHUB`, `EMAIL_USERNAME`, and `EMAIL_PASSWORD`
+2. Test scheduled workflow on `main` after merging this branch
+3. Configure Airtable/Slack/Discord only if those delivery channels are needed
 
 ---
 
@@ -58,6 +57,15 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-05-03 - Daily Cursor Work Automation Alignment
+- Updated summary generator to fall back to GitHub CLI auth for local/cloud-agent runs
+- Changed Markdown archive path to `YYYY-MM-DD-GitHub-Daily-Summary.md` at repo root
+- Changed workflow email subject to `Daily Cursor Work - [DATE]`
+- Changed repo sections to conversational 3-5 bullets sorted by commit count, with requested no-work message
+- Workflow now commits only the Markdown archive and uses a `.tmp/` HTML companion for email
+- Verification: Python/YAML checks passed; live generation blocked in cloud runtime by GitHub integration 403 and unavailable SMTP secrets
+- Bumped to v1.5.0 and synchronized README/CHANGELOG/VERSION metadata
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic

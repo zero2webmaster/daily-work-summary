@@ -70,7 +70,7 @@
 2. Select "Read and write permissions"
 3. Check "Allow GitHub Actions to create and approve pull requests" (optional)
 
-**Verification:** Run workflow manually, check that `summaries/` directory gets a new file
+**Verification:** Run workflow manually, check that `YYYY-MM-DD-GitHub-Daily-Summary.md` is committed at the repository root
 
 ---
 
@@ -81,6 +81,7 @@
 | 403 on API calls | PAT expired/wrong scopes | Regenerate PAT with `repo` + `read:user` |
 | No email received | Wrong App Password | Regenerate at myaccount.google.com/apppasswords |
 | Push fails in workflow | Missing write permissions | Settings → Actions → "Read and write permissions" |
+| Local script says `PAT_GITHUB not set` | GitHub CLI unavailable or not logged in | Run `gh auth login` or export `PAT_GITHUB` |
 | Cron not firing | Workflow not on `main` | Merge to `main` branch |
 | Rate limit errors | Too many API calls | Script has built-in exponential backoff |
 
