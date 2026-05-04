@@ -42,6 +42,22 @@ def _truncate(text: str, max_len: int) -> str:
     return text[: max_len - 3] + "..."
 
 
+def _fallback_bullets(messages: list[str]) -> list[str]:
+    """Build concise bullets from commit subjects for older summary payloads."""
+    bullets: list[str] = []
+    seen: set[str] = set()
+    for msg in messages:
+        bullet = _truncate(msg.split("\n")[0].strip(), 80)
+        normalized = bullet.lower()
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        bullets.append(bullet)
+        if len(bullets) == 5:
+            break
+    return bullets
+
+
 def _post_with_retry(url: str, payload: dict, label: str) -> bool:
     """POST JSON to a webhook URL with exponential-backoff retry.
 
@@ -99,13 +115,10 @@ def _build_slack_repo_text(repos: list[dict[str, Any]]) -> str:
         repo_name = repo["full_name"].split("/", 1)[-1]
         url = repo.get("url", "")
         lines.append(f"*<{url}|{repo_name}>* ({label})")
-        if repo.get("ai_summary"):
+        if repo.get("ai_summary") and not repo.get("summary_bullets"):
             lines.append(f"_{repo['ai_summary']}_")
-        for msg in repo["messages"]:
-            first_line = msg.split("\n")[0].strip()
-            if len(first_line) > 80:
-                first_line = first_line[:77] + "..."
-            lines.append(f"• {first_line}")
+        for bullet in repo.get("summary_bullets") or _fallback_bullets(repo["messages"]):
+            lines.append(f"• {bullet}")
         lines.append("")
     return "\n".join(lines).strip()
 
@@ -125,14 +138,14 @@ def send_slack(webhook_url: str, summary_data: dict[str, Any]) -> bool:
     blocks: list[dict] = [
         {
             "type": "header",
-            "text": {"type": "plain_text", "text": f"📋 Daily Work Summary — {date}"},
+            "text": {"type": "plain_text", "text": f"📋 Daily Cursor Work - {date}"},
         }
     ]
 
     if not has_commits:
         blocks.append({
             "type": "section",
-            "text": {"type": "mrkdwn", "text": "No commits today — well rested! ✅"},
+            "text": {"type": "mrkdwn", "text": "No work today – hope you enjoyed the rest!"},
         })
     else:
         # Stats bar
@@ -153,15 +166,10 @@ def send_slack(webhook_url: str, summary_data: dict[str, Any]) -> bool:
             url = repo.get("url", "")
 
             header_text = f"*<{url}|{repo_name}>* ({label})"
-            if repo.get("ai_summary"):
+            if repo.get("ai_summary") and not repo.get("summary_bullets"):
                 header_text += f"\n_{repo['ai_summary']}_"
 
-            commit_lines = []
-            for msg in repo["messages"]:
-                first_line = msg.split("\n")[0].strip()
-                if len(first_line) > 80:
-                    first_line = first_line[:77] + "..."
-                commit_lines.append(f"• {first_line}")
+            commit_lines = [f"• {bullet}" for bullet in repo.get("summary_bullets") or _fallback_bullets(repo["messages"])]
 
             body = "\n".join(commit_lines)
             full_text = f"{header_text}\n{body}"
@@ -196,7 +204,7 @@ def send_slack(webhook_url: str, summary_data: dict[str, Any]) -> bool:
     payload = {
         "blocks": blocks,
         # Fallback plain text for notifications
-        "text": f"Daily Work Summary — {date}: {total_commits} commit(s) across {total_repos} repo(s)",
+        "text": f"Daily Cursor Work - {date}: {total_commits} commit(s) across {total_repos} repo(s)",
     }
 
     return _post_with_retry(webhook_url, payload, "Slack")
@@ -215,13 +223,10 @@ def _build_discord_description(repos: list[dict[str, Any]]) -> str:
         url = repo.get("url", "")
         full_name = repo["full_name"]
         lines.append(f"**[{full_name}]({url})** ({label})")
-        if repo.get("ai_summary"):
+        if repo.get("ai_summary") and not repo.get("summary_bullets"):
             lines.append(f"*{repo['ai_summary']}*")
-        for msg in repo["messages"]:
-            first_line = msg.split("\n")[0].strip()
-            if len(first_line) > 80:
-                first_line = first_line[:77] + "..."
-            lines.append(f"• {first_line}")
+        for bullet in repo.get("summary_bullets") or _fallback_bullets(repo["messages"]):
+            lines.append(f"• {bullet}")
         lines.append("")
 
     return _truncate("\n".join(lines).strip(), DISCORD_MAX_DESC)
@@ -242,12 +247,12 @@ def send_discord(webhook_url: str, summary_data: dict[str, Any]) -> bool:
     color = 0x2ECC71 if has_commits else 0x95A5A6  # emerald green / concrete grey
 
     if not has_commits:
-        description = "No commits today — well rested! ✅"
+        description = "No work today – hope you enjoyed the rest!"
     else:
         description = _build_discord_description(repos)
 
     embed: dict[str, Any] = {
-        "title": f"📋 Daily Work Summary — {date}",
+        "title": f"📋 Daily Cursor Work - {date}",
         "description": description,
         "color": color,
         "footer": {

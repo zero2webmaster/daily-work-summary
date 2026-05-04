@@ -30,6 +30,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 try:
     from github import Github, GithubException, RateLimitExceededException
@@ -47,6 +48,9 @@ MAX_MSG_LENGTH = 80
 MAX_RETRIES = 3
 SUMMARY_DIR = "summaries"
 HTML_FONT_SIZE = "18px"
+EMAIL_HTML_PATH = ".tmp/daily-summary-email.html"
+NO_WORK_MESSAGE = "No work today – hope you enjoyed the rest!"
+SUMMARY_TITLE = "Daily Cursor Work"
 
 
 def get_github_client() -> Github:
@@ -75,6 +79,55 @@ def truncate(msg: str, length: int = MAX_MSG_LENGTH) -> str:
     if len(first_line) <= length:
         return first_line
     return first_line[: length - 3] + "..."
+
+
+def get_report_timezone() -> ZoneInfo:
+    """Return the configured report timezone, falling back to America/New_York."""
+    tz_name = os.environ.get("EMAIL_TIMEZONE", "America/New_York").strip() or "America/New_York"
+    try:
+        return ZoneInfo(tz_name)
+    except ZoneInfoNotFoundError:
+        print(f"  WARNING: Invalid EMAIL_TIMEZONE='{tz_name}', using America/New_York")
+        return ZoneInfo("America/New_York")
+
+
+def get_archive_path(date_str: str) -> Path:
+    """Return the requested Markdown archive path for a report date."""
+    return Path(SUMMARY_DIR) / f"{date_str}-GitHub-Daily-Summary.md"
+
+
+def fallback_repo_bullets(messages: list[str]) -> list[str]:
+    """Build concise repo bullets from commit subjects when AI is unavailable."""
+    bullets: list[str] = []
+    seen: set[str] = set()
+    for msg in messages:
+        bullet = truncate(msg)
+        normalized = bullet.lower()
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        bullets.append(bullet)
+        if len(bullets) == 5:
+            break
+    return bullets or ["Repository maintenance and housekeeping"]
+
+
+def parse_ai_bullets(text: str) -> list[str]:
+    """Extract clean bullet text from an AI response."""
+    bullets: list[str] = []
+    for line in text.splitlines():
+        item = line.strip()
+        if not item:
+            continue
+        for prefix in ("- ", "* ", "• "):
+            if item.startswith(prefix):
+                item = item[len(prefix):].strip()
+                break
+        if item and item not in bullets:
+            bullets.append(item.rstrip("."))
+        if len(bullets) == 5:
+            break
+    return bullets
 
 
 def fetch_commits_with_retry(repo, since, author, retries=MAX_RETRIES):
@@ -142,8 +195,8 @@ def _get_ai_client_and_key() -> tuple[str | None, str | None, str | None]:
     return provider, api_key, model
 
 
-def generate_ai_repo_summary(messages: list[str]) -> str | None:
-    """Generate a one-sentence summary of the type of work from commit messages."""
+def generate_ai_repo_bullets(messages: list[str]) -> list[str] | None:
+    """Generate 3-5 conversational repo summary bullets from commit messages."""
     provider, api_key, model = _get_ai_client_and_key()
     if not provider or not api_key:
         print("  AI summary: skipped (no provider key configured)")
@@ -151,13 +204,15 @@ def generate_ai_repo_summary(messages: list[str]) -> str | None:
     print(f"  AI summary: using {provider}/{model}")
 
     commit_list = "\n".join(truncate(m) for m in messages[:20])
-    prompt = f"""In one sentence, summarize the theme of development work from these git commits. Be concise and professional.
+    prompt = f"""Turn these git commit messages into 3-5 concise daily work summary bullets for one repository.
 
 Rules:
-- Do NOT list or enumerate commits (e.g., never say "2 changes: X; Y" or "3 commits: A, B, C")
-- Do NOT say how many commits there were
-- Describe the TYPE of work and WHAT area it touched (e.g., "Authentication refactor and UI polish across the login and dashboard flows.")
-- If there is only one commit, still describe the theme, not the commit itself
+- Return only markdown bullet lines, no intro or outro.
+- Use a conversational but professional tone.
+- Summarize features, refactors, bug fixes, and accomplishments.
+- Combine repetitive commits into one bullet.
+- Do not mention raw commit counts.
+- Keep each bullet under 140 characters.
 
 Commits:
 {commit_list}"""
@@ -209,10 +264,19 @@ Commits:
         else:
             return None
 
-        return summary.rstrip(".")
+        bullets = parse_ai_bullets(summary)
+        return bullets or None
     except Exception as e:
         print(f"  AI summary error ({provider}): {e}")
         return None
+
+
+def generate_repo_bullets(messages: list[str]) -> list[str]:
+    """Return AI-generated bullets when configured, otherwise a deterministic fallback."""
+    ai_bullets = generate_ai_repo_bullets(messages)
+    if ai_bullets:
+        return ai_bullets
+    return fallback_repo_bullets(messages)
 
 
 def generate_summary() -> dict[str, Any]:
@@ -227,7 +291,9 @@ def generate_summary() -> dict[str, Any]:
     print(f"Authenticated as: {user.login}")
 
     since = datetime.now(timezone.utc) - timedelta(hours=24)
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    report_now = datetime.now(timezone.utc).astimezone(get_report_timezone())
+    today = report_now.strftime("%Y-%m-%d")
+    display_date = report_now.strftime("%a %b %d, %Y")
     print(f"Fetching commits since: {since.isoformat()}")
 
     owner_repos: dict[str, dict[str, list[str]]] = defaultdict(dict)
@@ -250,17 +316,16 @@ def generate_summary() -> dict[str, Any]:
 
     # No commits — return minimal result
     if not owner_repos:
-        msg = "No commits today — well rested! ✅"
         footer = (
             "<p>Daily Work Summary initially created by "
             '<a href="https://zero2webmaster.com/kerry-kriger">Zero2Webmaster Founder Dr. Kerry Kriger</a></p>'
             '<p>Contribute to the public repository at: '
             '<a href="https://github.com/zero2webmaster/daily-work-summary">github.com/zero2webmaster/daily-work-summary</a></p>'
         )
-        html = f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;"><p>{msg}</p>{footer}</div>'
+        html = f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;"><p>{NO_WORK_MESSAGE}</p>{footer}</div>'
         return {
             "html": html,
-            "markdown": msg,
+            "markdown": NO_WORK_MESSAGE,
             "date": today,
             "total_commits": 0,
             "total_repos": 0,
@@ -275,7 +340,7 @@ def generate_summary() -> dict[str, Any]:
     total_repos = sum(len(r) for r in owner_repos.values())
 
     lines = [
-        f"# Daily Work Summary — {datetime.now(timezone.utc).strftime('%a %b %d, %Y')}",
+        f"# {SUMMARY_TITLE} - {display_date}",
         "",
         f"**{total_commits} commits** across **{total_repos} repos**",
         "",
@@ -300,17 +365,15 @@ def generate_summary() -> dict[str, Any]:
             count = len(messages)
             commit_label = f"{count} commit{'s' if count != 1 else ''}"
 
-            ai_summary = generate_ai_repo_summary(messages)
-            lines.append(f"### {repo_name} ({commit_label})")
-            if ai_summary:
-                lines.append(f"*{ai_summary}*")
-                ai_summary_bullets.append(f"- {repo_name}: {ai_summary}")
+            summary_bullets = generate_repo_bullets(messages)
+            ai_summary = "; ".join(summary_bullets)
+            lines.append(f"### {repo_name}")
+            lines.append(f"*{commit_label} in the last 24 hours*")
             lines.append("")
-
-            for msg in messages:
-                bullet = truncate(msg)
+            for bullet in summary_bullets:
                 lines.append(f"* {bullet}")
-
+            if ai_summary:
+                ai_summary_bullets.append(f"- {repo_name}: {ai_summary}")
             lines.append("")
 
             structured_repos.append({
@@ -320,6 +383,7 @@ def generate_summary() -> dict[str, Any]:
                 "commits": count,
                 "messages": messages,
                 "ai_summary": ai_summary,
+                "summary_bullets": summary_bullets,
             })
 
     lines.append("---")
@@ -599,9 +663,14 @@ def main():
 
     # Write summary file (always, for the archive and email step)
     Path(SUMMARY_DIR).mkdir(exist_ok=True)
-    summary_path = Path(SUMMARY_DIR) / f"daily-summary-{summary_data['date']}.md"
-    summary_path.write_text(summary_data["html"])
+    summary_path = get_archive_path(summary_data["date"])
+    summary_path.write_text(summary_data["markdown"] + "\n")
     print(f"Summary written to: {summary_path}")
+
+    email_path = Path(EMAIL_HTML_PATH)
+    email_path.parent.mkdir(exist_ok=True)
+    email_path.write_text(summary_data["html"])
+    print(f"Email HTML written to: {email_path}")
 
     # Airtable delivery
     if "airtable" in delivery_methods and summary_data["has_commits"]:
@@ -629,6 +698,9 @@ def main():
     if github_output:
         with open(github_output, "a") as fh:
             fh.write(f"send_email={'true' if send_email else 'false'}\n")
+            fh.write("has_summary=true\n")
+            fh.write(f"summary_file={summary_path}\n")
+            fh.write(f"email_file={email_path}\n")
 
     print(f"\n{'=' * 50}")
     print(summary_data["html"])

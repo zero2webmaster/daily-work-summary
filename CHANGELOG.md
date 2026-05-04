@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.6] - 2026-05-04
+
+### Changed
+- Archive files now use the requested `YYYY-MM-DD-GitHub-Daily-Summary.md` filename and save Markdown content.
+- Email delivery now uses a separate generated HTML body file and subject format `Daily Cursor Work - [DATE]`.
+- Repo sections now present 3-5 conversational summary bullets when AI is configured, with commit-message fallback bullets otherwise.
+- No-work days now use: `No work today – hope you enjoyed the rest!`
+- Report dates use `EMAIL_TIMEZONE`/America/New_York instead of UTC for archive naming and headings.
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

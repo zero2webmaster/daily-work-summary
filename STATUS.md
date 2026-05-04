@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-05-04 (v1.4.6)
 
 ---
 
@@ -44,10 +44,9 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Let the scheduled GitHub Actions run complete with configured repository secrets
+2. Confirm email arrives with subject `Daily Cursor Work - [DATE]`
+3. Optionally test Slack/Discord delivery if those webhook secrets are configured
 
 ---
 
@@ -58,6 +57,13 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-05-04 - Daily Cursor Work Alignment (v1.4.6)
+- Updated archive naming to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Email subject now uses `Daily Cursor Work - [DATE]`
+- Summary body now stores Markdown archives and separate HTML email output
+- Repo sections now show 3-5 conversational bullets per repo, with AI bullets when configured and deterministic fallback otherwise
+- No-work message now matches automation request: `No work today – hope you enjoyed the rest!`
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic
