@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-05-05
+
+### Changed
+- Archive files now use the requested `YYYY-MM-DD-GitHub-Daily-Summary.md` filename and contain Markdown, not email HTML.
+- Workflow email subject now uses `Daily Cursor Work - YYYY-MM-DD`.
+- Repo summaries are sorted globally by commit count and display 3-5 conversational bullets when AI is configured.
+- No-commit days now say: "No work today – hope you enjoyed the rest!"
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
