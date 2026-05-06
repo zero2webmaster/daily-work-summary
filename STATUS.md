@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-05-06 (v1.4.5)
 
 ---
 
@@ -20,9 +20,9 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Battle-tested GitHub Action for email. Gmail App Passwords provide secure auth without OAuth complexity. Supports HTML formatting for rich summaries.
 
-### Decision: Archive summaries in `summaries/` directory
-**Date:** 2026-03-11
-**Rationale:** Git-committed markdown files provide a permanent, searchable history of daily work. Workflow auto-commits after each run.
+### Decision: Archive summaries as root-level Markdown files
+**Date:** 2026-05-06
+**Rationale:** Git-committed `YYYY-MM-DD-GitHub-Daily-Summary.md` files provide a permanent, searchable history matching the automation contract. HTML email bodies remain in `summaries/` as generated workflow artifacts.
 
 ### Decision: Raw `requests` for Airtable client (not `pyairtable`)
 **Date:** 2026-03-11
@@ -44,10 +44,10 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. Monitor the next scheduled run for successful email delivery and auto-commit
+2. Optional: Configure Airtable and test with `DELIVERY_METHOD=email,airtable`
+3. Optional: Test Slack delivery with `SLACK_WEBHOOK_URL` and `DELIVERY_METHOD=slack`
+4. Optional: Test Discord delivery with `DISCORD_WEBHOOK_URL` and `DELIVERY_METHOD=discord`
 
 ---
 
@@ -58,6 +58,13 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-05-06 - Daily Cursor Summary Contract (v1.4.5)
+- Updated archive naming to `YYYY-MM-DD-GitHub-Daily-Summary.md` at the repo root
+- Kept separate HTML email body files in `summaries/`
+- Updated email subject to `Daily Cursor Work - YYYY-MM-DD`
+- Changed no-work message to `No work today – hope you enjoyed the rest!`
+- Generated summaries now sort repos globally by commit count and use 3-5 project bullets per repo
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic

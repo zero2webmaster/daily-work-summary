@@ -137,4 +137,25 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
-*Last Updated: 2026-03-11*
+## Maintenance Updates
+
+### Daily Cursor Work Summary Format ✅
+**Status:** Complete (2026-05-06)
+
+**Tasks:**
+- [x] Save root-level Markdown archives as `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- [x] Keep HTML email body separate in `summaries/daily-summary-YYYY-MM-DD.html`
+- [x] Use email subject `Daily Cursor Work - YYYY-MM-DD`
+- [x] Generate 3-5 conversational bullets per active repository
+- [x] Use the requested no-work text: `No work today – hope you enjoyed the rest!`
+
+**Verification:**
+```bash
+python3 -m py_compile .github/scripts/generate_summary.py
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+DELIVERY_METHOD=airtable python3 .github/scripts/generate_summary.py
+```
+
+---
+
+*Last Updated: 2026-05-06*

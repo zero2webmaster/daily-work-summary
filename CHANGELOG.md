@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.5] - 2026-05-06
+
+### Changed
+- Daily archives now use the requested root-level filename format: `YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Email subject now uses `Daily Cursor Work - YYYY-MM-DD`
+- Summary format is now project-first and globally sorted by repo activity, with 3-5 bullets per active repo
+- HTML email body is written separately to `summaries/daily-summary-YYYY-MM-DD.html`
+
+### Fixed
+- No-work days now use the exact fallback message: `No work today – hope you enjoyed the rest!`
+- Slack and Discord no-work notifications now use the same fallback message
+- Markdown archives now contain Markdown instead of HTML
+
 ## [1.4.0] - 2026-03-11
 
 ### Added

@@ -129,10 +129,12 @@ def send_slack(webhook_url: str, summary_data: dict[str, Any]) -> bool:
         }
     ]
 
+    no_work_message = summary_data.get("markdown", "No work today – hope you enjoyed the rest!")
+
     if not has_commits:
         blocks.append({
             "type": "section",
-            "text": {"type": "mrkdwn", "text": "No commits today — well rested! ✅"},
+            "text": {"type": "mrkdwn", "text": no_work_message},
         })
     else:
         # Stats bar
@@ -242,7 +244,7 @@ def send_discord(webhook_url: str, summary_data: dict[str, Any]) -> bool:
     color = 0x2ECC71 if has_commits else 0x95A5A6  # emerald green / concrete grey
 
     if not has_commits:
-        description = "No commits today — well rested! ✅"
+        description = summary_data.get("markdown", "No work today – hope you enjoyed the rest!")
     else:
         description = _build_discord_description(repos)
 
