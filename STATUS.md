@@ -6,7 +6,7 @@
 
 ## 🚧 Blockers
 
-None currently.
+- Cloud runner GitHub integration is scoped only to `zero2webmaster/daily-work-summary`, so it cannot generate an all-repositories summary locally. Production/manual workflow runs need `PAT_GITHUB` with `repo` + `read:user` scopes.
 
 ---
 
@@ -65,6 +65,9 @@ None currently.
 - Updated email subject to `Daily Cursor Work - YYYY-MM-DD`
 - Changed no-work message to `No work today – hope you enjoyed the rest!`
 - Generated summaries now sort repos globally by commit count and use 3-5 project bullets per repo
+- Added direct SMTP fallback for local/manual runs when `EMAIL_USERNAME` + `EMAIL_PASSWORD` are present
+- Added `PyYAML` as an explicit dependency so documented workflow validation commands work after install
+- Cloud runner GitHub token is scoped only to this repo; full account/org scans require the configured `PAT_GITHUB` secret
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic

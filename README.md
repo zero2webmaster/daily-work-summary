@@ -316,6 +316,15 @@ Open `.github/workflows/daily-summary.yml` and update the `cron:` line. See the 
 
 ---
 
+## Verification
+
+```bash
+python3 -m py_compile .github/scripts/generate_summary.py .github/scripts/webhook_client.py .github/scripts/airtable_client.py execution/setup_airtable.py
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+```
+
+---
+
 ## Troubleshooting
 
 See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues (403 PAT errors, email not sending, AI key errors, rate limits).

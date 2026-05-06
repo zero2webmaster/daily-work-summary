@@ -1,7 +1,7 @@
 # Troubleshooting Guide
 
 **Project:** Daily Work Summary
-**Last Updated:** 2026-03-11
+**Last Updated:** 2026-05-06
 
 ---
 
@@ -42,6 +42,25 @@
 
 ---
 
+### Issue: Cursor/GitHub App Token Only Sees This Repository
+
+**Problem:** Running locally in Cursor Cloud with `PAT_GITHUB="$(gh auth token)"` fails at `/user` with `403 Resource not accessible by integration`, or only lists `zero2webmaster/daily-work-summary`.
+
+**Root Cause:** The Cursor GitHub App installation token is scoped to the current repository. It can push this branch, but it cannot enumerate all personal and `zero2webmaster/*` repos or read `/user`.
+
+**Solution:**
+1. Run the production GitHub Actions workflow with the configured `PAT_GITHUB` repository secret
+2. For local full-account testing, export a classic PAT with `repo` + `read:user` scopes:
+   ```bash
+   export PAT_GITHUB=ghp_your_token
+   python .github/scripts/generate_summary.py
+   ```
+3. Do not rely on `gh auth token` for full daily summaries unless that token is a user PAT with the required scopes.
+
+**Verification:** Logs should show `Authenticated as: <username>` and `Found <N> repositories`, where `<N>` includes personal and organization repositories.
+
+---
+
 ### Issue: Email Not Sending
 
 **Problem:** Workflow runs successfully but no email arrives.
@@ -79,6 +98,7 @@
 | Error | Likely Cause | Quick Fix |
 |-------|-------------|-----------|
 | 403 on API calls | PAT expired/wrong scopes | Regenerate PAT with `repo` + `read:user` |
+| `/user` inaccessible from Cursor Cloud | GitHub App token scoped to current repo | Use the production `PAT_GITHUB` secret or export a full user PAT locally |
 | No email received | Wrong App Password | Regenerate at myaccount.google.com/apppasswords |
 | Push fails in workflow | Missing write permissions | Settings → Actions → "Read and write permissions" |
 | Cron not firing | Workflow not on `main` | Merge to `main` branch |

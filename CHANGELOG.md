@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - Email subject now uses `Daily Cursor Work - YYYY-MM-DD`
 - Summary format is now project-first and globally sorted by repo activity, with 3-5 bullets per active repo
 - HTML email body is written separately to `summaries/daily-summary-YYYY-MM-DD.html`
+- `PyYAML` is now listed explicitly so workflow YAML validation works after a fresh dependency install
 
 ### Fixed
 - No-work days now use the exact fallback message: `No work today – hope you enjoyed the rest!`
