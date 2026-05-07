@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.1] - 2026-05-07
+
+### Changed
+- Daily email/archive bullets now default to deterministic commit-derived summaries to avoid low-quality AI hallucinations in unattended runs.
+- Added `USE_AI_SUMMARIES=true` variable as an explicit opt-in for AI-generated repo bullets.
+
 ## [1.5.0] - 2026-05-07
 
 ### Added

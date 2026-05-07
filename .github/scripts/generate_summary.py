@@ -52,6 +52,7 @@ EMAIL_DIR = ".tmp"
 HTML_FONT_SIZE = "18px"
 DEFAULT_EMAIL_TIMEZONE = "America/New_York"
 NO_WORK_MESSAGE = "No work today \u2013 hope you enjoyed the rest!"
+TRUE_VALUES = {"1", "true", "yes", "on"}
 
 
 def get_github_client() -> Github:
@@ -178,6 +179,11 @@ def generate_local_repo_bullets(messages: list[str]) -> list[str]:
             break
 
     return bullets[:max_bullets]
+
+
+def use_ai_bullets() -> bool:
+    """AI bullets are opt-in so daily emails stay deterministic by default."""
+    return (os.environ.get("USE_AI_SUMMARIES") or "").strip().lower() in TRUE_VALUES
 
 
 def fetch_commits_with_retry(repo, since, author, retries=MAX_RETRIES):
@@ -493,7 +499,10 @@ def generate_summary() -> dict[str, Any]:
         full_name = f"{owner}/{repo_name}"
         count = len(messages)
         commit_label = f"{count} commit{'s' if count != 1 else ''}"
-        bullets = generate_ai_repo_bullets(messages) or generate_local_repo_bullets(messages)
+        bullets = None
+        if use_ai_bullets():
+            bullets = generate_ai_repo_bullets(messages)
+        bullets = bullets or generate_local_repo_bullets(messages)
         ai_summary = " ".join(bullets[:2]) if bullets else None
 
         lines.append(f"## {repo_name} ({commit_label})")

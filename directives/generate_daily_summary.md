@@ -1,6 +1,6 @@
 # Directive: Generate Daily Work Summary
 
-**Version:** 1.3.0
+**Version:** 1.3.1
 **Last Updated:** 2026-05-07
 **Owner:** Kerry Kriger
 
@@ -24,6 +24,7 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 | Email credentials | `EMAIL_USERNAME`, `EMAIL_PASSWORD` secrets | Gmail App Password |
 | Time window | Last 24 hours from run time | Uses `datetime.utcnow() - timedelta(hours=24)` |
 | Delivery method | `DELIVERY_METHOD` variable | Comma-separated: `email` (default), `airtable`, `slack`, `discord`. `both` = `email,airtable` |
+| AI bullets | `USE_AI_SUMMARIES` variable | Optional; default false so email summaries stay deterministic and commit-derived |
 | Airtable PAT | `AIRTABLE_PAT` secret | Required when delivery includes `airtable` |
 | Airtable IDs | `AIRTABLE_BASE_ID`, `AIRTABLE_TABLE_SUMMARIES`, `AIRTABLE_TABLE_REPOS` variables | All IDs (`appXXX`, `tblXXX`), never names |
 | Slack webhook | `SLACK_WEBHOOK_URL` secret | Required when delivery includes `slack` |
@@ -46,7 +47,8 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 - Account header: `## owner` (e.g., `## zero2webmaster`)
 - Repo header: `### repo-name` (repo name only, not full owner/repo)
 - Sort repos by commit count (most active first)
-- Optional AI summary: If any AI key set (OPENROUTER_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY), generate conversational repo accomplishment bullets. Use AI_PROVIDER variable to choose: openrouter, anthropic, gemini, openai. Auto-detects from first available key if unset.
+- Deterministic repo bullets are generated from commit messages by default.
+- Optional AI bullets: If `USE_AI_SUMMARIES=true` and an AI key is set (OPENROUTER_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY), generate conversational repo accomplishment bullets. Use AI_PROVIDER variable to choose: openrouter, anthropic, gemini, openai. Auto-detects from first available key if unset.
 - Format each repo section:
   ```
   ## repo-name (N commits)
@@ -54,7 +56,7 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
   * second accomplishment bullet
   * third accomplishment bullet
   ```
-- Use 1-5 conversational accomplishment bullets per repo. If an AI provider is available, ask it for 3-5 bullets; otherwise generate deterministic bullets from commit messages.
+- Use 1-5 conversational accomplishment bullets per repo. Default to deterministic commit-derived bullets; AI bullets require `USE_AI_SUMMARIES=true`.
 - Truncate individual commit messages to 80 characters
 - If zero commits across all repos: "No work today – hope you enjoyed the rest!"
 

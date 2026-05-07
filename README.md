@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.5.0
+**Version:** 1.5.1
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -21,14 +21,14 @@ Automated daily email summaries of your GitHub development work across all repos
 1. **GitHub Actions** triggers on your schedule (default: 10 PM EST)
 2. **PyGithub** fetches every commit you made in the last 24 hours across all repos you own
 3. Commits are **grouped by account → repo**, sorted by activity (most commits first)
-4. **Optional AI** generates 3-5 conversational accomplishment bullets per repo
+4. Deterministic logic generates 1-5 conversational accomplishment bullets per repo (optional AI bullets can be enabled explicitly)
 5. The result is saved as a **Markdown archive** named `YYYY-MM-DD-GitHub-Daily-Summary.md` in `summaries/` and emailed as HTML
 
 ---
 
 ## How AI Summaries Work
 
-When an AI provider key is configured, each repo's commit messages are sent to your chosen model with this goal:
+By default, daily emails use deterministic commit-derived bullets so the archive stays faithful to the actual commit messages. If `USE_AI_SUMMARIES=true` is configured, each repo's commit messages are sent to your chosen model with this goal:
 
 > *"Create 3-5 concise Markdown bullets summarizing the development work from these git commits. Use a conversational but professional tone."*
 
@@ -103,6 +103,7 @@ Set these under **Settings → Secrets and variables → Actions → Variables**
 |----------|---------|---------|
 | `DELIVERY_METHOD` | Comma-separated list: `email`, `airtable`, `slack`, `discord`. Also accepts `both` (= `email,airtable`) | `email` |
 | `AI_PROVIDER` | `openrouter`, `anthropic`, `gemini`, `openai` | Auto-detects from first available key |
+| `USE_AI_SUMMARIES` | `true` or `false` | `false` |
 | `EMAIL_TIMEZONE` | Any [IANA timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) (e.g. `America/New_York`, `Europe/London`) | `America/New_York` |
 | `AIRTABLE_BASE_ID` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
 | `AIRTABLE_TABLE_SUMMARIES` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
@@ -271,6 +272,7 @@ Only add the AI key(s) you actually have. One is enough.
 |----------|---------------|
 | `EMAIL_TIMEZONE` | `America/New_York` |
 | `AI_PROVIDER` | `openrouter` *(only needed if you set multiple AI keys)* |
+| `USE_AI_SUMMARIES` | `true` *(optional; default deterministic bullets are recommended)* |
 | `DELIVERY_METHOD` | `email,airtable` *(comma-separated; default is `email`. Options: `email`, `airtable`, `slack`, `discord`)* |
 | `AIRTABLE_BASE_ID` | `appXXXXXXXXXXXXXX` *(only needed if not stored as a Secret)* |
 | `AIRTABLE_TABLE_SUMMARIES` | `tblXXXXXXXXXXXXXX` *(only needed if not stored as a Secret)* |
@@ -345,4 +347,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.5.0 | Last Updated: 2026-05-07*
+*Version: 1.5.1 | Last Updated: 2026-05-07*
