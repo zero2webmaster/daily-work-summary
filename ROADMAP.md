@@ -126,6 +126,27 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
+## Phase 6: Cursor Cron Daily Digest Format ✅
+**Status:** Complete (2026-05-07)
+
+**Tasks:**
+- [x] Save true Markdown archives as `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- [x] Generate globally sorted repo sections with conversational accomplishment bullets
+- [x] Update no-work text to `No work today – hope you enjoyed the rest!`
+- [x] Update email subject to `Daily Cursor Work - Month D, YYYY`
+- [x] Add feature-branch push trigger gated by `[daily-summary-run]` for Cursor cron handoff to GitHub Actions secrets
+- [x] Bumped to v1.5.0
+
+**Verification:**
+```bash
+python3 -m py_compile .github/scripts/generate_summary.py
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+```
+
+**Dependencies:** Phases 1-5 (builds on existing GitHub Actions delivery)
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:
@@ -137,4 +158,4 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
-*Last Updated: 2026-03-11*
+*Last Updated: 2026-05-07*

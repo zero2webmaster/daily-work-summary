@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-05-07
+
+### Added
+- Cursor cron-friendly push trigger for the feature branch, gated by `[daily-summary-run]`, so this cloud automation can hand off email delivery to GitHub Actions secrets without exposing credentials in Cursor.
+- Markdown archives now use the requested filename format: `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`.
+- Email HTML is written separately to `.tmp/daily-summary-email-YYYY-MM-DD.html` for delivery while preserving the archive as real Markdown.
+
+### Changed
+- Daily summary format now sorts repos globally by commit count and outputs conversational accomplishment bullets per repo.
+- AI summaries now request 3-5 repo bullets; deterministic fallback bullets are generated from conventional commit messages when no AI key is configured.
+- Email subject changed to `Daily Cursor Work - Month D, YYYY`.
+- No-commit message changed to `No work today – hope you enjoyed the rest!`.
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
