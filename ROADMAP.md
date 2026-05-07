@@ -135,8 +135,9 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 - [x] Update no-work text to `No work today – hope you enjoyed the rest!`
 - [x] Update email subject to `Daily Cursor Work - Month D, YYYY`
 - [x] Add feature-branch push trigger gated by `[daily-summary-run]` for Cursor cron handoff to GitHub Actions secrets
-- [x] Bumped to v1.5.1
+- [x] Bumped to v1.5.2
 - [x] Made AI bullets opt-in via `USE_AI_SUMMARIES=true` so unattended daily emails stay deterministic by default
+- [x] Polished deterministic fallback labels and acronym casing
 
 **Verification:**
 ```bash

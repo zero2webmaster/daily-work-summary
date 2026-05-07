@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-05-07 (v1.5.1)
+**Last Updated:** 2026-05-07 (v1.5.2)
 
 ---
 
@@ -44,7 +44,7 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Confirm the v1.5.1 `[daily-summary-run]` workflow run sends the corrected May 6 daily email successfully.
+1. Confirm the v1.5.2 `[daily-summary-run]` workflow run sends the final corrected May 6 daily email successfully.
 2. Pull the generated `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md` archive from the workflow commit.
 3. Configure Airtable/Slack/Discord delivery if those optional channels are needed.
 
@@ -64,6 +64,7 @@ None currently.
 - Added a feature-branch push trigger gated by `[daily-summary-run]` so Cursor cron can hand off email sending to GitHub Actions secrets
 - Updated email subject to `Daily Cursor Work - Month D, YYYY`
 - Follow-up v1.5.1: made AI bullets opt-in (`USE_AI_SUMMARIES=true`) after a secret-backed run produced one low-quality hallucinated bullet
+- Follow-up v1.5.2: polished deterministic fallback labels and acronym casing
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic

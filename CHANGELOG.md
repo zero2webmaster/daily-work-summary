@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.2] - 2026-05-07
+
+### Fixed
+- Polished deterministic bullet labels so fallback summaries use clearer verbs like Released, Completed, Documented, and Fixed.
+- Preserved acronym casing in generated summary fragments (for example, `ROADMAP` no longer becomes `rOADMAP`).
+
 ## [1.5.1] - 2026-05-07
 
 ### Changed

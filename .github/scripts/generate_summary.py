@@ -124,9 +124,15 @@ def commit_category(msg: str) -> tuple[str, str]:
     prefix_match = re.match(r"^([a-z]+)(\([^)]+\))?!?:", lower)
     prefix = prefix_match.group(1) if prefix_match else ""
 
-    if prefix == "feat" or any(word in lower for word in ("add", "launch", "implement", "ship")):
+    if re.match(r"^v?\d+\.\d+\.\d+", lower):
+        label = "Released"
+    elif any(word in lower for word in ("roadmap", "status", "docs", "readme", "guide")):
+        label = "Documented"
+    elif any(word in lower for word in ("phase", "complete", "locked")):
+        label = "Completed"
+    elif prefix == "feat" or any(word in lower for word in ("add", "launch", "implement", "ship")):
         label = "Shipped"
-    elif prefix == "fix" or any(word in lower for word in ("fix", "bug", "repair", "resolve")):
+    elif prefix == "fix" or any(word in lower for word in ("fix", "bug", "repair", "resolve", "error")):
         label = "Fixed"
     elif prefix == "refactor" or "refactor" in lower:
         label = "Refined"
@@ -145,6 +151,8 @@ def commit_category(msg: str) -> tuple[str, str]:
 def _sentence_fragment(text: str) -> str:
     if not text:
         return "project work"
+    if len(text) > 1 and text[0].isupper() and text[1].isupper():
+        return text
     return text[0].lower() + text[1:] if len(text) > 1 else text.lower()
 
 
