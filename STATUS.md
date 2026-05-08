@@ -44,9 +44,9 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Confirm the v1.5.3 `[daily-summary-run]` workflow run sends the May 8 daily email successfully.
-2. Pull or verify the generated `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md` archive from the workflow commit.
-3. Configure Airtable/Slack/Discord delivery if those optional channels are needed.
+1. Merge or promote the v1.5.3 digest-format changes to `main` if the new archive/email format should become the default scheduled workflow behavior.
+2. Monitor the next scheduled run to confirm it uses `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md` and `Daily Cursor Work - Month D, YYYY`.
+3. Configure Slack/Discord delivery if those optional channels are needed.
 
 ---
 
@@ -62,6 +62,7 @@ None currently.
 - Ported the Cursor daily digest format improvements onto the current automation branch
 - Updated the gated push trigger to `cursor/daily-github-summary-7d16` for this run
 - Prepared a `[daily-summary-run]` commit so GitHub Actions can access PAT/Gmail secrets and deliver the May 8 summary
+- Run `25534557805` succeeded: scanned 29 repos, found 11 commits across 4 repos, wrote `summaries/2026-05-07-GitHub-Daily-Summary.md`, updated Airtable record `recgASaaW1P2iZYOI`, and sent Gmail with subject `Daily Cursor Work - May 7, 2026`
 
 ### Session: 2026-05-07 - Cursor Daily Summary Format (v1.5.0)
 - Updated archive filename to `YYYY-MM-DD-GitHub-Daily-Summary.md`
