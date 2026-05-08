@@ -1,7 +1,7 @@
 # Directive: Generate Daily Work Summary
 
-**Version:** 1.2.0
-**Last Updated:** 2026-03-11
+**Version:** 1.3.2
+**Last Updated:** 2026-05-08
 **Owner:** Kerry Kriger
 
 ---
@@ -14,6 +14,7 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 
 - **Automated:** GitHub Actions cron (default `0 3 * * *` UTC = 10pm EST). User edits workflow to change time.
 - **Manual:** GitHub Actions → "Run workflow" button
+- **Cursor cron handoff:** Push a commit to `cursor/daily-github-summary-7d16` touching the workflow or summary script with `[daily-summary-run]` in the commit message. This lets GitHub Actions use repo secrets that are unavailable inside Cursor Cloud.
 - **Timezone:** `EMAIL_TIMEZONE` variable (e.g. America/New_York) for subject date. Default: America/New_York.
 
 ## Inputs
@@ -24,6 +25,7 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 | Email credentials | `EMAIL_USERNAME`, `EMAIL_PASSWORD` secrets | Gmail App Password |
 | Time window | Last 24 hours from run time | Uses `datetime.utcnow() - timedelta(hours=24)` |
 | Delivery method | `DELIVERY_METHOD` variable | Comma-separated: `email` (default), `airtable`, `slack`, `discord`. `both` = `email,airtable` |
+| AI bullets | `USE_AI_SUMMARIES` variable | Optional; default false so email summaries stay deterministic and commit-derived |
 | Airtable PAT | `AIRTABLE_PAT` secret | Required when delivery includes `airtable` |
 | Airtable IDs | `AIRTABLE_BASE_ID`, `AIRTABLE_TABLE_SUMMARIES`, `AIRTABLE_TABLE_REPOS` variables | All IDs (`appXXX`, `tblXXX`), never names |
 | Slack webhook | `SLACK_WEBHOOK_URL` secret | Required when delivery includes `slack` |
@@ -46,22 +48,22 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 - Account header: `## owner` (e.g., `## zero2webmaster`)
 - Repo header: `### repo-name` (repo name only, not full owner/repo)
 - Sort repos by commit count (most active first)
-- Optional AI summary: If any AI key set (OPENROUTER_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY), generate one-sentence description per repo. Use AI_PROVIDER variable to choose: openrouter, anthropic, gemini, openai. Auto-detects from first available key if unset.
+- Deterministic repo bullets are generated from commit messages by default.
+- Optional AI bullets: If `USE_AI_SUMMARIES=true` and an AI key is set (OPENROUTER_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY), generate conversational repo accomplishment bullets. Use AI_PROVIDER variable to choose: openrouter, anthropic, gemini, openai. Auto-detects from first available key if unset.
 - Format each repo section:
   ```
-  ### repo-name
-  *AI summary sentence* (if OPENAI_API_KEY set)
-  **N commits**
-  * commit message 1
-  * commit message 2
-  ...
+  ## repo-name (N commits)
+  * shipped/refined/fixed accomplishment bullet
+  * second accomplishment bullet
+  * third accomplishment bullet
   ```
-- One bullet per commit; show all commits (no truncation)
+- Use 1-5 conversational accomplishment bullets per repo. Default to deterministic commit-derived bullets; AI bullets require `USE_AI_SUMMARIES=true`.
 - Truncate individual commit messages to 80 characters
-- If zero commits across all repos: "No commits today — well rested! ✅"
+- If zero commits across all repos: "No work today – hope you enjoyed the rest!"
 
 ### Step 4: Save Markdown Archive
-- Write to `summaries/daily-summary-YYYY-MM-DD.md`
+- Write Markdown archive to `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`
+- Write transient email HTML to `.tmp/daily-summary-email-YYYY-MM-DD.html`
 - Git add + commit + push from within the workflow
 
 ### Step 5: Deliver Summary
@@ -70,7 +72,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 **Email** (when `email` is in the list):
 - Use `dawidd6/action-send-mail` GitHub Action
 - To: kerry@zero2webmaster.com
-- Subject: `Daily Work Summary — Day Mon DD`
+- Subject: `Daily Cursor Work - Month D, YYYY`
 - Body: HTML-formatted summary
 - `generate_summary.py` outputs `send_email=true/false` to `$GITHUB_OUTPUT`; workflow email step is conditional on that value
 
@@ -95,7 +97,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 | Output | Location | Format |
 |--------|----------|--------|
 | Email | kerry@zero2webmaster.com | HTML (when `email` in DELIVERY_METHOD) |
-| Archive | `summaries/daily-summary-YYYY-MM-DD.md` | Markdown (always) |
+| Archive | `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md` | Markdown (always) |
 | Airtable | Daily Summaries + Repositories tables | Structured records (when `airtable` in DELIVERY_METHOD) |
 | Slack | Slack channel | Block Kit message (when `slack` in DELIVERY_METHOD) |
 | Discord | Discord channel | Rich embed (when `discord` in DELIVERY_METHOD) |
@@ -105,7 +107,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 
 | Scenario | Handling |
 |----------|----------|
-| No commits in 24h | "No commits today — well rested! ✅" |
+| No commits in 24h | "No work today – hope you enjoyed the rest!" |
 | Long commit message | Truncate to 80 chars with `...` |
 | 403 PAT error | Log clear error + link to token settings |
 | Empty repo (no commits ever) | Skip silently |

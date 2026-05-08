@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.4.0
+**Version:** 1.5.3
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -21,40 +21,35 @@ Automated daily email summaries of your GitHub development work across all repos
 1. **GitHub Actions** triggers on your schedule (default: 10 PM EST)
 2. **PyGithub** fetches every commit you made in the last 24 hours across all repos you own
 3. Commits are **grouped by account → repo**, sorted by activity (most commits first)
-4. **Optional AI** generates a one-sentence thematic summary per repo
-5. The result is saved as a **Markdown archive** in `summaries/` and emailed as HTML
+4. Deterministic logic generates 1-5 conversational accomplishment bullets per repo (optional AI bullets can be enabled explicitly)
+5. The result is saved as a **Markdown archive** named `YYYY-MM-DD-GitHub-Daily-Summary.md` in `summaries/` and emailed as HTML
 
 ---
 
 ## How AI Summaries Work
 
-When an AI provider key is configured, each repo's commit messages are sent to your chosen model with this prompt:
+By default, daily emails use deterministic commit-derived bullets so the archive stays faithful to the actual commit messages. If `USE_AI_SUMMARIES=true` is configured, each repo's commit messages are sent to your chosen model with this goal:
 
-> *"In one sentence, describe the type of development work from these git commits. Be concise and professional. Do not list commits; summarize the overall theme."*
+> *"Create 3-5 concise Markdown bullets summarizing the development work from these git commits. Use a conversational but professional tone."*
 
-**Without AI** — you get the raw commit list:
-
-```
-### my-website
-
-**3 commits**
-
-* Add DeepL caching for translations
-* Fix SEO meta tags on homepage
-* Refactor email queue handler
-```
-
-**With AI** — each repo gets a one-sentence summary above the commit list:
+**Without AI** — you get deterministic accomplishment bullets generated from commit messages:
 
 ```
-### my-website
-*Performance improvements, SEO fixes, and backend refactoring across translations and email.*
+## my-website (3 commits)
 
-**3 commits**
+* Shipped DeepL caching for translations.
+* Fixed SEO meta tags on homepage.
+* Refined email queue handler.
+```
 
-* Add DeepL caching for translations
-* Fix SEO meta tags on homepage
-* Refactor email queue handler
+**With AI** — each repo gets concise, conversational bullets:
+
+```
+## my-website (3 commits)
+
+* Added DeepL translation caching to reduce recurring SaaS costs.
+* Cleaned up homepage SEO metadata and hreflang output.
+* Refined the email queue handler for more reliable processing.
 ```
 
 Each AI call uses a small/fast model (Claude 3.5 Haiku, GPT-4o-mini, or Gemini Flash), so costs are negligible — typically under $0.01/day even across many repos.
@@ -108,6 +103,7 @@ Set these under **Settings → Secrets and variables → Actions → Variables**
 |----------|---------|---------|
 | `DELIVERY_METHOD` | Comma-separated list: `email`, `airtable`, `slack`, `discord`. Also accepts `both` (= `email,airtable`) | `email` |
 | `AI_PROVIDER` | `openrouter`, `anthropic`, `gemini`, `openai` | Auto-detects from first available key |
+| `USE_AI_SUMMARIES` | `true` or `false` | `false` |
 | `EMAIL_TIMEZONE` | Any [IANA timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) (e.g. `America/New_York`, `Europe/London`) | `America/New_York` |
 | `AIRTABLE_BASE_ID` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
 | `AIRTABLE_TABLE_SUMMARIES` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
@@ -276,6 +272,7 @@ Only add the AI key(s) you actually have. One is enough.
 |----------|---------------|
 | `EMAIL_TIMEZONE` | `America/New_York` |
 | `AI_PROVIDER` | `openrouter` *(only needed if you set multiple AI keys)* |
+| `USE_AI_SUMMARIES` | `true` *(optional; default deterministic bullets are recommended)* |
 | `DELIVERY_METHOD` | `email,airtable` *(comma-separated; default is `email`. Options: `email`, `airtable`, `slack`, `discord`)* |
 | `AIRTABLE_BASE_ID` | `appXXXXXXXXXXXXXX` *(only needed if not stored as a Secret)* |
 | `AIRTABLE_TABLE_SUMMARIES` | `tblXXXXXXXXXXXXXX` *(only needed if not stored as a Secret)* |
@@ -350,4 +347,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.4.0 | Last Updated: 2026-03-11*
+*Version: 1.5.3 | Last Updated: 2026-05-08*

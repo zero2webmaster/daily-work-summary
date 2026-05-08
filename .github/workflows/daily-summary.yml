@@ -5,12 +5,19 @@ on:
     # 10:00 PM EST = 3:00 AM UTC (next day)
     - cron: '0 3 * * *'
   workflow_dispatch:
+  push:
+    branches:
+      - cursor/daily-github-summary-7d16
+    paths:
+      - '.github/scripts/generate_summary.py'
+      - '.github/workflows/daily-summary.yml'
 
 permissions:
   contents: write
 
 jobs:
   generate-and-send:
+    if: github.event_name != 'push' || contains(github.event.head_commit.message, '[daily-summary-run]')
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -40,6 +47,7 @@ jobs:
         env:
           PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
           AI_PROVIDER: ${{ vars.AI_PROVIDER }}
+          USE_AI_SUMMARIES: ${{ vars.USE_AI_SUMMARIES }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -56,12 +64,19 @@ jobs:
           python .github/scripts/generate_summary.py
 
           # Check if summary was generated and has content
-          TODAY=$(date -u +%Y-%m-%d)
-          SUMMARY_FILE="summaries/daily-summary-${TODAY}.md"
+          SUMMARY_FILE="$(python - <<'PY'
+          from pathlib import Path
+          files = sorted(
+              Path("summaries").glob("*-GitHub-Daily-Summary.md"),
+              key=lambda p: p.stat().st_mtime,
+              reverse=True,
+          )
+          print(files[0] if files else "")
+          PY
+          )"
 
           if [ -f "$SUMMARY_FILE" ] && [ -s "$SUMMARY_FILE" ]; then
             echo "has_summary=true" >> $GITHUB_OUTPUT
-            echo "summary_file=$SUMMARY_FILE" >> $GITHUB_OUTPUT
           else
             echo "has_summary=false" >> $GITHUB_OUTPUT
             # send_email defaults to false when there is no summary
@@ -88,7 +103,7 @@ jobs:
           secure: true
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "Daily Work Summary — ${{ steps.date.outputs.subject_date }}"
+          subject: "Daily Cursor Work - ${{ steps.summary.outputs.subject_date }}"
           to: kerry@zero2webmaster.com
           from: ${{ secrets.EMAIL_USERNAME }}
-          html_body: file://${{ steps.summary.outputs.summary_file }}
+          html_body: file://${{ steps.summary.outputs.email_file }}

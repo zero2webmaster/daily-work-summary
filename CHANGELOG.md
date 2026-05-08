@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.3] - 2026-05-08
+
+### Changed
+- Pointed the Cursor cron handoff push trigger at the current automation branch (`cursor/daily-github-summary-7d16`) so the May 8 summary run can use GitHub Actions secrets for cross-repo scanning and Gmail delivery.
+
+## [1.5.2] - 2026-05-07
+
+### Fixed
+- Polished deterministic bullet labels so fallback summaries use clearer verbs like Released, Completed, Documented, and Fixed.
+- Preserved acronym casing in generated summary fragments (for example, `ROADMAP` no longer becomes `rOADMAP`).
+
+## [1.5.1] - 2026-05-07
+
+### Changed
+- Daily email/archive bullets now default to deterministic commit-derived summaries to avoid low-quality AI hallucinations in unattended runs.
+- Added `USE_AI_SUMMARIES=true` variable as an explicit opt-in for AI-generated repo bullets.
+
+## [1.5.0] - 2026-05-07
+
+### Added
+- Cursor cron-friendly push trigger for the feature branch, gated by `[daily-summary-run]`, so this cloud automation can hand off email delivery to GitHub Actions secrets without exposing credentials in Cursor.
+- Markdown archives now use the requested filename format: `summaries/YYYY-MM-DD-GitHub-Daily-Summary.md`.
+- Email HTML is written separately to `.tmp/daily-summary-email-YYYY-MM-DD.html` for delivery while preserving the archive as real Markdown.
+
+### Changed
+- Daily summary format now sorts repos globally by commit count and outputs conversational accomplishment bullets per repo.
+- AI summaries now request 3-5 repo bullets; deterministic fallback bullets are generated from conventional commit messages when no AI key is configured.
+- Email subject changed to `Daily Cursor Work - Month D, YYYY`.
+- No-commit message changed to `No work today – hope you enjoyed the rest!`.
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
