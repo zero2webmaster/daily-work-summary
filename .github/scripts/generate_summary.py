@@ -154,9 +154,12 @@ def generate_ai_repo_summary(messages: list[str]) -> str | None:
     prompt = f"""In one sentence, summarize the theme of development work from these git commits. Be concise and professional.
 
 Rules:
+- Write in plain English suitable for a non-developer reader.
+- Avoid jargon, version numbers, project codenames (e.g. "Phase 6.5", "Option D", "Slice X"), and framework references.
+- Describe what the user can now do, not what was implemented or refactored.
 - Do NOT list or enumerate commits (e.g., never say "2 changes: X; Y" or "3 commits: A, B, C")
 - Do NOT say how many commits there were
-- Describe the TYPE of work and WHAT area it touched (e.g., "Authentication refactor and UI polish across the login and dashboard flows.")
+- Describe the type of work and what area it touched (e.g., "Students can now see their membership tier on the dashboard, and the admin sync now emails on failure instead of staying silent.")
 - If there is only one commit, still describe the theme, not the commit itself
 
 Commits:
