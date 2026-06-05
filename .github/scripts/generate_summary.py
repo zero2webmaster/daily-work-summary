@@ -156,10 +156,11 @@ def generate_ai_repo_summary(messages: list[str]) -> str | None:
 Rules:
 - Write in plain English suitable for a non-developer reader.
 - Avoid jargon, version numbers, project codenames (e.g. "Phase 6.5", "Option D", "Slice X"), and framework references.
-- Describe what the user can now do, not what was implemented or refactored.
+- When the commits describe user-visible changes, lead with what the user can now do. Otherwise describe the area of work in passive, neutral terms — do NOT invent generic users or teams that aren't named in the commits (e.g., never say "The team improved..." or "The development team enhanced...").
+- Keep it to one short sentence. Do not pad with a second clause joined by "and" unless the commits genuinely span two distinct areas.
 - Do NOT list or enumerate commits (e.g., never say "2 changes: X; Y" or "3 commits: A, B, C")
 - Do NOT say how many commits there were
-- Describe the type of work and what area it touched (e.g., "Students can now see their membership tier on the dashboard, and the admin sync now emails on failure instead of staying silent.")
+- Describe the type of work and what area it touched (e.g., "Authentication and dashboard UI were tightened, and the nightly sync now emails on failure.")
 - If there is only one commit, still describe the theme, not the commit itself
 
 Commits:
