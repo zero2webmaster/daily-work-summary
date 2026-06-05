@@ -30,6 +30,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 try:
     from github import Github, GithubException, RateLimitExceededException
@@ -47,6 +48,83 @@ MAX_MSG_LENGTH = 80
 MAX_RETRIES = 3
 SUMMARY_DIR = "summaries"
 HTML_FONT_SIZE = "18px"
+
+DEFAULT_TIMEZONE = "America/New_York"
+DEFAULT_SEND_HOUR = 22
+DEFAULT_SEND_MINUTE = 30
+DEFAULT_SEND_WINDOW_MIN = 60
+
+SCHEDULE_DOCS_URL = (
+    "https://github.com/zero2webmaster/daily-work-summary"
+    "#customizing-the-email-schedule"
+)
+
+
+def _get_email_timezone() -> ZoneInfo:
+    """Return the configured EMAIL_TIMEZONE as a ZoneInfo, falling back to UTC.
+
+    Admins set EMAIL_TIMEZONE in GitHub Actions → Variables to an IANA zone
+    name (e.g. America/New_York, Europe/London, Asia/Singapore). If unset or
+    invalid, falls back gracefully so the run still completes.
+    """
+    tz_name = os.environ.get("EMAIL_TIMEZONE", DEFAULT_TIMEZONE).strip() or DEFAULT_TIMEZONE
+    try:
+        return ZoneInfo(tz_name)
+    except ZoneInfoNotFoundError:
+        print(f"WARNING: EMAIL_TIMEZONE='{tz_name}' is not a valid IANA zone; falling back to UTC")
+        return ZoneInfo("UTC")
+
+
+def _now_local() -> datetime:
+    return datetime.now(_get_email_timezone())
+
+
+def _parse_int_env(name: str, default: int) -> int:
+    raw = os.environ.get(name)
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        print(f"WARNING: {name}='{raw}' is not an integer; falling back to {default}")
+        return default
+
+
+def should_run_now() -> tuple[bool, str]:
+    """Decide whether the current wall-clock time falls inside the configured
+    send window. Returns (allowed, reason_string).
+
+    Admins set:
+      EMAIL_TIMEZONE          (IANA zone, e.g. America/New_York)
+      EMAIL_SEND_HOUR         (0-23, local hour, default 22)
+      EMAIL_SEND_MINUTE       (0-59, local minute, default 30)
+      EMAIL_SEND_WINDOW_MIN   (minutes after target that still count, default 60)
+
+    The workflow fires hourly; this guard ensures only the run nearest the
+    target local time actually sends the email. The window is one-sided
+    (only AFTER the target) so a delayed cron still fires; it never fires
+    early.
+    """
+    tz = _get_email_timezone()
+    hour = _parse_int_env("EMAIL_SEND_HOUR", DEFAULT_SEND_HOUR)
+    minute = _parse_int_env("EMAIL_SEND_MINUTE", DEFAULT_SEND_MINUTE)
+    window = _parse_int_env("EMAIL_SEND_WINDOW_MIN", DEFAULT_SEND_WINDOW_MIN)
+
+    if not (0 <= hour <= 23 and 0 <= minute <= 59):
+        return False, f"invalid target time {hour:02d}:{minute:02d} (must be 00:00–23:59)"
+
+    now_local = datetime.now(tz)
+    target = now_local.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    delta_min = (now_local - target).total_seconds() / 60
+
+    label = (
+        f"target {hour:02d}:{minute:02d} {tz.key}, "
+        f"now {now_local.strftime('%H:%M %Z')}, "
+        f"delta {delta_min:+.0f}m, window 0..{window}m"
+    )
+    if 0 <= delta_min <= window:
+        return True, f"within window ({label})"
+    return False, f"outside window ({label})"
 
 
 def get_github_client() -> Github:
@@ -231,8 +309,10 @@ def generate_summary() -> dict[str, Any]:
     print(f"Authenticated as: {user.login}")
 
     since = datetime.now(timezone.utc) - timedelta(hours=24)
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    now_local = _now_local()
+    today = now_local.strftime("%Y-%m-%d")
     print(f"Fetching commits since: {since.isoformat()}")
+    print(f"Local date label: {today} ({now_local.tzinfo.key})")
 
     owner_repos: dict[str, dict[str, list[str]]] = defaultdict(dict)
     repo_urls: dict[str, str] = {}
@@ -260,6 +340,8 @@ def generate_summary() -> dict[str, Any]:
             '<a href="https://zero2webmaster.com/kerry-kriger">Zero2Webmaster Founder Dr. Kerry Kriger</a></p>'
             '<p>Contribute to the public repository at: '
             '<a href="https://github.com/zero2webmaster/daily-work-summary">github.com/zero2webmaster/daily-work-summary</a></p>'
+            f'<p style="font-size: 14px; color: #666;">Need to change the timing or timezone of these emails? '
+            f'<a href="{SCHEDULE_DOCS_URL}">Click here</a> for instructions.</p>'
         )
         html = f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;"><p>{msg}</p>{footer}</div>'
         return {
@@ -279,7 +361,7 @@ def generate_summary() -> dict[str, Any]:
     total_repos = sum(len(r) for r in owner_repos.values())
 
     lines = [
-        f"# Daily Work Summary — {datetime.now(timezone.utc).strftime('%a %b %d, %Y')}",
+        f"# Daily Work Summary — {now_local.strftime('%a %b %d, %Y')}",
         "",
         f"**{total_commits} commits** across **{total_repos} repos**",
         "",
@@ -332,7 +414,12 @@ def generate_summary() -> dict[str, Any]:
     lines.append("")
     lines.append("Contribute to the public repository at: https://github.com/zero2webmaster/daily-work-summary")
     lines.append("")
-    lines.append(f"*Generated at {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}*")
+    lines.append(
+        f"Need to change the timing or timezone of these emails? "
+        f"[Click here]({SCHEDULE_DOCS_URL}) for instructions."
+    )
+    lines.append("")
+    lines.append(f"*Generated at {now_local.strftime('%Y-%m-%d %H:%M %Z')}*")
     lines.append("")
 
     markdown_body = "\n".join(lines)
@@ -582,6 +669,28 @@ def main():
     print("Daily Work Summary Generator")
     print("=" * 50)
 
+    # Time-of-day guard: when fired from a recurring cron, only proceed if
+    # the current local time is inside the configured send window. Manual
+    # workflow_dispatch runs bypass the guard (so admins can always trigger
+    # a one-off send from the Actions UI).
+    event_name = os.environ.get("GITHUB_EVENT_NAME", "").strip()
+    force_run = os.environ.get("FORCE_RUN", "").strip().lower() in {"1", "true", "yes"}
+
+    if event_name == "workflow_dispatch" or force_run:
+        print(f"Manual run ({event_name or 'FORCE_RUN'}) — bypassing time-of-day guard")
+    else:
+        allowed, reason = should_run_now()
+        print(f"Time-of-day guard: {reason}")
+        if not allowed:
+            print("Skipping this run — not inside the configured send window.")
+            github_output = os.environ.get("GITHUB_OUTPUT")
+            if github_output:
+                with open(github_output, "a") as fh:
+                    fh.write("should_run=false\n")
+                    fh.write("send_email=false\n")
+                    fh.write("has_summary=false\n")
+            return
+
     try:
         summary_data = generate_summary()
     except GithubException as e:
@@ -632,7 +741,11 @@ def main():
     github_output = os.environ.get("GITHUB_OUTPUT")
     if github_output:
         with open(github_output, "a") as fh:
+            fh.write("should_run=true\n")
             fh.write(f"send_email={'true' if send_email else 'false'}\n")
+            fh.write(f"local_date={summary_data['date']}\n")
+            fh.write(f"summary_file={summary_path.as_posix()}\n")
+            fh.write(f"has_summary={'true' if summary_data['has_commits'] else 'false'}\n")
 
     print(f"\n{'=' * 50}")
     print(summary_data["html"])

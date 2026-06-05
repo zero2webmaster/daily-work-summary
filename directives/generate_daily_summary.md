@@ -1,7 +1,7 @@
 # Directive: Generate Daily Work Summary
 
-**Version:** 1.2.0
-**Last Updated:** 2026-03-11
+**Version:** 1.3.0
+**Last Updated:** 2026-06-05
 **Owner:** Kerry Kriger
 
 ---
@@ -12,9 +12,11 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 
 ## Trigger
 
-- **Automated:** GitHub Actions cron (default `0 3 * * *` UTC = 10pm EST). User edits workflow to change time.
-- **Manual:** GitHub Actions → "Run workflow" button
-- **Timezone:** `EMAIL_TIMEZONE` variable (e.g. America/New_York) for subject date. Default: America/New_York.
+- **Automated:** GitHub Actions cron `5 * * * *` (hourly at `:05` UTC). The Python script's `should_run_now()` time-of-day guard reads `EMAIL_TIMEZONE` + `EMAIL_SEND_HOUR` + `EMAIL_SEND_MINUTE` + `EMAIL_SEND_WINDOW_MIN` Action variables and short-circuits 23 of the 24 hourly runs — only the run nearest the configured local target time proceeds. This replaces the previous "edit-the-cron-line-in-YAML" approach so admins never touch UTC math or daylight-saving offsets.
+- **Manual:** GitHub Actions → "Run workflow" button. `workflow_dispatch` runs bypass the time-of-day guard (so a one-off send always fires).
+- **Timezone:** `EMAIL_TIMEZONE` variable (Settings → Actions → Variables). IANA format (e.g. `America/New_York`, `Europe/London`). [Full list](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Default: `America/New_York`. Now controls ALL date labels: subject date, markdown heading, filename in `summaries/`, "Generated at" footer timestamp, commit message, AND the scheduling guard. Previously controlled only subject + footer.
+- **Send time:** `EMAIL_SEND_HOUR` (0–23, default `22`) and `EMAIL_SEND_MINUTE` (0–59, default `30`) — local target in `EMAIL_TIMEZONE`. Default = 10:30 PM in `America/New_York`.
+- **Window:** `EMAIL_SEND_WINDOW_MIN` (default `60`) — minutes AFTER the target during which a delayed cron still counts. One-sided window: never fires earlier than the target. Sized to ride out GitHub cron's typical 5–15 min delay with margin.
 
 ## Inputs
 
@@ -22,7 +24,8 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 |-------|--------|-------|
 | GitHub PAT | `PAT_GITHUB` secret | Scopes: `repo`, `read:user` |
 | Email credentials | `EMAIL_USERNAME`, `EMAIL_PASSWORD` secrets | Gmail App Password |
-| Time window | Last 24 hours from run time | Uses `datetime.utcnow() - timedelta(hours=24)` |
+| Time window | Last 24 hours from run time | Uses `datetime.now(timezone.utc) - timedelta(hours=24)` |
+| Scheduling target | `EMAIL_TIMEZONE` + `EMAIL_SEND_HOUR` + `EMAIL_SEND_MINUTE` + `EMAIL_SEND_WINDOW_MIN` variables | All four have defaults — see Trigger section |
 | Delivery method | `DELIVERY_METHOD` variable | Comma-separated: `email` (default), `airtable`, `slack`, `discord`. `both` = `email,airtable` |
 | Airtable PAT | `AIRTABLE_PAT` secret | Required when delivery includes `airtable` |
 | Airtable IDs | `AIRTABLE_BASE_ID`, `AIRTABLE_TABLE_SUMMARIES`, `AIRTABLE_TABLE_REPOS` variables | All IDs (`appXXX`, `tblXXX`), never names |
@@ -40,6 +43,11 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 - For each repo, query commits from last 24 hours
 - Filter to commits authored by the authenticated user
 - Collect: repo name, commit message (first line), SHA, timestamp
+
+### Step 0: Time-of-Day Guard (cron only)
+- `main()` reads `GITHUB_EVENT_NAME`. If `workflow_dispatch` (manual) or `FORCE_RUN=true`, skip the guard.
+- Otherwise call `should_run_now()`: returns `(allowed, reason)` based on `EMAIL_TIMEZONE` + `EMAIL_SEND_HOUR` + `EMAIL_SEND_MINUTE` + `EMAIL_SEND_WINDOW_MIN`.
+- If not allowed: write `should_run=false`, `send_email=false`, `has_summary=false` to `$GITHUB_OUTPUT` and exit cleanly. Workflow's downstream steps (subject-date, commit, email) all gate on `steps.summary.outputs.should_run == 'true'`.
 
 ### Step 3: Generate Smart Summary
 - Group commits by repository owner (account)

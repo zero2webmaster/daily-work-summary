@@ -2,8 +2,12 @@ name: Daily Work Summary
 
 on:
   schedule:
-    # 10:00 PM EST = 3:00 AM UTC (next day)
-    - cron: '0 3 * * *'
+    # Fire hourly at :05 (ride out GitHub cron's typical 5-15 min delay).
+    # The Python script's time-of-day guard reads EMAIL_TIMEZONE +
+    # EMAIL_SEND_HOUR + EMAIL_SEND_MINUTE Action variables and skips the
+    # run unless we're inside the configured local window.
+    # See: https://github.com/zero2webmaster/daily-work-summary#customizing-the-email-schedule
+    - cron: '5 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -27,18 +31,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Set date for email subject
-        id: date
-        env:
-          EMAIL_TIMEZONE: ${{ vars.EMAIL_TIMEZONE }}
-        run: |
-          SUBJECT_DATE=$(TZ="${EMAIL_TIMEZONE:-America/New_York}" date +'%a %b %d')
-          echo "subject_date=$SUBJECT_DATE" >> $GITHUB_OUTPUT
-
       - name: Generate daily summary
         id: summary
         env:
           PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          # Scheduling controls — admins set these in Settings → Actions → Variables.
+          # All four have sensible defaults, so unset = 22:30 America/New_York with a 60-minute window.
+          EMAIL_TIMEZONE: ${{ vars.EMAIL_TIMEZONE }}
+          EMAIL_SEND_HOUR: ${{ vars.EMAIL_SEND_HOUR }}
+          EMAIL_SEND_MINUTE: ${{ vars.EMAIL_SEND_MINUTE }}
+          EMAIL_SEND_WINDOW_MIN: ${{ vars.EMAIL_SEND_WINDOW_MIN }}
           AI_PROVIDER: ${{ vars.AI_PROVIDER }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -52,33 +55,29 @@ jobs:
           AIRTABLE_TABLE_REPOS: ${{ secrets.AIRTABLE_TABLE_REPOS || vars.AIRTABLE_TABLE_REPOS }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python .github/scripts/generate_summary.py
+
+      - name: Set subject date for email
+        id: subject
+        if: steps.summary.outputs.should_run == 'true' && steps.summary.outputs.has_summary == 'true'
+        env:
+          EMAIL_TIMEZONE: ${{ vars.EMAIL_TIMEZONE }}
         run: |
-          python .github/scripts/generate_summary.py
-
-          # Check if summary was generated and has content
-          TODAY=$(date -u +%Y-%m-%d)
-          SUMMARY_FILE="summaries/daily-summary-${TODAY}.md"
-
-          if [ -f "$SUMMARY_FILE" ] && [ -s "$SUMMARY_FILE" ]; then
-            echo "has_summary=true" >> $GITHUB_OUTPUT
-            echo "summary_file=$SUMMARY_FILE" >> $GITHUB_OUTPUT
-          else
-            echo "has_summary=false" >> $GITHUB_OUTPUT
-            # send_email defaults to false when there is no summary
-            echo "send_email=false" >> $GITHUB_OUTPUT
-          fi
+          SUBJECT_DATE=$(TZ="${EMAIL_TIMEZONE:-America/New_York}" date +'%a %b %d')
+          echo "subject_date=$SUBJECT_DATE" >> $GITHUB_OUTPUT
 
       - name: Commit summary to repo
-        if: steps.summary.outputs.has_summary == 'true'
+        if: steps.summary.outputs.should_run == 'true' && steps.summary.outputs.has_summary == 'true'
         run: |
           git config user.name "Daily Summary Bot"
           git config user.email "daily-summary@users.noreply.github.com"
           git add summaries/
-          git diff --cached --quiet || git commit -m "Add daily summary for $(date -u +%Y-%m-%d)"
+          git diff --cached --quiet || git commit -m "Add daily summary for ${{ steps.summary.outputs.local_date }}"
           git push
 
       - name: Send email
         if: >-
+          steps.summary.outputs.should_run == 'true' &&
           steps.summary.outputs.has_summary == 'true' &&
           steps.summary.outputs.send_email == 'true'
         uses: dawidd6/action-send-mail@v3
@@ -88,7 +87,7 @@ jobs:
           secure: true
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "Daily Work Summary — ${{ steps.date.outputs.subject_date }}"
+          subject: "Daily Work Summary — ${{ steps.subject.outputs.subject_date }}"
           to: kerry@zero2webmaster.com
           from: ${{ secrets.EMAIL_USERNAME }}
           html_body: file://${{ steps.summary.outputs.summary_file }}

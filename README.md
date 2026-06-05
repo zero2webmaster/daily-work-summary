@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.4.0
+**Version:** 1.5.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -108,7 +108,10 @@ Set these under **Settings → Secrets and variables → Actions → Variables**
 |----------|---------|---------|
 | `DELIVERY_METHOD` | Comma-separated list: `email`, `airtable`, `slack`, `discord`. Also accepts `both` (= `email,airtable`) | `email` |
 | `AI_PROVIDER` | `openrouter`, `anthropic`, `gemini`, `openai` | Auto-detects from first available key |
-| `EMAIL_TIMEZONE` | Any [IANA timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) (e.g. `America/New_York`, `Europe/London`) | `America/New_York` |
+| `EMAIL_TIMEZONE` | IANA timezone identifier — see [Customizing the email schedule](#customizing-the-email-schedule) below | `America/New_York` |
+| `EMAIL_SEND_HOUR` | Local hour (0–23) at which the email should go out — see [Customizing the email schedule](#customizing-the-email-schedule) | `22` |
+| `EMAIL_SEND_MINUTE` | Local minute (0–59) | `30` |
+| `EMAIL_SEND_WINDOW_MIN` | Acceptable delay after the target time, in minutes — rides out GitHub cron's typical 5–15 min jitter | `60` |
 | `AIRTABLE_BASE_ID` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
 | `AIRTABLE_TABLE_SUMMARIES` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
 | `AIRTABLE_TABLE_REPOS` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
@@ -125,20 +128,69 @@ Set these under **Settings → Secrets and variables → Actions → Variables**
 | `email,airtable,slack,discord` | All four channels |
 | `both` | Email + Airtable (backward-compatible alias) |
 
-### Email Schedule (cron)
+### Customizing the email schedule
 
-Edit `.github/workflows/daily-summary.yml` and change the `cron:` line. Cron times are in **UTC**:
+**TL;DR — set three Variables and you're done. No cron math, no YAML edits, no daylight-saving fiddling.**
 
-| Local time | Timezone | Cron |
-|------------|----------|------|
-| 10:00 PM | America/New_York (EST) | `0 3 * * *` |
-| 10:00 PM | America/New_York (EDT, summer) | `0 2 * * *` |
-| 9:00 PM | America/Chicago (CST) | `0 3 * * *` |
-| 6:00 PM | America/Los_Angeles (PST) | `0 2 * * *` |
-| 8:00 PM | Europe/London (GMT) | `0 20 * * *` |
-| 9:00 AM | Asia/Tokyo (JST) | `0 0 * * *` |
+The workflow itself fires hourly. The Python script then checks whether your local clock has reached your target time before doing any real work — so 23 of the 24 hourly runs exit in a couple of seconds and only the run nearest your target sends the email. This means you can change your timezone or your preferred send time without ever touching `.github/workflows/daily-summary.yml`.
 
-Use [crontab.guru](https://crontab.guru) to calculate the right UTC cron for your timezone.
+#### Step 1 — Pick your timezone
+
+In **Settings → Secrets and variables → Actions → Variables**, create a variable named `EMAIL_TIMEZONE` and set it to an [IANA timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) — `Area/Location` style, no spaces. Examples:
+
+| Where you are | Value to use |
+|---|---|
+| US East Coast | `America/New_York` |
+| US Central | `America/Chicago` |
+| US Mountain | `America/Denver` |
+| US West Coast | `America/Los_Angeles` |
+| UK | `Europe/London` |
+| Central Europe | `Europe/Berlin` |
+| India | `Asia/Kolkata` |
+| Singapore | `Asia/Singapore` |
+| Japan | `Asia/Tokyo` |
+| Sydney | `Australia/Sydney` |
+
+The script handles daylight saving automatically — `America/New_York` flips between EST and EDT for you. Search the [Wikipedia table](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for any city or region.
+
+#### Step 2 — Pick what time you want the email
+
+Add two more variables:
+
+- `EMAIL_SEND_HOUR` — the local hour you want the email, in 24-hour format (`0`–`23`). Default `22` (10 PM).
+- `EMAIL_SEND_MINUTE` — the local minute (`0`–`59`). Default `30`.
+
+So out of the box, the email arrives around **10:30 PM in `America/New_York`**. If you want it at 9 PM in `Australia/Sydney`, set `EMAIL_TIMEZONE=Australia/Sydney`, `EMAIL_SEND_HOUR=21`, `EMAIL_SEND_MINUTE=0` — that's all.
+
+#### Step 3 — (Optional) widen or tighten the window
+
+GitHub's cron is often delayed 5–15 minutes during peak hours. The script accepts a window of minutes AFTER your target time during which the run still counts. Default is **60 minutes** — generous enough that a 30-minute cron delay still fires the email, narrow enough that two consecutive hourly runs never both fire.
+
+Set `EMAIL_SEND_WINDOW_MIN` if you need a different window. The window is one-sided (only AFTER the target), so the email never goes out earlier than your configured time.
+
+#### Why this works the way it does
+
+GitHub Actions cron schedules are UTC-only and can't read from your repo's variables. The old approach was to hand-calculate the right UTC cron and edit `.github/workflows/daily-summary.yml` every time you moved or daylight saving started. The new approach moves the schedule decision into the Python script, which CAN read your variables — so the schedule lives where the rest of your settings live, and the workflow YAML stays unchanged.
+
+#### Manual sends
+
+Want to send the email right now regardless of the schedule? Go to **Actions → Daily Work Summary → Run workflow**. Manual `workflow_dispatch` runs bypass the time-of-day guard.
+
+#### A working example
+
+You live in Berlin, you usually wrap up work around 11 PM, and you want the email shortly after:
+
+| Variable | Value |
+|---|---|
+| `EMAIL_TIMEZONE` | `Europe/Berlin` |
+| `EMAIL_SEND_HOUR` | `23` |
+| `EMAIL_SEND_MINUTE` | `15` |
+
+Done. The 23:00–23:59 hourly run will send the email; every other hour's run will exit in seconds. The email subject's date, the markdown heading inside the email, the filename in `summaries/`, the commit message, and the "Generated at" timestamp at the bottom of the email will all show the Berlin-local date, so the email arriving at 23:15 on June 5 will reference June 5's work (not June 6 like a UTC-anchored summary would).
+
+#### When the cron line itself might still need a change
+
+The only reason to edit `.github/workflows/daily-summary.yml` directly is if you want to change how often the workflow CHECKS the time. The default `'5 * * * *'` (hourly at :05) is right for almost every use case. If you wanted minute-level precision, you could switch to `'*/15 * * * *'` (every 15 minutes) and tighten the window — but that burns more GitHub Actions minutes for no real benefit.
 
 ---
 
@@ -274,7 +326,10 @@ Only add the AI key(s) you actually have. One is enough.
 
 | Variable | Example value |
 |----------|---------------|
-| `EMAIL_TIMEZONE` | `America/New_York` |
+| `EMAIL_TIMEZONE` | `America/New_York` — see [Customizing the email schedule](#customizing-the-email-schedule) for format and the [full list of valid names](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) |
+| `EMAIL_SEND_HOUR` | `22` (local hour 0–23, default 22 = 10 PM) |
+| `EMAIL_SEND_MINUTE` | `30` (local minute 0–59, default 30) |
+| `EMAIL_SEND_WINDOW_MIN` | `60` (acceptable cron delay in minutes, default 60) |
 | `AI_PROVIDER` | `openrouter` *(only needed if you set multiple AI keys)* |
 | `DELIVERY_METHOD` | `email,airtable` *(comma-separated; default is `email`. Options: `email`, `airtable`, `slack`, `discord`)* |
 | `AIRTABLE_BASE_ID` | `appXXXXXXXXXXXXXX` *(only needed if not stored as a Secret)* |
@@ -290,7 +345,7 @@ Only add the AI key(s) you actually have. One is enough.
 
 ### 6. Customize the Email Schedule (Optional)
 
-Open `.github/workflows/daily-summary.yml` and update the `cron:` line. See the table above for common times.
+Set `EMAIL_TIMEZONE`, `EMAIL_SEND_HOUR`, and `EMAIL_SEND_MINUTE` as Variables in step 4 above. No need to edit `.github/workflows/daily-summary.yml`. Full walkthrough in [Customizing the email schedule](#customizing-the-email-schedule).
 
 ---
 
@@ -350,4 +405,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.4.0 | Last Updated: 2026-03-11*
+*Version: 1.5.0 | Last Updated: 2026-06-05*

@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-06-05
+
+### Added
+- **Timezone-aware scheduling:** New `EMAIL_SEND_HOUR` (default `22`), `EMAIL_SEND_MINUTE` (default `30`), and `EMAIL_SEND_WINDOW_MIN` (default `60`) Action variables let admins set the local target time for the daily email without touching cron syntax or UTC math. The workflow now fires hourly; the Python script's time-of-day guard skips the run unless local-clock time in `EMAIL_TIMEZONE` is inside the configured window. Manual `workflow_dispatch` runs bypass the guard.
+- **Footer link in every email:** "Need to change the timing or timezone of these emails? Click here for instructions." Points at the public README's [Customizing the email schedule](https://github.com/zero2webmaster/daily-work-summary#customizing-the-email-schedule) section.
+- **Onboarded to the Z2W agent coordination bulletin** at `zero2webmaster/z2w-agent-coordination`. Canonical block v0.1.8 added to `CLAUDE.md` and `AGENTS.md`; bulletin file `projects/daily-work-summary.md` scaffolded.
+
+### Changed
+- **Email date labels now reflect `EMAIL_TIMEZONE` consistently** — markdown heading, filename in `summaries/`, "Generated at" footer timestamp, commit message, and email subject all use the configured local zone (previously only the email subject was zone-aware; everything else was UTC, which caused the date to read as "tomorrow" when received late at night).
+- **AI summary prompt tightened** (`generate_summary.py`): keeps yesterday's plain-English guardrails but bans invented-team filler ("The team improved…"), caps output at one short sentence, and replaces the 22-word example with a 13-word passive-theme one.
+- **Workflow cron switched** from a single fixed UTC time (`0 3 * * *` = 10 PM EST) to hourly at `:05` (`5 * * * *`). Admins set the local target via Variables instead of editing the YAML.
+
+### Migration
+
+Existing installations: no action required if you're happy with the default (10:30 PM in `America/New_York`). To change the time or timezone, see [Customizing the email schedule](https://github.com/zero2webmaster/daily-work-summary#customizing-the-email-schedule) in the README — no YAML edit needed anymore.
+
 ## [1.4.0] - 2026-03-11
 
 ### Added
