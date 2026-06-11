@@ -183,10 +183,10 @@ def fetch_commits_with_retry(repo, since, author, retries=MAX_RETRIES):
 
 # AI provider config: (api_key_env, model). Gemini also accepts GEMINI_API_KEY.
 AI_PROVIDERS = {
-    "openrouter": ("OPENROUTER_API_KEY", "anthropic/claude-3-5-haiku"),
-    "anthropic": ("ANTHROPIC_API_KEY", "claude-3-5-haiku-20241022"),
-    "gemini": ("GOOGLE_API_KEY", "gemini-1.5-flash"),  # GOOGLE_API_KEY or GEMINI_API_KEY
-    "openai": ("OPENAI_API_KEY", "gpt-4o-mini"),
+    "openrouter": ("OPENROUTER_API_KEY", "anthropic/claude-haiku-4.5"),
+    "anthropic": ("ANTHROPIC_API_KEY", "claude-haiku-4-5-20251001"),
+    "gemini": ("GOOGLE_API_KEY", "gemini-2.5-flash"),  # GOOGLE_API_KEY or GEMINI_API_KEY
+    "openai": ("OPENAI_API_KEY", "gpt-5-mini"),
 }
 
 

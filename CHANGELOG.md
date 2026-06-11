@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.1] - 2026-06-10
+
+### Fixed
+- **CRITICAL: Nightly summary cron was broken because the default Claude model had been retired.** [`.github/scripts/generate_summary.py`](.github/scripts/generate_summary.py) (line 187) defaulted to `claude-3-5-haiku-20241022` — Anthropic retired that snapshot on Feb 19, 2026, so every nightly run that fell through to the Anthropic native provider was 404ing silently. The other three provider defaults were also one major version behind. Updated all four:
+  - Claude native: `claude-3-5-haiku-20241022` → `claude-haiku-4-5-20251001`
+  - Claude OpenRouter: `anthropic/claude-3-5-haiku` → `anthropic/claude-haiku-4.5`
+  - Gemini: `gemini-1.5-flash` → `gemini-2.5-flash`
+  - OpenAI: `gpt-4o-mini` → `gpt-5-mini`
+- The same model IDs are also referenced in the README's "Optional AI Secrets" table — all four updated to match.
+
+### Verification
+- `python3 -c "import ast; ast.parse(open('.github/scripts/generate_summary.py').read())"` — clean parse.
+- The next scheduled cron run (or a manual `workflow_dispatch` from the Actions tab) is the live test. If it sends an email, we're back online.
+
+---
+
 ## [1.5.0] - 2026-06-05
 
 ### Added

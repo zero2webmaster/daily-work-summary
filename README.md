@@ -77,10 +77,10 @@ Set **one** of these to enable AI-powered repo summaries. If you set multiple ke
 
 | Secret | Provider | Default model | Get your key |
 |--------|----------|---------------|--------------|
-| `OPENROUTER_API_KEY` | [OpenRouter](https://openrouter.ai) | `anthropic/claude-3-5-haiku` | [openrouter.ai/keys](https://openrouter.ai/keys) |
-| `ANTHROPIC_API_KEY` | [Anthropic](https://console.anthropic.com) | `claude-3-5-haiku-20241022` | [console.anthropic.com/keys](https://console.anthropic.com/settings/keys) |
-| `GOOGLE_API_KEY` | [Google Gemini](https://aistudio.google.com) | `gemini-1.5-flash` | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
-| `OPENAI_API_KEY` | [OpenAI](https://platform.openai.com) | `gpt-4o-mini` | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+| `OPENROUTER_API_KEY` | [OpenRouter](https://openrouter.ai) | `anthropic/claude-haiku-4.5` | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| `ANTHROPIC_API_KEY` | [Anthropic](https://console.anthropic.com) | `claude-haiku-4-5-20251001` | [console.anthropic.com/keys](https://console.anthropic.com/settings/keys) |
+| `GOOGLE_API_KEY` | [Google Gemini](https://aistudio.google.com) | `gemini-2.5-flash` | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| `OPENAI_API_KEY` | [OpenAI](https://platform.openai.com) | `gpt-5-mini` | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
 
 > **Tip:** OpenRouter lets you use models from Anthropic, OpenAI, Google, and others with a single key — useful if you want flexibility without managing multiple accounts.
 
