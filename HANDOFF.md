@@ -36,12 +36,14 @@ guards against silent outages.
 
 ## Open / next actions
 
-- **Portfolio totals:** see the `## Current focus` in
-  `z2w-agent-coordination/projects/daily-work-summary.md` for the true
-  portfolio-wide LoC/doc numbers from the v1.9.1 re-run.
-- **Session-metrics hook:** wired globally via `update-config` this session (or
-  pending — confirm in `~/.claude/settings.json`). ROADMAP tracks remaining
-  polish (rolling log, `systemMessage` surfacing).
+- **Portfolio totals (v1.9.1 re-run, 2026-06-18):** 41 repos (40 active, 1
+  archived) → **695,618 lines of code + 431,186 lines of documentation**
+  (`stats/portfolio-2026-06.json`). z2w-ai-suite = 115K LoC after excluding its
+  committed `.specstory` transcripts.
+- **Session-metrics hook:** LIVE — `~/.claude/hooks/session_metrics.py` wired
+  into `~/.claude/settings.json` as a global Stop hook. ROADMAP tracks remaining
+  polish (rolling log). Filed a `[→ z2w-starter-kit]` discussion ask (Kerry's
+  curiosity: traditional-dev effort + famous-software line-count comparisons).
 - **For the z2w-ai-suite agent (not this project):** `.specstory/` is committed
   there (528 files) — should be gitignored + `git rm --cached`'d per the
   2026-06-15 portfolio heads-up.
