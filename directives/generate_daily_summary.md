@@ -1,7 +1,7 @@
 # Directive: Generate Daily Work Summary
 
-**Version:** 1.3.0
-**Last Updated:** 2026-06-05
+**Version:** 1.4.0
+**Last Updated:** 2026-06-18
 **Owner:** Kerry Kriger
 
 ---
@@ -29,6 +29,7 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 | Time window | Last 24 hours from run time | Uses `datetime.now(timezone.utc) - timedelta(hours=24)` |
 | Scheduling target | `EMAIL_TIMEZONE` + `EMAIL_SEND_HOUR` + `EMAIL_SEND_MINUTE` + `EMAIL_SEND_WINDOW_MIN` variables | All four have defaults — see Trigger section |
 | Delivery method | `DELIVERY_METHOD` variable | Comma-separated: `email` (default), `airtable`, `slack`, `discord`. `both` = `email,airtable` |
+| Skill Vault tally | `SKILL_VAULT_TALLY` variable (default on) | Set `false` to hide the headline Skill Vault line. Reads `stats/skill-vault.json` from the coordination repo via `PAT_GITHUB` — no extra secret. See Step 3a |
 | Airtable PAT | `AIRTABLE_PAT` secret | Required when delivery includes `airtable` |
 | Airtable IDs | `AIRTABLE_BASE_ID`, `AIRTABLE_TABLE_SUMMARIES`, `AIRTABLE_TABLE_REPOS` variables | All IDs (`appXXX`, `tblXXX`), never names |
 | Slack webhook | `SLACK_WEBHOOK_URL` secret | Required when delivery includes `slack` |
@@ -70,6 +71,14 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 - One bullet per commit; show all commits (no truncation)
 - Truncate individual commit messages to 80 characters
 - If zero commits across all repos: "No commits today — well rested! ✅"
+
+### Step 3a: Skill Vault tally (headline stat) — added v1.8.0
+- After the date is resolved, read the pre-computed `stats/skill-vault.json` artifact (schema `skill-vault-stats/v1`) from the `zero2webmaster/z2w-agent-coordination` repo using the existing `PAT_GITHUB` client (`fetch_skill_vault_tally()`). No new secret — `PAT_GITHUB`'s org read already covers it.
+- Emit a one-line headline near the top of the email (both the has-commits and no-commits paths): `🧠 **Skill Vault:** {created} created, {improved} improved today · {total} skills total`, taken from `by_day[today]` (`created`/`improved`) + `totals.skills`.
+- **Staleness:** the artifact only refreshes at a Vault session-end, so when `by_day` has no entry for today the line shows just the running total + `*(Vault stats as of {as_of})*`, never an implied "0 created today".
+- **Must never break the email.** `fetch_skill_vault_tally()` is fully exception-wrapped — a missing/unreadable/malformed artifact (or a fork that has none) silently drops the line and the digest sends normally.
+- **Toggle:** optional `SKILL_VAULT_TALLY` Action variable (default on); set to `false` to hide the line without a code change.
+- Formatting is isolated in the pure `format_skill_vault_tally(stats, today)` and covered by `.tmp/test_skill_vault_tally.py` (9/9).
 
 ### Step 4: Save Markdown Archive
 - Write to `summaries/daily-summary-YYYY-MM-DD.md`

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0] - 2026-06-18
+
+### Added
+- **Skill Vault tally as a headline line in the daily email.** When work was done on Kerry's portfolio-wide skill library that day, the email now leads with a one-line stat — e.g. `🧠 Skill Vault: 3 created, 5 improved today · 28 skills total` — surfacing the created-vs-improved split (the compounding-value signal) plus the running total. ([`generate_summary.py`](.github/scripts/generate_summary.py))
+  - **Data source:** reads the pre-computed `stats/skill-vault.json` artifact (schema `skill-vault-stats/v1`) from the `zero2webmaster/z2w-agent-coordination` repo via the job's existing `PAT_GITHUB` — **no new secret**, no second clone, no dependency on the private skill-vault repo directly.
+  - **Can never break the email.** The fetch is fully wrapped: if the artifact is missing, unreadable, or malformed, the tally is silently skipped and the digest sends as normal. Forks without the artifact simply never see the line.
+  - **Honest about staleness.** The artifact only refreshes when a Vault session ends, so on a day with no recorded entry the line shows just the running total plus a *"(Vault stats as of YYYY-MM-DD)"* note instead of implying "0 created today".
+  - New optional `SKILL_VAULT_TALLY` Action variable (default on) turns the line off without a code change.
+  - Verified by an offline unit test (`.tmp/test_skill_vault_tally.py`, 9/9) covering both-counts, created-only, improved-only, stale-artifact, no-activity, zero-counts, and malformed-input cases.
+
 ## [1.7.0] - 2026-06-18
 
 ### Added

@@ -143,6 +143,22 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/backfill-summari
 
 ---
 
+## Skill Vault Tally in the Email (2026-06-18) ✅
+
+Fulfills the no-urgency bulletin ask from `z2w-skill-vault` (2026-06-16): surface a headline Skill Vault statistic in the daily digest.
+
+- [x] **v1.8.0** — Email leads with `🧠 Skill Vault: X created, Y improved today · N skills total`. Reads the pre-computed `stats/skill-vault.json` (`skill-vault-stats/v1`) from the coordination repo via `PAT_GITHUB` (no new secret). Fully exception-wrapped so it can never break the email; honest "(Vault stats as of …)" note when the artifact is stale; optional `SKILL_VAULT_TALLY` Action variable to disable.
+
+**Verification:**
+```bash
+source venv/bin/activate
+python -m py_compile .github/scripts/generate_summary.py
+python .tmp/test_skill_vault_tally.py   # 9/9
+python -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+```
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:
@@ -154,4 +170,4 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/backfill-summari
 
 ---
 
-*Last Updated: 2026-06-18*
+*Last Updated: 2026-06-18 (v1.8.0)*

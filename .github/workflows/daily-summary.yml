@@ -49,6 +49,9 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DELIVERY_METHOD: ${{ vars.DELIVERY_METHOD }}
+          # Headline Skill Vault tally in the email (default on). Set the
+          # SKILL_VAULT_TALLY Action variable to "false" to turn it off.
+          SKILL_VAULT_TALLY: ${{ vars.SKILL_VAULT_TALLY }}
           AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID || vars.AIRTABLE_BASE_ID }}
           AIRTABLE_TABLE_SUMMARIES: ${{ secrets.AIRTABLE_TABLE_SUMMARIES || vars.AIRTABLE_TABLE_SUMMARIES }}

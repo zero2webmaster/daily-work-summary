@@ -64,6 +64,14 @@ SCHEDULE_DOCS_URL = (
     "#customizing-the-email-schedule"
 )
 
+# Skill Vault tally (headline stat in the email). The Vault's per-day created/
+# improved counts + running total are pre-computed into a versioned JSON artifact
+# in the coordination repo (schema skill-vault-stats/v1; see that repo's
+# stats/README.md). We read that artifact rather than the private z2w-skill-vault
+# repo directly, so no extra token scope is needed beyond PAT_GITHUB's org read.
+COORDINATION_REPO = "zero2webmaster/z2w-agent-coordination"
+SKILL_VAULT_STATS_PATH = "stats/skill-vault.json"
+
 
 def _get_email_timezone() -> ZoneInfo:
     """Return the configured EMAIL_TIMEZONE as a ZoneInfo, falling back to UTC.
@@ -346,6 +354,78 @@ def _resolve_window() -> tuple[datetime, datetime | None, str]:
     return since, None, _now_local().strftime("%Y-%m-%d")
 
 
+def format_skill_vault_tally(stats: dict, today: str) -> str | None:
+    """Build the one-line Skill Vault headline from a skill-vault-stats/v1 dict.
+
+    Returns a Markdown line (e.g. "🧠 **Skill Vault:** 3 created, 5 improved
+    today · 28 skills total") or None if the artifact has no usable numbers.
+    Pure/offline so it can be unit-tested without GitHub.
+    """
+    if not isinstance(stats, dict):
+        return None
+
+    totals = stats.get("totals") or {}
+    total_skills = totals.get("skills")
+    by_day = stats.get("by_day") or {}
+    as_of = stats.get("as_of")
+
+    parts: list[str] = []
+
+    today_entry = by_day.get(today) if isinstance(by_day, dict) else None
+    if isinstance(today_entry, dict):
+        created = today_entry.get("created", 0) or 0
+        improved = today_entry.get("improved", 0) or 0
+        seg = []
+        if created:
+            seg.append(f"{created} created")
+        if improved:
+            seg.append(f"{improved} improved")
+        if seg:
+            parts.append(", ".join(seg) + " today")
+
+    if total_skills is not None:
+        parts.append(f"{total_skills} skills total")
+
+    if not parts:
+        return None
+
+    line = "🧠 **Skill Vault:** " + " · ".join(parts)
+    # Surface staleness: the artifact only refreshes when a Vault session ends,
+    # so if its latest day predates today we don't actually know today's counts.
+    # Note the as-of date rather than implying "0 created today".
+    if as_of and as_of != today and not isinstance(today_entry, dict):
+        line += f" *(Vault stats as of {as_of})*"
+    return line
+
+
+def fetch_skill_vault_tally(g: Github, today: str) -> str | None:
+    """Read the pre-computed Skill Vault stats artifact from the coordination
+    repo and return a one-line Markdown headline for the email.
+
+    NEVER raises. This is an optional adornment on Kerry's morning email; any
+    failure (repo not accessible, file missing, malformed JSON) silently skips
+    the tally rather than breaking the digest. Disable with SKILL_VAULT_TALLY=0.
+    """
+    if (os.environ.get("SKILL_VAULT_TALLY", "true").strip().lower()
+            in {"0", "false", "no", "off"}):
+        print("  Skill Vault tally: disabled via SKILL_VAULT_TALLY")
+        return None
+    try:
+        import json
+        repo = g.get_repo(COORDINATION_REPO)
+        content = repo.get_contents(SKILL_VAULT_STATS_PATH)
+        stats = json.loads(content.decoded_content.decode("utf-8"))
+        line = format_skill_vault_tally(stats, today)
+        if line:
+            print(f"  Skill Vault tally: {line}")
+        else:
+            print("  Skill Vault tally: skipped (artifact had no usable totals)")
+        return line
+    except Exception as e:
+        print(f"  Skill Vault tally: skipped ({type(e).__name__}: {e})")
+        return None
+
+
 def generate_summary() -> dict[str, Any]:
     """Fetch commits, generate summary, and return structured data.
 
@@ -372,6 +452,9 @@ def generate_summary() -> dict[str, Any]:
     else:
         label_local = _now_local()
 
+    # Headline Skill Vault tally (optional; never breaks the email if it fails).
+    vault_line = fetch_skill_vault_tally(g, today)
+
     owner_repos: dict[str, dict[str, list[str]]] = defaultdict(dict)
     repo_urls: dict[str, str] = {}
 
@@ -393,6 +476,7 @@ def generate_summary() -> dict[str, Any]:
     # No commits — return minimal result
     if not owner_repos:
         msg = "No commits today — well rested! ✅"
+        vault_html = markdown_lib.markdown(vault_line) if vault_line else ""
         footer = (
             "<p>Daily Work Summary initially created by "
             '<a href="https://zero2webmaster.com/kerry-kriger">Zero2Webmaster Founder Dr. Kerry Kriger</a></p>'
@@ -401,10 +485,11 @@ def generate_summary() -> dict[str, Any]:
             f'<p style="font-size: 14px; color: #666;">Need to change the timing or timezone of these emails? '
             f'<a href="{SCHEDULE_DOCS_URL}">Click here</a> for instructions.</p>'
         )
-        html = f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;"><p>{msg}</p>{footer}</div>'
+        html = f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;"><p>{msg}</p>{vault_html}{footer}</div>'
+        markdown_out = msg + (f"\n\n{vault_line}" if vault_line else "")
         return {
             "html": html,
-            "markdown": msg,
+            "markdown": markdown_out,
             "date": today,
             "total_commits": 0,
             "total_repos": 0,
@@ -422,6 +507,10 @@ def generate_summary() -> dict[str, Any]:
         f"# Daily Work Summary — {label_local.strftime('%a %b %d, %Y')}",
         "",
         f"**{total_commits} commits** across **{total_repos} repos**",
+    ]
+    if vault_line:
+        lines += ["", vault_line]
+    lines += [
         "",
         "---",
         "",

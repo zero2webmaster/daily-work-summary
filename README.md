@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.7.0
+**Version:** 1.8.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -61,6 +61,20 @@ Each AI call uses a small/fast model (Claude 3.5 Haiku, GPT-4o-mini, or Gemini F
 
 ---
 
+## Skill Vault tally (optional)
+
+If you maintain a "skill vault" stats artifact, the email leads with a one-line headline showing how many reusable skills you created/improved that day and your running total:
+
+```
+🧠 Skill Vault: 3 created, 5 improved today · 28 skills total
+```
+
+**How it works:** the line is read from a pre-computed JSON artifact at `stats/skill-vault.json` in the `zero2webmaster/z2w-agent-coordination` repo (schema `skill-vault-stats/v1`). The job's existing `PAT_GITHUB` reads it — no extra secret. If the artifact can't be read (not present, no access, malformed), the tally is **silently skipped** and the rest of the email is unaffected. When the artifact's latest day predates today, the line shows just the running total plus an honest *"(Vault stats as of YYYY-MM-DD)"* note.
+
+This is a Zero2Webmaster-specific feature; most forks won't have the artifact, so it simply won't appear. Set the `SKILL_VAULT_TALLY` variable to `false` to disable it explicitly.
+
+---
+
 ## Configuration Reference
 
 ### Required Secrets
@@ -118,6 +132,7 @@ Set these under **Settings → Secrets and variables → Actions → Variables**
 | `EMAIL_SEND_HOUR` | Local hour (0–23) at which the email should go out — see [Customizing the email schedule](#customizing-the-email-schedule) | `22` |
 | `EMAIL_SEND_MINUTE` | Local minute (0–59) | `30` |
 | `EMAIL_SEND_WINDOW_MIN` | Acceptable delay after the target time, in minutes — rides out GitHub cron's typical 5–15 min jitter | `60` |
+| `SKILL_VAULT_TALLY` | Set to `false` to hide the Skill Vault headline line — see [Skill Vault tally](#skill-vault-tally-optional) below | `true` (shown) |
 | `AIRTABLE_BASE_ID` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
 | `AIRTABLE_TABLE_SUMMARIES` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
 | `AIRTABLE_TABLE_REPOS` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
@@ -411,4 +426,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.7.0 | Last Updated: 2026-06-18*
+*Version: 1.8.0 | Last Updated: 2026-06-18*

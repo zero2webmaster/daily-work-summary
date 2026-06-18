@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-06-18 (v1.7.0)
+**Last Updated:** 2026-06-18 (v1.8.0)
 
 ---
 
@@ -58,6 +58,14 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-06-18 - Skill Vault tally in the daily email (v1.8.0)
+- **v1.8.0 — headline Skill Vault stat in the email.** Each digest now leads with `🧠 Skill Vault: X created, Y improved today · N skills total`, the created-vs-improved split + running total. Fulfills the no-urgency bulletin ask from `z2w-skill-vault` (2026-06-16).
+- **Data source:** reads the pre-computed `stats/skill-vault.json` (schema `skill-vault-stats/v1`) from the `z2w-agent-coordination` repo via the existing `PAT_GITHUB` — **no new secret**, no second clone, no direct dependency on the private skill-vault repo.
+- **Cannot break the email:** the fetch is fully exception-wrapped — missing/unreadable/malformed artifact (or a fork without it) silently drops the line. Honest about staleness: when the artifact has no entry for today it shows the running total + `(Vault stats as of YYYY-MM-DD)` rather than implying "0 created today".
+- New optional `SKILL_VAULT_TALLY` Action variable (default on) hides the line without a code change.
+- **Verified:** offline unit test `.tmp/test_skill_vault_tally.py` 9/9 + live render against the real artifact (`28 skills total`; created/improved split renders on matching days). py_compile + both workflow YAMLs valid.
+- **Next:** remaining no-urgency ask is the monthly portfolio-stats artifact (write `stats/portfolio-YYYY-MM.json` into the coordination repo).
 
 ### Session: 2026-06-18 - Email-outage fix + dead-man's-switch + backfill (v1.5.2 → 1.7.0)
 - **v1.5.2 — fixed the week-long outage.** Root cause was the time-of-day guard, NOT the email credential or an auto-disabled workflow. Two bugs skipped every run since June 5: (1) the 22:30 ET + 60-min window maps to 02:30–03:30 UTC, which sits in GitHub's scheduled-cron dead zone (it reliably fires nothing ~00:25–04:39 UTC); (2) the target was computed as *today's* 22:30, so the early-morning runs GitHub does fire measured lateness against a future target → always "too early, skip." Fix: anchor target to most-recent-past HH:MM, widen default window 60→480 min, add per-day idempotency. Verified by a clock-frozen guard test (`.tmp/test_guard.py`) 7/7.
