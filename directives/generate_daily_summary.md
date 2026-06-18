@@ -12,11 +12,12 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 
 ## Trigger
 
-- **Automated:** GitHub Actions cron `5 * * * *` (hourly at `:05` UTC). The Python script's `should_run_now()` time-of-day guard reads `EMAIL_TIMEZONE` + `EMAIL_SEND_HOUR` + `EMAIL_SEND_MINUTE` + `EMAIL_SEND_WINDOW_MIN` Action variables and short-circuits 23 of the 24 hourly runs — only the run nearest the configured local target time proceeds. This replaces the previous "edit-the-cron-line-in-YAML" approach so admins never touch UTC math or daylight-saving offsets.
+- **Automated:** GitHub Actions cron `5 * * * *` (nominally hourly at `:05` UTC). The Python script's `should_run_now()` time-of-day guard reads `EMAIL_TIMEZONE` + `EMAIL_SEND_HOUR` + `EMAIL_SEND_MINUTE` + `EMAIL_SEND_WINDOW_MIN` Action variables and skips runs outside the configured local send window. This replaces the previous "edit-the-cron-line-in-YAML" approach so admins never touch UTC math or daylight-saving offsets.
+  - **GitHub does NOT honor the hourly schedule for this repo.** Its free scheduler is heavily throttled — actual runs land every 2–5 hours, and there is a reliable dead zone from roughly **00:30–04:30 ET (≈04:30–08:30 UTC)** where it fires nothing. The runs it *does* fire most consistently are early morning ET (~00:40–02:00 ET). The guard is built around this reality (wide window + most-recent-past anchoring), not around the cron firing on time. **Do not narrow `EMAIL_SEND_WINDOW_MIN` back toward 60** expecting an on-the-minute send — that is what broke v1.5.0→1.5.1 (no summary June 5–17, fixed in v1.5.2).
 - **Manual:** GitHub Actions → "Run workflow" button. `workflow_dispatch` runs bypass the time-of-day guard (so a one-off send always fires).
 - **Timezone:** `EMAIL_TIMEZONE` variable (Settings → Actions → Variables). IANA format (e.g. `America/New_York`, `Europe/London`). [Full list](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Default: `America/New_York`. Now controls ALL date labels: subject date, markdown heading, filename in `summaries/`, "Generated at" footer timestamp, commit message, AND the scheduling guard. Previously controlled only subject + footer.
 - **Send time:** `EMAIL_SEND_HOUR` (0–23, default `22`) and `EMAIL_SEND_MINUTE` (0–59, default `30`) — local target in `EMAIL_TIMEZONE`. Default = 10:30 PM in `America/New_York`.
-- **Window:** `EMAIL_SEND_WINDOW_MIN` (default `60`) — minutes AFTER the target during which a delayed cron still counts. One-sided window: never fires earlier than the target. Sized to ride out GitHub cron's typical 5–15 min delay with margin.
+- **Window:** `EMAIL_SEND_WINDOW_MIN` (default `480` = 8h) — minutes AFTER the target during which a delayed cron still counts. One-sided: never fires earlier than the target, and the target is anchored to the most recent PAST occurrence of HH:MM (so a run after midnight measures its lateness against last night's target, not tonight's). The 8h default is deliberately wide to survive GitHub's throttled scheduler and its 00:30–04:30 ET dead zone. **Idempotency:** at most one scheduled summary per local day — if `summaries/daily-summary-<local-date>.md` already exists on checkout, a later same-day run bows out instead of double-sending. Manual `workflow_dispatch` runs bypass both the window and the idempotency check.
 
 ## Inputs
 
@@ -46,8 +47,9 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 
 ### Step 0: Time-of-Day Guard (cron only)
 - `main()` reads `GITHUB_EVENT_NAME`. If `workflow_dispatch` (manual) or `FORCE_RUN=true`, skip the guard.
-- Otherwise call `should_run_now()`: returns `(allowed, reason)` based on `EMAIL_TIMEZONE` + `EMAIL_SEND_HOUR` + `EMAIL_SEND_MINUTE` + `EMAIL_SEND_WINDOW_MIN`.
-- If not allowed: write `should_run=false`, `send_email=false`, `has_summary=false` to `$GITHUB_OUTPUT` and exit cleanly. Workflow's downstream steps (subject-date, commit, email) all gate on `steps.summary.outputs.should_run == 'true'`.
+- Otherwise call `should_run_now()`: returns `(allowed, reason)` based on `EMAIL_TIMEZONE` + `EMAIL_SEND_HOUR` + `EMAIL_SEND_MINUTE` + `EMAIL_SEND_WINDOW_MIN`. Target is anchored to the most recent PAST occurrence of HH:MM (steps back a day when now < today's target) so early-morning throttled runs measure lateness correctly.
+- If allowed, then a per-day idempotency check: if `summaries/daily-summary-<local-date>.md` already exists, skip too (prevents the wide window from double-sending on a second same-day run).
+- If not allowed (or already sent today): write `should_run=false`, `send_email=false`, `has_summary=false` to `$GITHUB_OUTPUT` and exit cleanly. Workflow's downstream steps (subject-date, commit, email) all gate on `steps.summary.outputs.should_run == 'true'`.
 
 ### Step 3: Generate Smart Summary
 - Group commits by repository owner (account)

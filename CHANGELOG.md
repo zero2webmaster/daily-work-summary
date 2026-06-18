@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.2] - 2026-06-17
+
+### Fixed
+- **The daily email stopped arriving — no summary had been sent since June 5.** Two bugs in the "only send at the chosen time of day" guard combined to skip every run:
+  - **GitHub runs the job too late at night.** The configured send time (10:30 PM Eastern) plus the old 60-minute grace window landed in a stretch of the night — roughly 12:30 AM to 4:30 AM Eastern — where GitHub's free scheduler reliably runs *nothing*. So the one-hour window the email was allowed to send in was never actually reached.
+  - **The grace window did the wrong math after midnight.** The runs GitHub *does* fire happen in the early morning (around 12:40–2:00 AM Eastern). For those, the code measured the gap against *tonight's* 10:30 PM instead of *last night's*, getting a huge negative number, so it always concluded "too early, skip" no matter how wide the window was.
+- **The fix:**
+  - Measure the gap against the most recent past 10:30 PM (step back a day when we're past midnight) — so an early-morning run correctly counts as "a bit late," not "way too early." [`generate_summary.py`](.github/scripts/generate_summary.py)
+  - Widen the default grace window from 60 minutes to 8 hours so a run that GitHub delays into the early morning still sends.
+  - Add a one-per-day safety check: if today's summary already exists in the repo, a later run that same day bows out instead of sending a duplicate. This makes the wide window safe.
+- Also corrected version drift: the README still said 1.5.0 even though VERSION was 1.5.1.
+
+### Verification
+- New guard test ([`.tmp/test_guard.py`](.tmp/test_guard.py), throwaway) freezes the clock at 7 representative times and confirms the throttled early-morning runs now send while pre-target and stale-afternoon runs don't — all 7 pass.
+- Live test: a manual `workflow_dispatch` run from the Actions tab regenerates today's summary and sends the email.
+
+---
+
 ## [1.5.1] - 2026-06-10
 
 ### Fixed

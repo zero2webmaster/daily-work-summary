@@ -52,7 +52,12 @@ HTML_FONT_SIZE = "18px"
 DEFAULT_TIMEZONE = "America/New_York"
 DEFAULT_SEND_HOUR = 22
 DEFAULT_SEND_MINUTE = 30
-DEFAULT_SEND_WINDOW_MIN = 60
+# Wide by design. GitHub throttles the "hourly" cron for low-traffic repos and
+# routinely fires nothing between ~00:30 and ~04:30 ET — so a narrow window that
+# straddles that gap never catches a run and no summary is ever sent. 480 minutes
+# (8h) lets the first run after the target time still send, while the per-day
+# idempotency guard in main() prevents a wide window from double-sending.
+DEFAULT_SEND_WINDOW_MIN = 480
 
 SCHEDULE_DOCS_URL = (
     "https://github.com/zero2webmaster/daily-work-summary"
@@ -103,7 +108,8 @@ def should_run_now() -> tuple[bool, str]:
     The workflow fires hourly; this guard ensures only the run nearest the
     target local time actually sends the email. The window is one-sided
     (only AFTER the target) so a delayed cron still fires; it never fires
-    early.
+    early. GitHub's scheduler is heavily throttled, so the window is wide by
+    default (see DEFAULT_SEND_WINDOW_MIN) and main() dedupes per local day.
     """
     tz = _get_email_timezone()
     hour = _parse_int_env("EMAIL_SEND_HOUR", DEFAULT_SEND_HOUR)
@@ -115,10 +121,17 @@ def should_run_now() -> tuple[bool, str]:
 
     now_local = datetime.now(tz)
     target = now_local.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    # Anchor to the most recent PAST occurrence of HH:MM. Without this, a cron
+    # run that lands after midnight (the only runs GitHub reliably fires are
+    # ~00:39–02:01 ET) computes a target ~22h in the future, making delta hugely
+    # negative so the guard never fires. Stepping back a day when we're before
+    # today's target makes delta the minutes since the last scheduled send time.
+    if now_local < target:
+        target -= timedelta(days=1)
     delta_min = (now_local - target).total_seconds() / 60
 
     label = (
-        f"target {hour:02d}:{minute:02d} {tz.key}, "
+        f"target {hour:02d}:{minute:02d} {tz.key} ({target.strftime('%b %d')}), "
         f"now {now_local.strftime('%H:%M %Z')}, "
         f"delta {delta_min:+.0f}m, window 0..{window}m"
     )
@@ -683,6 +696,25 @@ def main():
         print(f"Time-of-day guard: {reason}")
         if not allowed:
             print("Skipping this run — not inside the configured send window.")
+            github_output = os.environ.get("GITHUB_OUTPUT")
+            if github_output:
+                with open(github_output, "a") as fh:
+                    fh.write("should_run=false\n")
+                    fh.write("send_email=false\n")
+                    fh.write("has_summary=false\n")
+            return
+
+        # Idempotency: at most one scheduled summary per local day. The send
+        # window is intentionally wide to survive GitHub's throttled scheduler,
+        # so several cron runs can fall inside it on the same day — without this
+        # guard they would each generate and email a duplicate. The summary file
+        # is committed back to the repo, so a later run on the same day sees it
+        # on checkout and bows out here. Manual runs (handled above) always run.
+        today_local = _now_local().strftime("%Y-%m-%d")
+        existing = Path(SUMMARY_DIR) / f"daily-summary-{today_local}.md"
+        if existing.exists():
+            print(f"Summary for {today_local} already exists ({existing}) — "
+                  "skipping to avoid a duplicate send.")
             github_output = os.environ.get("GITHUB_OUTPUT")
             if github_output:
                 with open(github_output, "a") as fh:
