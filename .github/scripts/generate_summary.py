@@ -168,10 +168,15 @@ def truncate(msg: str, length: int = MAX_MSG_LENGTH) -> str:
     return first_line[: length - 3] + "..."
 
 
-def fetch_commits_with_retry(repo, since, author, retries=MAX_RETRIES):
+def fetch_commits_with_retry(repo, since, author, retries=MAX_RETRIES, until=None):
     for attempt in range(retries):
         try:
-            commits = list(repo.get_commits(since=since, author=author))
+            # until is set only for backfill (a closed [since, until] window);
+            # the normal nightly run passes until=None ("since 24h ago, to HEAD").
+            kwargs = {"since": since, "author": author}
+            if until is not None:
+                kwargs["until"] = until
+            commits = list(repo.get_commits(**kwargs))
             return commits
         except RateLimitExceededException:
             if attempt < retries - 1:
@@ -310,6 +315,37 @@ Commits:
         return None
 
 
+def _resolve_window() -> tuple[datetime, datetime | None, str]:
+    """Return (since_utc, until_utc_or_None, date_label) for this run.
+
+    Normal nightly run: a rolling 24h window ending now (until=None → to HEAD),
+    labeled with today's local date.
+
+    Backfill (env BACKFILL_DATE=YYYY-MM-DD): a CLOSED window covering that whole
+    calendar day in EMAIL_TIMEZONE — [D 00:00 local, D 23:59:59 local] — labeled D.
+    Calendar-day boundaries give clean, gap-free, non-overlapping coverage across
+    a backfilled date range, and "the summary for June 10 = what you committed on
+    June 10" is the most intuitive reading of the archive.
+    """
+    backfill = (os.environ.get("BACKFILL_DATE") or "").strip()
+    if backfill:
+        tz = _get_email_timezone()
+        try:
+            d = datetime.strptime(backfill, "%Y-%m-%d").date()
+        except ValueError:
+            print(f"ERROR: BACKFILL_DATE='{backfill}' is not YYYY-MM-DD.")
+            sys.exit(1)
+        start_local = datetime(d.year, d.month, d.day, 0, 0, 0, tzinfo=tz)
+        end_local = datetime(d.year, d.month, d.day, 23, 59, 59, tzinfo=tz)
+        since = start_local.astimezone(timezone.utc)
+        until = end_local.astimezone(timezone.utc)
+        print(f"BACKFILL mode: whole local day {backfill} ({tz.key})")
+        return since, until, backfill
+
+    since = datetime.now(timezone.utc) - timedelta(hours=24)
+    return since, None, _now_local().strftime("%Y-%m-%d")
+
+
 def generate_summary() -> dict[str, Any]:
     """Fetch commits, generate summary, and return structured data.
 
@@ -321,11 +357,20 @@ def generate_summary() -> dict[str, Any]:
     user = g.get_user()
     print(f"Authenticated as: {user.login}")
 
-    since = datetime.now(timezone.utc) - timedelta(hours=24)
-    now_local = _now_local()
-    today = now_local.strftime("%Y-%m-%d")
+    since, until, today = _resolve_window()
     print(f"Fetching commits since: {since.isoformat()}")
-    print(f"Local date label: {today} ({now_local.tzinfo.key})")
+    if until is not None:
+        print(f"Fetching commits until: {until.isoformat()}")
+    print(f"Local date label: {today} ({_get_email_timezone().key})")
+
+    # Datetime used only for human-readable labels (heading + "Generated at").
+    # Normal run = now; backfill = noon of the backfilled day, so the heading
+    # reads the right date instead of today's.
+    if until is not None:
+        _y, _m, _d = (int(x) for x in today.split("-"))
+        label_local = datetime(_y, _m, _d, 12, 0, tzinfo=_get_email_timezone())
+    else:
+        label_local = _now_local()
 
     owner_repos: dict[str, dict[str, list[str]]] = defaultdict(dict)
     repo_urls: dict[str, str] = {}
@@ -337,7 +382,7 @@ def generate_summary() -> dict[str, Any]:
         if repo.archived:
             continue
 
-        commits = fetch_commits_with_retry(repo, since, user.login)
+        commits = fetch_commits_with_retry(repo, since, user.login, until=until)
         if commits:
             messages = [c.commit.message for c in commits]
             owner, repo_name = repo.full_name.split("/", 1)
@@ -374,7 +419,7 @@ def generate_summary() -> dict[str, Any]:
     total_repos = sum(len(r) for r in owner_repos.values())
 
     lines = [
-        f"# Daily Work Summary — {now_local.strftime('%a %b %d, %Y')}",
+        f"# Daily Work Summary — {label_local.strftime('%a %b %d, %Y')}",
         "",
         f"**{total_commits} commits** across **{total_repos} repos**",
         "",
@@ -432,7 +477,7 @@ def generate_summary() -> dict[str, Any]:
         f"[Click here]({SCHEDULE_DOCS_URL}) for instructions."
     )
     lines.append("")
-    lines.append(f"*Generated at {now_local.strftime('%Y-%m-%d %H:%M %Z')}*")
+    lines.append(f"*Generated at {label_local.strftime('%Y-%m-%d %H:%M %Z')}*")
     lines.append("")
 
     markdown_body = "\n".join(lines)
@@ -688,9 +733,11 @@ def main():
     # a one-off send from the Actions UI).
     event_name = os.environ.get("GITHUB_EVENT_NAME", "").strip()
     force_run = os.environ.get("FORCE_RUN", "").strip().lower() in {"1", "true", "yes"}
+    backfill = bool((os.environ.get("BACKFILL_DATE") or "").strip())
 
-    if event_name == "workflow_dispatch" or force_run:
-        print(f"Manual run ({event_name or 'FORCE_RUN'}) — bypassing time-of-day guard")
+    if event_name == "workflow_dispatch" or force_run or backfill:
+        why = "BACKFILL" if backfill else (event_name or "FORCE_RUN")
+        print(f"Manual run ({why}) — bypassing time-of-day guard + per-day idempotency")
     else:
         allowed, reason = should_run_now()
         print(f"Time-of-day guard: {reason}")

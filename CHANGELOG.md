@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0] - 2026-06-18
+
+### Added
+- **Backfill mode — regenerate summaries for past days the outage skipped.** The daily summaries are derived from git commit history, which is permanent, so the June 6–16 gap was never lost — just never rendered. New `BACKFILL_DATE=YYYY-MM-DD` env mode summarizes a **whole local calendar day** in `EMAIL_TIMEZONE` (a closed `[00:00, 23:59:59]` window), so "the summary for June 10 = everything committed on June 10" — clean, gap-free, non-overlapping coverage across a range. ([`generate_summary.py`](.github/scripts/generate_summary.py))
+- **New `Backfill Summaries` workflow** ([`backfill-summaries.yml`](.github/workflows/backfill-summaries.yml)) — a `workflow_dispatch` with `start_date` / `end_date` inputs that loops the range, writing each day to the `summaries/` archive + Airtable. Deliberately scoped narrower than the nightly job: `DELIVERY_METHOD` is forced to `airtable` so a multi-week backfill **never** emails/Slacks/Discords, and it sends **no heartbeat ping** (a backfill isn't "today's run"). Airtable's existing per-date duplicate detection makes re-runs safe.
+
 ## [1.6.0] - 2026-06-17
 
 ### Added

@@ -1,0 +1,89 @@
+name: Backfill Summaries
+
+# One-off recovery: regenerate daily summaries for a past date range from git
+# history (which is permanent — nothing is ever lost) and write them to the
+# summaries/ archive + Airtable. Use this after an outage where the nightly cron
+# skipped some days. The script's BACKFILL_DATE mode summarizes a whole local
+# calendar day in EMAIL_TIMEZONE (a closed [00:00, 23:59:59] window).
+#
+# Deliberately scoped narrower than the nightly job:
+#   - DELIVERY_METHOD is forced to `airtable` → it writes the archive + Airtable,
+#     but never emails / Slacks / Discords (so a 2-week backfill can't spam you).
+#   - No heartbeat ping — a backfill is not "today's daily run."
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: 'First day to backfill (YYYY-MM-DD, inclusive)'
+        required: true
+      end_date:
+        description: 'Last day to backfill (YYYY-MM-DD, inclusive)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate a summary for each day in the range
+        env:
+          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          EMAIL_TIMEZONE: ${{ vars.EMAIL_TIMEZONE }}
+          AI_PROVIDER: ${{ vars.AI_PROVIDER }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # Backfill writes the archive + Airtable ONLY — never email/Slack/Discord.
+          DELIVERY_METHOD: airtable
+          AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID || vars.AIRTABLE_BASE_ID }}
+          AIRTABLE_TABLE_SUMMARIES: ${{ secrets.AIRTABLE_TABLE_SUMMARIES || vars.AIRTABLE_TABLE_SUMMARIES }}
+          AIRTABLE_TABLE_REPOS: ${{ secrets.AIRTABLE_TABLE_REPOS || vars.AIRTABLE_TABLE_REPOS }}
+          START_DATE: ${{ github.event.inputs.start_date }}
+          END_DATE: ${{ github.event.inputs.end_date }}
+        run: |
+          set -euo pipefail
+          echo "Backfilling ${START_DATE} .. ${END_DATE}"
+          d="${START_DATE}"
+          i=0
+          while :; do
+            i=$((i + 1))
+            if [ "$i" -gt 60 ]; then
+              echo "Safety stop: exceeded 60 days — check START_DATE/END_DATE order." >&2
+              exit 1
+            fi
+            echo "::group::Backfill ${d}"
+            BACKFILL_DATE="${d}" python .github/scripts/generate_summary.py
+            echo "::endgroup::"
+            [ "${d}" = "${END_DATE}" ] && break
+            d=$(date -u -d "${d} + 1 day" +%Y-%m-%d)
+          done
+          echo "Backfill loop complete (${i} day(s))."
+
+      - name: Commit backfilled summaries
+        run: |
+          git config user.name "Daily Summary Bot"
+          git config user.email "daily-summary@users.noreply.github.com"
+          git add summaries/
+          git diff --cached --quiet || git commit -m "Backfill daily summaries ${{ github.event.inputs.start_date }}..${{ github.event.inputs.end_date }}"
+          git push
