@@ -91,3 +91,25 @@ jobs:
           to: kerry@zero2webmaster.com
           from: ${{ secrets.EMAIL_USERNAME }}
           html_body: file://${{ steps.summary.outputs.summary_file }}
+
+      # Dead-man's-switch heartbeat (see Skill Vault [[scheduled-job-liveness]]).
+      # Pings an Uptime Kuma PUSH monitor ONLY on the day's real run (should_run
+      # == true) AND only if every prior step succeeded (success()) — so a silent
+      # skip (guard never fires), a crash, OR a failed email send all WITHHOLD the
+      # ping and trip the monitor in hours, not a week. No-op skipped runs and
+      # quiet/no-commit days (should_run false) correctly do not ping.
+      # Safe to merge before the secret exists: the step no-ops if it's unset.
+      - name: Heartbeat — ping Uptime Kuma (dead-man's-switch)
+        if: success() && steps.summary.outputs.should_run == 'true'
+        env:
+          UPTIME_KUMA_PUSH_URL: ${{ secrets.UPTIME_KUMA_PUSH_URL }}
+        run: |
+          if [ -z "$UPTIME_KUMA_PUSH_URL" ]; then
+            echo "UPTIME_KUMA_PUSH_URL not configured — skipping heartbeat (no-op)."
+            exit 0
+          fi
+          # Append status/msg as query params to the base push URL (…/api/push/<token>).
+          curl -fsS --retry 2 --max-time 20 \
+            "${UPTIME_KUMA_PUSH_URL}?status=up&msg=daily-summary-${{ steps.summary.outputs.local_date }}" \
+            && echo "Heartbeat ping sent." \
+            || echo "Heartbeat ping failed (non-fatal — Kuma unreachable, not the email)."

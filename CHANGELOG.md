@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0] - 2026-06-17
+
+### Added
+- **Dead-man's-switch heartbeat so the email can never go dark unnoticed again.** This is the prevention companion to the v1.5.2 outage fix: the whole reason that outage lasted ~12 days is that nothing was watching whether the email actually went out. Now the workflow pings an [Uptime Kuma](https://github.com/louislam/uptime-kuma) **Push** monitor *after* the success-critical work — and crucially **only** on the day's real run *and* only if every prior step succeeded. So a silent skip (the guard never fires), a crash, or a failed email send all *withhold* the ping, and the monitor alerts within hours instead of someone noticing a week later. ([`daily-summary.yml`](.github/workflows/daily-summary.yml))
+  - Gated on a new `UPTIME_KUMA_PUSH_URL` repository secret. **Safe before setup:** if the secret is unset the step no-ops, so this ships dark until Kerry creates the Push monitor and adds the URL.
+  - No-op skipped runs and quiet/no-commit days (`should_run=false`) correctly do not ping, so they don't cause false alarms.
+- Captured the underlying lesson portfolio-wide: extended the `scheduled-job-liveness` Skill Vault skill with a fifth silent-failure mode (a throttled scheduler firing outside a narrow time-of-day guard's window, plus the after-midnight target-math trap).
+
+### Setup (one-time, Kerry)
+- In Uptime Kuma: add a **Push** monitor (suggested heartbeat interval ~36h to tolerate GitHub's fire-time drift while still catching a missed day), copy its push URL, and save it as the repo secret `UPTIME_KUMA_PUSH_URL`.
+
 ## [1.5.2] - 2026-06-17
 
 ### Fixed

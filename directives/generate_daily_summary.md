@@ -100,6 +100,12 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 - Discord embed: green (has commits) or grey (no commits) accent, inline commit/repo stats, per-repo breakdown with hyperlinks
 - Description capped at 4000 chars; overflows truncated with `...`
 
+### Step 6: Heartbeat (dead-man's-switch) — added v1.6.0
+- Final workflow step pings an Uptime Kuma **Push** monitor via `curl` to the `UPTIME_KUMA_PUSH_URL` secret. This is the prevention companion to the v1.5.2 outage fix — it makes a silent non-delivery VISIBLE. See Skill Vault `scheduled-job-liveness` ("monitor the outcome, not the schedule").
+- **Fires only on the day's real run AND only if every prior step succeeded** (`if: success() && steps.summary.outputs.should_run == 'true'`). So a silent skip (guard never fires), a crash, or a failed email send all WITHHOLD the ping → the monitor alerts in hours, not a week. No-op skipped runs and quiet/no-commit days (`should_run=false`) correctly do not ping.
+- **Safe before setup:** if `UPTIME_KUMA_PUSH_URL` is unset, the step no-ops (`exit 0`) — ships dark until Kerry creates the Push monitor and adds the secret.
+- **Setup (one-time):** Uptime Kuma → add a **Push** monitor (heartbeat interval ~36h to tolerate GitHub's fire-time drift while still catching a missed day) → copy its push URL → save as repo secret `UPTIME_KUMA_PUSH_URL`. The job appends `?status=up&msg=daily-summary-<date>` to the base `…/api/push/<token>` URL.
+
 ## Outputs
 
 | Output | Location | Format |

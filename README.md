@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.5.2
+**Version:** 1.6.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -99,6 +99,12 @@ Set **one** of these to enable AI-powered repo summaries. If you set multiple ke
 |--------|-------------|
 | `SLACK_WEBHOOK_URL` | Slack [Incoming Webhook URL](https://api.slack.com/messaging/webhooks) — format: `https://hooks.slack.com/services/...` |
 | `DISCORD_WEBHOOK_URL` | Discord channel webhook URL — format: `https://discord.com/api/webhooks/...` |
+
+### Optional Monitoring Secret (dead-man's-switch)
+
+| Secret | Description |
+|--------|-------------|
+| `UPTIME_KUMA_PUSH_URL` | [Uptime Kuma](https://github.com/louislam/uptime-kuma) **Push** monitor URL — format: `https://<your-kuma-host>/api/push/<token>`. The workflow pings it *after* a successful run, so a silent outage (the cron stops, the guard skips, or the send fails) trips an alert in hours instead of going unnoticed for days. Leave unset to disable — the heartbeat step no-ops. Suggested Kuma heartbeat interval: ~36h. |
 
 ### Variables
 
@@ -405,4 +411,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.5.2 | Last Updated: 2026-06-17*
+*Version: 1.6.0 | Last Updated: 2026-06-17*
