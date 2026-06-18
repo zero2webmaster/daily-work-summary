@@ -31,6 +31,8 @@ env:
 jobs:
   portfolio-stats:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout this repo (for the script)
@@ -42,8 +44,11 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
+        # This job only needs PyGithub (+ python-dotenv for local runs) — NOT the
+        # heavy AI SDKs in requirements.txt that the email job pulls in. Installing
+        # just these two takes seconds instead of minutes.
         run: |
-          pip install -r requirements.txt
+          pip install "PyGithub>=2.1.1" "python-dotenv>=1.0.0"
           sudo apt-get update -qq
           sudo apt-get install -y -qq cloc
 

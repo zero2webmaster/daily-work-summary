@@ -41,9 +41,24 @@ in that directory.
 
 1. Enumerate every repo via PyGithub (`affiliation="owner,organization_member"`),
    same set the daily summary walks.
-2. For each repo: shallow-clone it, run `cloc --json`, read `SUM.code` → `loc`
-   and `SUM.comment` → `doc_lines`. `last_commit_date` comes from `pushed_at`;
-   `status` is `archived` if the repo is archived else `active`.
+2. For each repo: shallow-clone it, run `cloc --json` (with the exclusions
+   below), then split the per-language breakdown honestly:
+   - **`loc`** = code lines in *programming* languages (prose languages excluded).
+   - **`doc_lines`** = all code comments **plus** the lines of prose/doc files
+     (Markdown, Text, reStructuredText, AsciiDoc, …).
+   `last_commit_date` comes from `pushed_at`; `status` is `archived` if the repo
+   is archived else `active`.
+
+   **cloc exclusions (critical for true numbers):**
+   - `--exclude-dir=.specstory,node_modules,vendor,third_party,third-party,dist,build,.next,out,coverage,__pycache__,.venv,venv`
+   - `--not-match-f=(\.min\.(js|css)|-min\.(js|css)|\.bundle\.js)$`
+
+   These exclude things that are committed but are **not the repo's own authored
+   source**: AI chat transcripts (`.specstory`), vendored third-party libraries,
+   build output, and minified/bundled assets. Discovered 2026-06-18: without
+   excluding `.specstory`, that one directory was **85% of z2w-ai-suite's
+   apparent 1.3M "lines of code"** (1.46M lines of committed chat logs). The real
+   plugin is a fraction of that. Always exclude these for honest counts.
 3. Aggregate: `repo_count`, `active_repo_count`, `archived_repo_count`,
    `total_loc`, `total_doc_lines`.
 4. Write JSON, commit to the coordination repo with a rebase-and-retry push
@@ -116,10 +131,11 @@ PAT_GITHUB=ghp_xxx python .github/scripts/portfolio_stats.py
 
 ## Edge cases / notes
 
-- cloc runs over the **committed** files in a shallow clone, so build artifacts
-  / `node_modules` (gitignored, never committed) don't inflate counts. A repo
-  that commits vendored/minified code WILL count it — acceptable for v1; revisit
-  with `--exclude-dir` if a repo skews the totals.
+- cloc runs over the **committed** files in a shallow clone. Committed vendored
+  libraries, build output, `.specstory` chat transcripts, and minified assets
+  are excluded via `--exclude-dir` / `--not-match-f` (see "How it works"), so
+  they don't inflate the counts. If a new repo introduces a vendored directory
+  under a different name, add it to `EXCLUDE_DIRS` in `portfolio_stats.py`.
 - Empty repos (no source files) cloc-measure to `0/0` — recorded, not errored.
 - Cadence is monthly by design; the artifact is a size **snapshot**, not a
   monthly delta, so the `period` label is just "when this snapshot was taken."

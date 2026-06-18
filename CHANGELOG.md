@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.1] - 2026-06-18
+
+### Fixed
+- **Portfolio stats now count authored source only — true numbers.** The first run reported `z2w-ai-suite` at 1.32M "lines of code"; investigation found **85% of that was committed `.specstory` AI chat transcripts** (1.46M lines), plus vendored libraries. `portfolio_stats.py` now runs `cloc` with `--exclude-dir` (`.specstory`, `node_modules`, `vendor`, build/output dirs, …) and `--not-match-f` (minified/bundled assets), and splits the per-language breakdown honestly: `loc` = code lines in programming languages, `doc_lines` = code comments **plus** prose/doc files (Markdown, etc.). Documentation no longer masquerades as code. ([`portfolio_stats.py`](.github/scripts/portfolio_stats.py))
+- Unit test updated to cover the new `classify_cloc` code/doc split (`.tmp/test_portfolio_stats.py`, 23/23).
+
+### Changed
+- **Portfolio Stats workflow installs in seconds, not minutes.** It now installs only `PyGithub` + `python-dotenv` (the two packages it actually uses) instead of the full `requirements.txt` with its heavy AI SDKs, and sets the Node-24 actions env to silence the deprecation warning. ([`portfolio-stats.yml`](.github/workflows/portfolio-stats.yml))
+
+### Added
+- **Session-metrics Stop-hook prototype** ([`execution/session_metrics.py`](.github/scripts/../../execution/session_metrics.py)) — a Claude Code Stop hook that parses the session transcript and reports how much the admin engaged: questions answered (exact — `AskUserQuestion` calls), actions taken, and declined/interrupted (all exact). Plain "allow" approvals aren't recorded in the transcript, so the report says so honestly rather than inventing a count. Validated against real transcripts. Tracked in ROADMAP as a prototype pending wiring.
+
 ## [1.9.0] - 2026-06-18
 
 ### Added

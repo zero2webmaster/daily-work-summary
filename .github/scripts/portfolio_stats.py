@@ -55,32 +55,63 @@ GENERATED_FOR = "daily-work-summary"
 CLONE_TIMEOUT = 300
 CLOC_TIMEOUT = 300
 
+# Directories cloc must NOT count — they hold things that are not this repo's
+# own source: AI chat transcripts (.specstory — these alone were 85% of one
+# plugin's apparent "code"), third-party vendored libraries, and build output.
+# cloc's --exclude-dir matches directory NAMES at any depth (not paths).
+EXCLUDE_DIRS = [
+    ".specstory", "node_modules", "vendor", "third_party", "third-party",
+    "dist", "build", ".next", "out", "coverage", "__pycache__", ".venv", "venv",
+]
+# File patterns cloc must skip — minified/bundled assets are machine-generated,
+# not authored code.
+NOT_MATCH_F = r"(\.min\.(js|css)|-min\.(js|css)|\.bundle\.js)$"
+
+# cloc language names that are prose/documentation, not programming-language
+# source. Their lines count toward doc_lines, never toward loc.
+DOC_LANGUAGES = {
+    "Markdown", "Text", "reStructuredText", "AsciiDoc", "Org", "Pod", "TeX",
+}
+
 
 # ----------------------------------------------------------------------
 # Pure / offline helpers (unit-tested without GitHub or cloning)
 # ----------------------------------------------------------------------
 
-def parse_cloc_sum(cloc_json: dict) -> tuple[int, int]:
-    """Extract (code_lines, comment_lines) from a `cloc --json` payload.
+def _int(v) -> int:
+    try:
+        return int(v or 0)
+    except (TypeError, ValueError):
+        return 0
 
-    cloc's JSON has a top-level "SUM" object: {blank, comment, code, nFiles}.
-    Returns (0, 0) for anything missing/malformed so a weird cloc output can
-    never raise. code → loc, comment → doc_lines.
+
+def classify_cloc(cloc_json: dict) -> tuple[int, int]:
+    """From a `cloc --json` payload, return (loc, doc_lines).
+
+    Uses the PER-LANGUAGE breakdown (not just SUM) so we can split honestly:
+      loc       = code lines in programming languages (prose languages excluded)
+      doc_lines = all comment lines  +  the lines of prose/doc files
+                  (Markdown, Text, etc.)
+
+    So a README or docs/ markdown counts as documentation, not as code; and a
+    language's inline comments count as documentation too. Returns (0, 0) for
+    malformed input so a weird cloc payload can never raise.
     """
     if not isinstance(cloc_json, dict):
         return 0, 0
-    total = cloc_json.get("SUM")
-    if not isinstance(total, dict):
-        return 0, 0
-    try:
-        code = int(total.get("code", 0) or 0)
-    except (TypeError, ValueError):
-        code = 0
-    try:
-        comment = int(total.get("comment", 0) or 0)
-    except (TypeError, ValueError):
-        comment = 0
-    return code, comment
+    loc = 0
+    doc = 0
+    for lang, vals in cloc_json.items():
+        if lang in ("header", "SUM") or not isinstance(vals, dict):
+            continue
+        code = _int(vals.get("code"))
+        comment = _int(vals.get("comment"))
+        if lang in DOC_LANGUAGES:
+            doc += code + comment
+        else:
+            loc += code
+            doc += comment
+    return loc, doc
 
 
 def build_portfolio_stats(
@@ -164,7 +195,12 @@ def measure_repo_loc(clone_dir: str) -> tuple[int, int]:
     """
     try:
         proc = subprocess.run(
-            ["cloc", "--json", "--quiet", clone_dir],
+            [
+                "cloc", "--json", "--quiet",
+                "--exclude-dir=" + ",".join(EXCLUDE_DIRS),
+                "--not-match-f=" + NOT_MATCH_F,
+                clone_dir,
+            ],
             capture_output=True,
             text=True,
             timeout=CLOC_TIMEOUT,
@@ -181,7 +217,7 @@ def measure_repo_loc(clone_dir: str) -> tuple[int, int]:
     if not out:
         return 0, 0
     try:
-        return parse_cloc_sum(json.loads(out))
+        return classify_cloc(json.loads(out))
     except json.JSONDecodeError:
         print("    cloc output was not valid JSON — recording 0 LoC")
         return 0, 0

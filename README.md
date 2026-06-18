@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.9.0
+**Version:** 1.9.1
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -80,7 +80,7 @@ This is a Zero2Webmaster-specific feature; most forks won't have the artifact, s
 A separate monthly workflow (**Portfolio Stats**) snapshots the size of every repo you have access to — lines of code and documentation/comment lines — and commits a versioned JSON artifact for a dashboard to read and render.
 
 - **Schedule:** `0 6 1 * *` (06:00 UTC on the 1st of each month) plus a manual **Run workflow** button.
-- **What it measures:** for each repo it shallow-clones the code and runs [`cloc`](https://github.com/AlDanial/cloc) — `code` lines → `loc`, `comment` lines → `doc_lines` — plus `last_commit_date` and an `active`/`archived` status.
+- **What it measures:** for each repo it shallow-clones the code and runs [`cloc`](https://github.com/AlDanial/cloc), then splits honestly — `loc` = code lines in programming languages; `doc_lines` = code comments plus prose/doc files (Markdown, etc.) — plus `last_commit_date` and an `active`/`archived` status. Vendored libraries, build output, `.specstory` chat transcripts, and minified assets are excluded so counts reflect authored source only.
 - **Where the artifact goes:** `stats/portfolio-YYYY-MM.json` **in the `zero2webmaster/z2w-agent-coordination` repo** (not this repo), so the command center — whose token is scoped to that one repo — can read it. Schema `portfolio-stats/v1`; see [`directives/generate_portfolio_stats.md`](directives/generate_portfolio_stats.md) for the full field reference.
 - **Decoupled by design:** this is a different workflow from the nightly email, so it can never affect the daily digest. A repo that fails to measure is recorded with null counts rather than aborting the run.
 
@@ -442,4 +442,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.9.0 | Last Updated: 2026-06-18*
+*Version: 1.9.1 | Last Updated: 2026-06-18*

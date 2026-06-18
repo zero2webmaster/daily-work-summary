@@ -175,6 +175,25 @@ python -c "import yaml; yaml.safe_load(open('.github/workflows/portfolio-stats.y
 
 ---
 
+## Session Metrics Stop Hook (2026-06-18) 🔬 Prototype
+
+Kerry's idea: at the end of every session, report how much the admin had to engage — questions answered through the official answer system, plus permission/approval activity.
+
+- [x] **Prototype built** — `execution/session_metrics.py`. A Claude Code **Stop hook** that parses the session transcript JSONL and reports: questions answered (exact — `AskUserQuestion` calls), actions taken (exact — all tool calls), declined/interrupted (exact), and user turns. Validated against real transcripts (a session with an `AskUserQuestion` reports `1 question across 1 prompt`).
+- [x] **Honest limitation documented** — plain "allow" approvals are NOT written to the transcript, so a raw approval count isn't reconstructable; the hook reports "actions taken + declined" as the closest exact proxy and says so.
+- [ ] **Decide scope + wire it up.** Not yet installed. Options: (a) project-local `.claude/settings.json` (fires only for sessions in this repo), or (b) global `~/.claude/settings.json` (every session, every project — likely what Kerry wants). Recommend wiring via the `update-config` skill. Snippet is in the script's docstring.
+- [ ] **Optional polish** — write the report to a rolling log for trend tracking; surface it via the hook's `systemMessage` output so it renders cleanly in the UI.
+
+**Note:** this is a Claude Code harness feature, not part of the nightly digest pipeline — it lives here because the idea surfaced in this project's session.
+
+**Verification:**
+```bash
+python3 -m py_compile execution/session_metrics.py
+python3 execution/session_metrics.py ~/.claude/projects/<proj>/<session>.jsonl
+```
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:

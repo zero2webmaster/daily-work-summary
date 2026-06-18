@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-06-18 (v1.9.0)
+**Last Updated:** 2026-06-18 (v1.9.1)
 
 ---
 
@@ -58,6 +58,13 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-06-18 - Portfolio-stats accuracy + faster workflow + session-metrics hook (v1.9.1)
+- **True numbers fix.** First run reported `z2w-ai-suite` at 1.32M LoC; **85% was committed `.specstory` chat transcripts** (1.46M lines) + vendored libs. `portfolio_stats.py` now excludes `.specstory`/vendor/build/minified via `cloc --exclude-dir`/`--not-match-f`, and splits honestly: `loc` = programming-language code; `doc_lines` = code comments + prose/doc files (Markdown). Unit test 23/23.
+  - **Separate finding to flag to Kerry:** `z2w-ai-suite` has `.specstory/` **committed** (528 files) — violates the 2026-06-15 portfolio heads-up to gitignore it (potential secret-leak surface). That's a z2w-ai-suite hygiene fix, tracked for that project's agent.
+- **Faster workflow.** `portfolio-stats.yml` installs only `PyGithub`+`python-dotenv` (not the heavy AI SDKs) + Node-24 env. Next run installs in seconds.
+- **Session-metrics Stop-hook prototype** `execution/session_metrics.py` — reports questions-answered (exact), actions-taken, declined/interrupted from the transcript; honest that plain approvals aren't logged. To be wired **globally** this session via `update-config`.
+- **Verified end-to-end earlier:** v1.9.0 manual run succeeded, committed `stats/portfolio-2026-06.json` to the coordination repo → **confirmed `PAT_GITHUB` has write access** (no token change needed). Re-running with the v1.9.1 accuracy fix for true portfolio-wide numbers.
 
 ### Session: 2026-06-18 - Monthly portfolio-stats job (v1.9.0)
 - **v1.9.0 — monthly portfolio-stats artifact.** New separate `Portfolio Stats` workflow snapshots every Z2W repo's lines-of-code + documentation/comment lines and commits `stats/portfolio-YYYY-MM.json` into the **`z2w-agent-coordination` repo** (not this repo — the command center's token is scoped there). Fulfills the last open no-urgency bulletin ask (`z2w-agent-command-center`, 2026-06-12, amended 2026-06-17).
