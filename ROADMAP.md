@@ -126,6 +126,23 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
+## Reliability Hardening (2026-06-18) ✅
+
+Prompted by a ~12-day silent email outage (no summary June 5–17).
+
+- [x] **v1.5.2** — Fixed the time-of-day guard (anchor target to most-recent-past HH:MM + widen window 60→480 min + per-day idempotency). Root cause: GitHub's cron dead zone + after-midnight target math. Verified by clock-frozen guard test (7/7).
+- [x] **v1.6.0** — Dead-man's-switch: post-run Uptime Kuma Push heartbeat, gated so a skip/crash/failed-send withholds the ping. Verified live (`{"ok":true}`).
+- [x] **v1.7.0** — Backfill mode + `Backfill Summaries` workflow. Recovered June 6–16 into the archive + Airtable (archive now contiguous June 5→18).
+
+**Verification:**
+```bash
+python3 -m py_compile .github/scripts/generate_summary.py
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/backfill-summaries.yml'))"
+```
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:
@@ -137,4 +154,4 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.ym
 
 ---
 
-*Last Updated: 2026-03-11*
+*Last Updated: 2026-06-18*
