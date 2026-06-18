@@ -85,5 +85,20 @@ jobs:
           git config user.name "Daily Summary Bot"
           git config user.email "daily-summary@users.noreply.github.com"
           git add summaries/
-          git diff --cached --quiet || git commit -m "Backfill daily summaries ${{ github.event.inputs.start_date }}..${{ github.event.inputs.end_date }}"
-          git push
+          if git diff --cached --quiet; then
+            echo "No new summaries to commit (already present)."
+            exit 0
+          fi
+          git commit -m "Backfill daily summaries ${{ github.event.inputs.start_date }}..${{ github.event.inputs.end_date }}"
+          # Rebase-and-retry: the nightly run (or another job) may push to main
+          # concurrently, which would reject a plain push. Rebase on top and retry.
+          for attempt in 1 2 3; do
+            if git pull --rebase origin main && git push origin main; then
+              echo "Pushed on attempt ${attempt}."
+              exit 0
+            fi
+            echo "Push attempt ${attempt} failed (likely a concurrent push) — retrying..."
+            sleep 5
+          done
+          echo "Failed to push backfilled summaries after 3 attempts." >&2
+          exit 1
