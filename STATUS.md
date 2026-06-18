@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-03-11 (v1.4.0)
+**Last Updated:** 2026-06-17 (v1.5.2)
 
 ---
 
@@ -58,6 +58,13 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-06-17 - Fix week-long email outage (v1.5.2)
+- **Root cause:** the time-of-day guard skipped every run since June 5 (not the email credential, not an auto-disabled workflow). Two bugs: (1) the 22:30 ET + 60-min window maps to 02:30–03:30 UTC, which sits in GitHub's scheduled-cron dead zone (scheduler reliably fires nothing ~00:25–04:39 UTC); (2) target was computed as *today's* 22:30, so the early-morning runs GitHub does fire measured lateness against a future target → always "too early, skip."
+- **Fix:** anchor target to most-recent-past HH:MM; widen default window 60→480 min; add per-day idempotency so the wide window can't double-send. ([`generate_summary.py`](.github/scripts/generate_summary.py))
+- **Verified:** clock-frozen guard test (`.tmp/test_guard.py`) 7/7; manual `workflow_dispatch` sent the email + committed `summaries/daily-summary-2026-06-17.md`.
+- **Follow-up:** wire an Uptime Kuma Push heartbeat (dead-man's-switch) — blocked on Kerry providing a push URL.
+- Fixed README version drift (was 1.5.0; VERSION was 1.5.1). Bumped to v1.5.2.
 
 ### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
 - Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic
