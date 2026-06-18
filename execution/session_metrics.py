@@ -153,30 +153,46 @@ def format_report(m):
 
 
 def _resolve_transcript_path():
-    # Stop hook: JSON on stdin with transcript_path. Local test: argv[1].
+    """Return (path, hook_mode).
+
+    hook_mode=True  → invoked as a Stop hook (JSON on stdin with transcript_path);
+                      emit JSON {"systemMessage": ...} so the report shows in the UI.
+    hook_mode=False → invoked locally with a path arg; print plain text.
+    """
     if len(sys.argv) > 1:
-        return sys.argv[1]
+        return sys.argv[1], False
     try:
         if not sys.stdin.isatty():
             payload = json.loads(sys.stdin.read() or "{}")
-            return payload.get("transcript_path")
+            return payload.get("transcript_path"), True
     except (json.JSONDecodeError, ValueError):
-        return None
-    return None
+        return None, True
+    return None, False
+
+
+def _emit(report, hook_mode):
+    if hook_mode:
+        # A Stop hook surfaces a message to the user only via JSON systemMessage;
+        # suppressOutput hides the raw stdout echo from the transcript.
+        print(json.dumps({"systemMessage": report, "suppressOutput": True}))
+    else:
+        print(report)
 
 
 def main():
-    path = _resolve_transcript_path()
+    path, hook_mode = _resolve_transcript_path()
     if not path:
-        print("session_metrics: no transcript_path (pass one as an arg, or run as a Stop hook)")
+        if not hook_mode:
+            print("session_metrics: no transcript_path (pass one as an arg, or run as a Stop hook)")
         sys.exit(0)
     try:
-        metrics = analyze_transcript(path)
-        print(format_report(metrics))
+        _emit(format_report(analyze_transcript(path)), hook_mode)
     except FileNotFoundError:
-        print(f"session_metrics: transcript not found: {path}")
+        if not hook_mode:
+            print(f"session_metrics: transcript not found: {path}")
     except Exception as e:  # never block a session over a metrics report
-        print(f"session_metrics: skipped ({type(e).__name__}: {e})")
+        if not hook_mode:
+            print(f"session_metrics: skipped ({type(e).__name__}: {e})")
     sys.exit(0)
 
 
