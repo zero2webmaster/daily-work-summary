@@ -159,6 +159,22 @@ python -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml
 
 ---
 
+## Monthly Portfolio Stats Artifact (2026-06-18) ✅
+
+Fulfills the no-urgency bulletin ask from `z2w-agent-command-center` (filed 2026-06-12, amended 2026-06-17): produce a versioned portfolio-stats JSON the command center can read and render.
+
+- [x] **v1.9.0** — New `Portfolio Stats` workflow + `portfolio_stats.py`. Monthly (`0 6 1 * *`) + manual run. Shallow-clones every repo, runs `cloc` (`code`→`loc`, `comment`→`doc_lines`), records `last_commit_date` + `active`/`archived` status, aggregates totals, and commits `stats/portfolio-YYYY-MM.json` into the **`z2w-agent-coordination` repo** (not this repo — the command center's token is scoped there). Schema `portfolio-stats/v1`. Separate from the email workflow (can't affect the digest); per-repo exception-wrapped; rebase-and-retry push for the multi-agent ref-lock race; reuses `PAT_GITHUB` (no new secret). SOP: `directives/generate_portfolio_stats.md`.
+
+**Verification:**
+```bash
+source venv/bin/activate
+python -m py_compile .github/scripts/portfolio_stats.py
+python .tmp/test_portfolio_stats.py   # 21/21
+python -c "import yaml; yaml.safe_load(open('.github/workflows/portfolio-stats.yml'))"
+```
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:
@@ -170,4 +186,4 @@ python -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml
 
 ---
 
-*Last Updated: 2026-06-18 (v1.8.0)*
+*Last Updated: 2026-06-18 (v1.9.0)*

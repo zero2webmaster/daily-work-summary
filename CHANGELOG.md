@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.0] - 2026-06-18
+
+### Added
+- **Monthly portfolio-stats job — a size snapshot of every Z2W repo.** A new, separate workflow (**Portfolio Stats**) walks every repo, measures its lines of code and documentation/comment lines, and commits a versioned JSON artifact a dashboard can read and render. Fulfills the no-urgency bulletin ask from `z2w-agent-command-center` (filed 2026-06-12, amended 2026-06-17). ([`portfolio_stats.py`](.github/scripts/portfolio_stats.py), [`portfolio-stats.yml`](.github/workflows/portfolio-stats.yml))
+  - **Where the artifact goes:** `stats/portfolio-YYYY-MM.json` **in the `zero2webmaster/z2w-agent-coordination` repo** — NOT this repo. The command center's GitHub token is scoped to the coordination repo only, so any artifact it reads must live there. This is the second artifact in that `stats/` directory (after `skill-vault.json`).
+  - **What it measures:** each repo is shallow-cloned and run through [`cloc`](https://github.com/AlDanial/cloc) — `code` lines → `loc`, `comment` lines → `doc_lines` — plus `last_commit_date` (from `pushed_at`) and an `active`/`archived` status. Aggregate block carries `repo_count`, `active_repo_count`, `archived_repo_count`, `total_loc`, `total_doc_lines`. Schema `portfolio-stats/v1`.
+  - **Cadence:** monthly (`0 6 1 * *`, 06:00 UTC on the 1st) plus a manual **Run workflow** button with an optional `month` (`YYYY-MM`) override.
+  - **Decoupled by design.** A separate workflow from the nightly email, so it can never affect Kerry's morning digest. Per-repo work is fully exception-wrapped: a repo that fails to clone or measure is recorded with `null` counts and an `error` note rather than aborting the run. The push to the coordination repo uses rebase-and-retry (the bulletin clone is written by many agents, so a concurrent push can grab the ref lock first — the same race the v1.7.0 backfill hit).
+  - **No new secret.** Reuses `PAT_GITHUB`, which must have write access to the coordination repo (it already reads it for the Skill Vault tally).
+  - Verified by an offline unit test (`.tmp/test_portfolio_stats.py`, 21/21) covering the cloc parser and the aggregate builder (sorting, null metrics, archived split, empty portfolio).
+  - New SOP: [`directives/generate_portfolio_stats.md`](directives/generate_portfolio_stats.md).
+
 ## [1.8.0] - 2026-06-18
 
 ### Added

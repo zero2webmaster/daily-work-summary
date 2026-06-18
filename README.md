@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.8.0
+**Version:** 1.9.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -72,6 +72,19 @@ If you maintain a "skill vault" stats artifact, the email leads with a one-line 
 **How it works:** the line is read from a pre-computed JSON artifact at `stats/skill-vault.json` in the `zero2webmaster/z2w-agent-coordination` repo (schema `skill-vault-stats/v1`). The job's existing `PAT_GITHUB` reads it — no extra secret. If the artifact can't be read (not present, no access, malformed), the tally is **silently skipped** and the rest of the email is unaffected. When the artifact's latest day predates today, the line shows just the running total plus an honest *"(Vault stats as of YYYY-MM-DD)"* note.
 
 This is a Zero2Webmaster-specific feature; most forks won't have the artifact, so it simply won't appear. Set the `SKILL_VAULT_TALLY` variable to `false` to disable it explicitly.
+
+---
+
+## Portfolio stats (optional, monthly)
+
+A separate monthly workflow (**Portfolio Stats**) snapshots the size of every repo you have access to — lines of code and documentation/comment lines — and commits a versioned JSON artifact for a dashboard to read and render.
+
+- **Schedule:** `0 6 1 * *` (06:00 UTC on the 1st of each month) plus a manual **Run workflow** button.
+- **What it measures:** for each repo it shallow-clones the code and runs [`cloc`](https://github.com/AlDanial/cloc) — `code` lines → `loc`, `comment` lines → `doc_lines` — plus `last_commit_date` and an `active`/`archived` status.
+- **Where the artifact goes:** `stats/portfolio-YYYY-MM.json` **in the `zero2webmaster/z2w-agent-coordination` repo** (not this repo), so the command center — whose token is scoped to that one repo — can read it. Schema `portfolio-stats/v1`; see [`directives/generate_portfolio_stats.md`](directives/generate_portfolio_stats.md) for the full field reference.
+- **Decoupled by design:** this is a different workflow from the nightly email, so it can never affect the daily digest. A repo that fails to measure is recorded with null counts rather than aborting the run.
+
+Reuses the existing `PAT_GITHUB` secret (which needs write access to the coordination repo). This is a Zero2Webmaster-specific integration; forks can ignore or delete the workflow.
 
 ---
 
@@ -384,9 +397,12 @@ Set `EMAIL_TIMEZONE`, `EMAIL_SEND_HOUR`, and `EMAIL_SEND_MINUTE` as Variables in
 ├── .github/
 │   ├── workflows/
 │   │   ├── daily-summary.yml          # Cron + email + Airtable + webhook workflow
+│   │   ├── backfill-summaries.yml     # Regenerate summaries for past days
+│   │   ├── portfolio-stats.yml        # Monthly LoC/doc snapshot → coordination repo
 │   │   └── setup-airtable.yml         # One-click Airtable table setup (run once)
 │   └── scripts/
 │       ├── generate_summary.py        # Summary generator + delivery routing
+│       ├── portfolio_stats.py         # Monthly portfolio LoC/doc-line stats
 │       ├── airtable_client.py         # Airtable REST API client
 │       └── webhook_client.py          # Slack + Discord webhook delivery
 ├── summaries/                         # Daily archives (auto-generated)
@@ -426,4 +442,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.8.0 | Last Updated: 2026-06-18*
+*Version: 1.9.0 | Last Updated: 2026-06-18*

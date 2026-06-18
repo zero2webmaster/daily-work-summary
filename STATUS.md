@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-06-18 (v1.8.0)
+**Last Updated:** 2026-06-18 (v1.9.0)
 
 ---
 
@@ -59,6 +59,14 @@ None currently.
 
 ## 📊 Recent Updates
 
+### Session: 2026-06-18 - Monthly portfolio-stats job (v1.9.0)
+- **v1.9.0 — monthly portfolio-stats artifact.** New separate `Portfolio Stats` workflow snapshots every Z2W repo's lines-of-code + documentation/comment lines and commits `stats/portfolio-YYYY-MM.json` into the **`z2w-agent-coordination` repo** (not this repo — the command center's token is scoped there). Fulfills the last open no-urgency bulletin ask (`z2w-agent-command-center`, 2026-06-12, amended 2026-06-17).
+- **How:** shallow-clones each repo, runs `cloc --json` (`code`→`loc`, `comment`→`doc_lines`), records `last_commit_date` + `active`/`archived` status, aggregates totals. Schema `portfolio-stats/v1`. Cadence `0 6 1 * *` (monthly) + manual run with optional `month` override.
+- **Cannot affect the email:** it's a *separate* workflow; per-repo work is exception-wrapped (a repo that fails to measure → null counts + `error` note, never aborts); coordination-repo push uses rebase-and-retry for the multi-agent ref-lock race.
+- **No new secret** — reuses `PAT_GITHUB` (needs write to the coordination repo, which it already reads for the Skill Vault tally).
+- **Verified:** offline unit test `.tmp/test_portfolio_stats.py` 21/21 (cloc parser + aggregate builder incl. null metrics, archived split, empty portfolio); `py_compile` clean; both workflow YAMLs valid. New SOP `directives/generate_portfolio_stats.md`.
+- **Next:** all known bulletin feature asks are now closed. No blocking work.
+
 ### Session: 2026-06-18 - Skill Vault tally in the daily email (v1.8.0)
 - **v1.8.0 — headline Skill Vault stat in the email.** Each digest now leads with `🧠 Skill Vault: X created, Y improved today · N skills total`, the created-vs-improved split + running total. Fulfills the no-urgency bulletin ask from `z2w-skill-vault` (2026-06-16).
 - **Data source:** reads the pre-computed `stats/skill-vault.json` (schema `skill-vault-stats/v1`) from the `z2w-agent-coordination` repo via the existing `PAT_GITHUB` — **no new secret**, no second clone, no direct dependency on the private skill-vault repo.
@@ -74,29 +82,6 @@ None currently.
 - Fixed README version drift (was 1.5.0). 
 - **Next:** none blocking. Optional future: Skill Vault tally in the email + the portfolio-stats artifact (no-urgency bulletin asks).
 
-### Session: 2026-03-11 - Slack/Discord Delivery (v1.4.0)
-- Built `webhook_client.py` — Slack Block Kit + Discord embed client with retry/rate-limit logic
-- Added `send_to_slack()` + `send_to_discord()` in `generate_summary.py`
-- Refactored `DELIVERY_METHOD` to comma-separated (e.g. `email,slack,discord`); `both` alias preserved
-- Workflow: added `SLACK_WEBHOOK_URL` + `DISCORD_WEBHOOK_URL`; email condition now uses `send_email` output
-- README: new Slack & Discord Integration section with step-by-step setup
-- Bumped to v1.4.0
-
-### Session: 2026-03-11 - Airtable Integration (v1.3.0)
-- Built `airtable_client.py` — full Airtable REST API client with retry logic
-- Built `setup_airtable.py` — one-time table creation via Meta API
-- Refactored `generate_summary.py` to return structured data dict
-- Added `write_to_airtable()` with duplicate detection and linked records
-- Updated workflow with `DELIVERY_METHOD` routing and Airtable env vars
-- Updated README with Airtable setup section, fixed version drift
-- Bumped to v1.3.0
-
-### Session: 2026-03-11 - Initial Setup (v1.0.0 → v1.2.6)
-- Created complete 3-layer architecture
-- Built GitHub Actions workflow with 10pm EST cron
-- Built smart summary script with intelligent commit grouping
-- Created README with production setup guide
-- Added 4 AI providers, email formatting, fork sync docs
-- All 3 core phases complete
+*(Earlier sessions — v1.0.0 initial build, v1.3.0 Airtable, v1.4.0 Slack/Discord, all 2026-03-11 — trimmed per the STATUS 3-4-session rule; full history in [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).)*
 
 ---

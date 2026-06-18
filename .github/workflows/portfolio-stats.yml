@@ -1,0 +1,97 @@
+name: Portfolio Stats
+
+# Monthly snapshot of every Z2W repo's LoC + doc-line counts, committed as a
+# versioned JSON artifact into the zero2webmaster/z2w-agent-coordination repo
+# (NOT this repo) for the command center (agents.z2w.us) to read and render.
+#
+# Why the coordination repo: the command center's GitHub token is scoped to
+# z2w-agent-coordination only, so any artifact it reads must live there
+# (2026-06-17 amendment to the original 2026-06-12 ask).
+#
+# Fully decoupled from the nightly email job — this cannot affect the digest.
+
+on:
+  schedule:
+    # 06:00 UTC on the 1st of each month. No urgency; monthly is plenty for a
+    # LoC snapshot. workflow_dispatch below lets an admin run it on demand.
+    - cron: '0 6 1 * *'
+  workflow_dispatch:
+    inputs:
+      month:
+        description: 'Snapshot label YYYY-MM (blank = current UTC month)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+env:
+  COORDINATION_REPO: zero2webmaster/z2w-agent-coordination
+
+jobs:
+  portfolio-stats:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout this repo (for the script)
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq cloc
+
+      - name: Resolve period
+        id: period
+        run: |
+          PERIOD="${{ github.event.inputs.month }}"
+          if [ -z "$PERIOD" ]; then
+            PERIOD=$(date -u +'%Y-%m')
+          fi
+          echo "period=$PERIOD" >> "$GITHUB_OUTPUT"
+          echo "Resolved period: $PERIOD"
+
+      - name: Clone coordination repo
+        env:
+          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
+        run: |
+          git clone --depth 1 --quiet \
+            "https://x-access-token:${PAT_GITHUB}@github.com/${COORDINATION_REPO}.git" \
+            _coordination
+
+      - name: Generate portfolio stats
+        id: stats
+        env:
+          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
+          STATS_MONTH: ${{ steps.period.outputs.period }}
+          PORTFOLIO_STATS_OUTPUT: _coordination/stats/portfolio-${{ steps.period.outputs.period }}.json
+        run: python .github/scripts/portfolio_stats.py
+
+      - name: Commit artifact to coordination repo
+        working-directory: _coordination
+        run: |
+          git config user.name "Daily Summary Bot"
+          git config user.email "daily-summary@users.noreply.github.com"
+          git add stats/
+          if git diff --cached --quiet; then
+            echo "No change to portfolio stats — nothing to commit."
+          else
+            git commit -m "daily-work-summary: portfolio-stats snapshot ${{ steps.period.outputs.period }}"
+            # Rebase-and-retry: the bulletin clone is written by many agents, so a
+            # concurrent push can grab the ref lock first (same race the backfill hit).
+            for attempt in 1 2 3; do
+              if git push; then
+                echo "Pushed portfolio stats."
+                break
+              fi
+              echo "Push failed (attempt $attempt) — rebasing on latest and retrying."
+              git pull --rebase --autostash || true
+              sleep 3
+            done
+          fi
