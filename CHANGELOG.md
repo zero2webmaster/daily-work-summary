@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.10.0] - 2026-06-19
+
+### Added
+- **Session-metrics report now shows how many messages you sent the agent.** Answering Kerry's 2026-06-18 ask ("do we track total chats sent in to the agent during the session by the admin?"). The count was already computed internally (`user_turns`) but buried as "over N of your turns" — it's now the lead headline: *"you sent N message(s) to the agent and answered X question(s)…"*. The count is exact: it counts only real typed admin messages, excluding tool-results (which are also "user" transcript lines) and harness-injected `isMeta`/`isSidechain` lines. ([`execution/session_metrics.py`](execution/session_metrics.py))
+  - Module docstring updated to document the messages-sent metric in the "what is/isn't measurable" section.
+  - Deployed global hook (`~/.claude/hooks/session_metrics.py`) re-synced to match source (verified identical).
+  - Verified by a regression test (`.tmp/test_session_metrics.py`, 6/6) that asserts the count ignores tool-results + meta noise, plus a live run against a real transcript in both hook and CLI modes.
+
 ## [1.9.1] - 2026-06-18
 
 ### Fixed

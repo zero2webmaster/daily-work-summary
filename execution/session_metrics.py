@@ -3,12 +3,16 @@
 Session metrics — a Claude Code **Stop hook** prototype.
 
 Reports, at the end of a Claude Code session, how much the admin had to engage:
-how many questions they answered through the official answer system
-(AskUserQuestion), how many actions the agent took, and how many of those the
-admin declined or interrupted.
+how many messages they sent to the agent, how many questions they answered
+through the official answer system (AskUserQuestion), how many actions the agent
+took, and how many of those the admin declined or interrupted.
 
 WHAT IS AND ISN'T MEASURABLE (verified empirically against real transcripts)
 ----------------------------------------------------------------------------
+- **Messages sent by the admin — EXACT.** A "user" transcript line that carries a
+  `text` block and is NOT harness-injected (`isMeta`/`isSidechain`) is a chat the
+  admin typed in. Tool results are also "user" lines but carry `tool_result`
+  blocks, so they're excluded. This is the `user_turns` count.
 - **Questions answered — EXACT.** Each `AskUserQuestion` call is a discrete
   `tool_use` block in the transcript; we count the prompts and sum the questions
   inside them.
@@ -142,9 +146,10 @@ def format_report(m):
     top = ", ".join(f"{k}×{v}" for k, v in list(m["top_tools"].items())[:4])
     return (
         "📊 Session metrics — "
-        f"you answered {m['questions_answered']} question(s) "
+        f"you sent {m['user_turns']} message(s) to the agent and "
+        f"answered {m['questions_answered']} question(s) "
         f"across {m['question_prompts']} prompt(s); "
-        f"the agent took {m['actions_taken']} action(s) over {m['user_turns']} of your turns, "
+        f"the agent took {m['actions_taken']} action(s), "
         f"{m['declined_or_interrupted']} declined/interrupted."
         + (f"\n   Top tools: {top}" if top else "")
         + "\n   (Note: plain permission approvals aren't logged in the transcript, "

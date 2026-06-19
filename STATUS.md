@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-06-18 (v1.9.1)
+**Last Updated:** 2026-06-19 (v1.10.0)
 
 ---
 
@@ -59,6 +59,14 @@ None currently.
 
 ## 📊 Recent Updates
 
+### Session: 2026-06-19 - Answer Kerry's inbox Qs + AI Engine survey; messages-sent metric (v1.10.0)
+- **Session-metrics report now headlines messages-sent.** Answers Kerry's 2026-06-18 inbox ask: "do we track total chats sent in to the agent by the admin?" The count already existed internally (`user_turns`) but was buried as "over N of your turns"; it's now the lead: *"you sent N message(s) to the agent and answered X question(s)…"*. Exact count — real typed admin messages only, excluding tool-results (also "user" transcript lines) and harness `isMeta`/`isSidechain` lines. Module docstring updated to document it.
+- **Both copies synced.** Updated source `execution/session_metrics.py` and re-copied to the deployed global hook `~/.claude/hooks/session_metrics.py`; verified byte-identical via `diff`.
+- **Verified:** new regression test `.tmp/test_session_metrics.py` 6/6 (asserts the count ignores tool-results + meta noise) + a live run against a real session transcript in both hook (JSON stdin) and CLI (path arg) modes.
+- **Answered Kerry's portability question** (2026-06-18 18:56): the hook is **machine-local only** (script + wiring both under `~/.claude/`), so portable-stack/starter-kit buyers don't get it. Bundling it into the sellable kits is logged as an Open follow-up pending Kerry's go-ahead.
+- **Answered the `z2w-ai-suite` "Z2W AI Engine" survey** in the coordination bulletin's `global.md`: daily-work-summary is the portfolio's strongest model-drift data point (hand-rolls a four-provider `AI_PROVIDERS` registry in `generate_summary.py`) and a pure-summarization product → it would consume the engine's model-registry + summarization slices over **HTTP service** (Python cron, no Node); hard boundary that the daily email must still send if the engine is down.
+- **Next:** all known bulletin feature asks closed; only open item is the optional "bundle the session-metrics hook into the kits" follow-up.
+
 ### Session: 2026-06-18 - Portfolio-stats accuracy + faster workflow + session-metrics hook (v1.9.1)
 - **True numbers fix.** First run reported `z2w-ai-suite` at 1.32M LoC; **85% was committed `.specstory` chat transcripts** (1.46M lines) + vendored libs. `portfolio_stats.py` now excludes `.specstory`/vendor/build/minified via `cloc --exclude-dir`/`--not-match-f`, and splits honestly: `loc` = programming-language code; `doc_lines` = code comments + prose/doc files (Markdown). Unit test 23/23.
   - **Separate finding to flag to Kerry:** `z2w-ai-suite` has `.specstory/` **committed** (528 files) — violates the 2026-06-15 portfolio heads-up to gitignore it (potential secret-leak surface). That's a z2w-ai-suite hygiene fix, tracked for that project's agent.
@@ -83,13 +91,6 @@ None currently.
 - **Verified:** offline unit test `.tmp/test_skill_vault_tally.py` 9/9 + live render against the real artifact (`28 skills total`; created/improved split renders on matching days). py_compile + both workflow YAMLs valid.
 - **Next:** remaining no-urgency ask is the monthly portfolio-stats artifact (write `stats/portfolio-YYYY-MM.json` into the coordination repo).
 
-### Session: 2026-06-18 - Email-outage fix + dead-man's-switch + backfill (v1.5.2 → 1.7.0)
-- **v1.5.2 — fixed the week-long outage.** Root cause was the time-of-day guard, NOT the email credential or an auto-disabled workflow. Two bugs skipped every run since June 5: (1) the 22:30 ET + 60-min window maps to 02:30–03:30 UTC, which sits in GitHub's scheduled-cron dead zone (it reliably fires nothing ~00:25–04:39 UTC); (2) the target was computed as *today's* 22:30, so the early-morning runs GitHub does fire measured lateness against a future target → always "too early, skip." Fix: anchor target to most-recent-past HH:MM, widen default window 60→480 min, add per-day idempotency. Verified by a clock-frozen guard test (`.tmp/test_guard.py`) 7/7.
-- **v1.6.0 — dead-man's-switch heartbeat.** Workflow now pings an Uptime Kuma Push monitor after a successful run, gated `if: success() && should_run=='true'` so a skip/crash/failed-send all withhold the ping. **Verified live:** manual run's heartbeat step got `{"ok":true}` from Kuma. Secret `UPTIME_KUMA_PUSH_URL` is set.
-- **v1.7.0 — backfill.** New `BACKFILL_DATE` mode (whole local calendar day) + `Backfill Summaries` workflow (start/end dates, archive + Airtable only, no email/heartbeat). **Verified:** regenerated June 6–16 → `summaries/` is now contiguous June 5→18, and Airtable records for those days exist with repos linked. (First run raced the nightly push; fixed with rebase-and-retry.)
-- Fixed README version drift (was 1.5.0). 
-- **Next:** none blocking. Optional future: Skill Vault tally in the email + the portfolio-stats artifact (no-urgency bulletin asks).
-
-*(Earlier sessions — v1.0.0 initial build, v1.3.0 Airtable, v1.4.0 Slack/Discord, all 2026-03-11 — trimmed per the STATUS 3-4-session rule; full history in [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).)*
+*(Earlier sessions — the v1.5.2→1.7.0 outage-fix + dead-man's-switch + backfill (2026-06-18), and the v1.0.0 / v1.3.0 / v1.4.0 builds (2026-03-11) — trimmed per the STATUS 3-4-session rule; full history in [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).)*
 
 ---
