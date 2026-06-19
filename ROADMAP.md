@@ -175,14 +175,16 @@ python -c "import yaml; yaml.safe_load(open('.github/workflows/portfolio-stats.y
 
 ---
 
-## Session Metrics Stop Hook (2026-06-18) 🔬 Prototype
+## Session Metrics Stop Hook (2026-06-18 → 2026-06-19) ✅ Live
 
-Kerry's idea: at the end of every session, report how much the admin had to engage — questions answered through the official answer system, plus permission/approval activity.
+Kerry's idea: at the end of every session, report how much the admin had to engage — messages sent, questions answered through the official answer system, plus action/approval activity.
 
-- [x] **Prototype built** — `execution/session_metrics.py`. A Claude Code **Stop hook** that parses the session transcript JSONL and reports: questions answered (exact — `AskUserQuestion` calls), actions taken (exact — all tool calls), declined/interrupted (exact), and user turns. Validated against real transcripts (a session with an `AskUserQuestion` reports `1 question across 1 prompt`).
+- [x] **Prototype built** — `execution/session_metrics.py`. A Claude Code **Stop hook** that parses the session transcript JSONL and reports: messages sent by the admin (exact — `user_turns`), questions answered (exact — `AskUserQuestion` calls), actions taken (exact — all tool calls), declined/interrupted (exact). Validated against real transcripts.
 - [x] **Honest limitation documented** — plain "allow" approvals are NOT written to the transcript, so a raw approval count isn't reconstructable; the hook reports "actions taken + declined" as the closest exact proxy and says so.
-- [ ] **Decide scope + wire it up.** Not yet installed. Options: (a) project-local `.claude/settings.json` (fires only for sessions in this repo), or (b) global `~/.claude/settings.json` (every session, every project — likely what Kerry wants). Recommend wiring via the `update-config` skill. Snippet is in the script's docstring.
-- [ ] **Optional polish** — write the report to a rolling log for trend tracking; surface it via the hook's `systemMessage` output so it renders cleanly in the UI.
+- [x] **Wired up globally (v1.9.1).** Installed at `~/.claude/hooks/session_metrics.py` + a Stop-hook entry in `~/.claude/settings.json` — fires for every session in every project. Surfaces via `systemMessage` so it renders cleanly in the UI.
+- [x] **Messages-sent headline (v1.10.0, 2026-06-19).** Answered Kerry's "do we track total chats sent in by the admin?" — the report now leads with *"you sent N message(s) to the agent…"*. Count was already collected; now surfaced. Regression test `.tmp/test_session_metrics.py` 6/6.
+- [ ] **Optional — bundle into the sellable kits** (portable-stack / starter-kit) so licensees get it on clone (repo-relative `.claude/settings.json` + `tools/session_metrics.py`). Answered Kerry's portability question; pending his go-ahead. (See bulletin Open follow-ups.)
+- [ ] **Optional polish** — write the report to a rolling log for cross-session trend tracking.
 
 **Note:** this is a Claude Code harness feature, not part of the nightly digest pipeline — it lives here because the idea surfaced in this project's session.
 
