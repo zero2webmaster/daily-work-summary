@@ -850,6 +850,30 @@ Be pragmatic. Be reliable. Self-anneal.
 
 <!-- z2w-agent-coordination canonical-block v0.1.8 -->
 
+## Capture Learnings (session end)
+
+<!-- cursor-project-templates capture-learnings-block v1.0.0 -->
+
+*(↓ copy this section, including this heading AND the HTML fingerprint comment above, verbatim into each project's `CLAUDE.md` and `AGENTS.md`. The fingerprint lets `grep` detect drift across projects. Canonical source: `Resources/CAPTURE_LEARNINGS_BLOCK.md` in `zero2webmaster/cursor-project-templates`.)*
+
+**At the end of every session, decide whether anything you learned this session should become a skill — and state the verdict in your recap.** This fires by default, unasked. It is **never** a question you put to the project owner ("want me to make a skill?"); it is a decision you make and report.
+
+**The bar is high.** One fix or gotcha that cost more than ~15 minutes, or that was non-obvious enough that the next agent would re-derive it from scratch. Don't capture the obvious or the already-documented.
+
+**Route it:**
+
+| The learning is… | Where it goes |
+|---|---|
+| one-off, this project only | a `TROUBLESHOOTING.md` line — or nothing |
+| recurring, this project only | a directive / this `CLAUDE.md` (self-anneal) |
+| recurring **and** portfolio-general | the **Skill Vault** — extend an existing skill before creating a new one |
+
+**Report the verdict even when it's negative.** "Nothing worth capturing this session" is a valid and expected outcome, and saying it out loud is the point: a reflex nobody can see is indistinguishable from a reflex nobody ran.
+
+**If you notice this step missing from another project, do not just fix that one file.** Two or more projects missing it means the *enrollment* step is the bug, not the rows. File it with `cursor-project-templates` (owns the canonical block), `z2w-starter-kit` (owns the scaffold/`init` path), and `z2w-agent-coordination` (owns `scripts/check-fingerprint-drift.sh`, the only propagation checker in this ecosystem that has demonstrably worked).
+
+Full routing rubric, worked examples, and the Skill Vault's own commit conventions: the **`capture-learning`** skill.
+
 ## Agent Coordination
 
 This project participates in the Z2W cross-project coordination bulletin at `zero2webmaster/z2w-agent-coordination`. The canonical protocol body lives in that repo's `AGENT_PROTOCOL.md` — read it at session start for the current version and section list. Reference conventions by NAME — the §-numbers below are parenthetical breadcrumbs that may renumber upstream. The HTML fingerprint comment above lets `grep -L "canonical-block v0.1.8" {file}` detect drift; bump it when the upstream banner bumps.
