@@ -161,6 +161,23 @@ check(
     False,
 )
 
+print("\n8. Coordination-repo collapsing (COLLAPSE_REPOS)")
+import os as _os
+def _collapsed(val):
+    if val is None:
+        _os.environ.pop("COLLAPSE_REPOS", None)
+    else:
+        _os.environ["COLLAPSE_REPOS"] = val
+    return gs.get_collapsed_repos()
+
+check("unset -> the coordination repo by default", _collapsed(None), {"z2w-agent-coordination"})
+check("blank -> falls back to the default", _collapsed("   "), {"z2w-agent-coordination"})
+check("'none' -> collapsing disabled", _collapsed("none"), set())
+check("'off'/'false' also disable", (_collapsed("off"), _collapsed("FALSE")), (set(), set()))
+check("explicit list overrides the default", _collapsed("repo-a, repo-b"), {"repo-a", "repo-b"})
+check("stray commas/whitespace tolerated", _collapsed(" repo-a , , repo-b "), {"repo-a", "repo-b"})
+_collapsed(None)
+
 print("\n" + "=" * 52)
 if failures:
     print(f"{len(failures)} FAILED: {', '.join(failures)}")

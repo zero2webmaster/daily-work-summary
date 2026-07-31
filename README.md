@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.11.0
+**Version:** 1.12.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -75,6 +75,29 @@ This is a Zero2Webmaster-specific feature; most forks won't have the artifact, s
 
 ---
 
+## Collapsing coordination-repo noise
+
+Some repos hold agent/coordination **bookkeeping** rather than product work. In the Z2W portfolio every agent writes its session notes into `z2w-agent-coordination`, so that repo routinely tops a digest that sorts purely by commit count — on 2026-06-22 it contributed 64 commits and out-ranked every product repo, spending roughly a third of the email on bulletin housekeeping.
+
+Those repos are rendered as a **single line with no bullets**, and no AI call is spent on them:
+
+```
+z2w-agent-coordination: 32 coordination commits
+```
+
+They still count toward the headline totals, and Airtable still receives their full commit list — only the email body is condensed.
+
+| | |
+|---|---|
+| Variable | `COLLAPSE_REPOS` |
+| Unset (default) | `z2w-agent-coordination` |
+| Custom | comma-separated repo names, e.g. `repo-a,repo-b` |
+| Disable entirely | `none` (also accepts `off` / `false`) |
+
+Most forks have no such repo; leaving the variable unset simply has no effect on them.
+
+---
+
 ## Portfolio stats (optional, monthly)
 
 A separate monthly workflow (**Portfolio Stats**) snapshots the size of every repo you have access to — lines of code and documentation/comment lines — and commits a versioned JSON artifact for a dashboard to read and render.
@@ -145,6 +168,7 @@ Set these under **Settings → Secrets and variables → Actions → Variables**
 | `EMAIL_SEND_HOUR` | Local hour (0–23) at which the email should go out — see [Customizing the email schedule](#customizing-the-email-schedule) | `22` |
 | `EMAIL_SEND_MINUTE` | Local minute (0–59) | `30` |
 | `EMAIL_SEND_WINDOW_MIN` | Acceptable delay after the target time, in minutes — wide by default because GitHub throttles cron hard overnight | `480` |
+| `COLLAPSE_REPOS` | Repos shown as one collapsed line instead of a bullet list — see [Collapsing coordination-repo noise](#collapsing-coordination-repo-noise). `none` disables | `z2w-agent-coordination` |
 | `SKILL_VAULT_TALLY` | Set to `false` to hide the Skill Vault headline line — see [Skill Vault tally](#skill-vault-tally-optional) below | `true` (shown) |
 | `AIRTABLE_BASE_ID` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
 | `AIRTABLE_TABLE_SUMMARIES` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
@@ -469,4 +493,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.11.0 | Last Updated: 2026-07-31*
+*Version: 1.12.0 | Last Updated: 2026-07-31*

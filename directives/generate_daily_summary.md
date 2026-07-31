@@ -1,6 +1,6 @@
 # Directive: Generate Daily Work Summary
 
-**Version:** 1.5.0
+**Version:** 1.6.0
 **Last Updated:** 2026-07-31
 **Owner:** Kerry Kriger
 
@@ -44,6 +44,20 @@ Worked example with `EMAIL_SEND_HOUR=23`, `America/New_York`:
 
 **Regression test:** `execution/test_summary_date.py` (25 clock-frozen checks). Run before touching any scheduling or labeling code.
 
+## Collapsed coordination repos (v1.12.0)
+
+Repos listed in `COLLAPSE_REPOS` (default: `z2w-agent-coordination`) render as a **single line, no bullets, no AI call**:
+
+```
+z2w-agent-coordination: 32 coordination commits
+```
+
+**Why:** every Z2W agent writes its session notes into the coordination repo, and the digest sorts purely by commit count — so bookkeeping out-ranked product work (64 commits on 2026-06-22, roughly a third of that email). Kerry's call, 2026-07-31: keep the "agents were active" signal, drop the detail.
+
+**What is NOT changed:** collapsed repos still count in the headline `N commits across M repos`, and Airtable still receives their full commit list. Only the email/archive body is condensed.
+
+Set `COLLAPSE_REPOS` to a comma-separated list to override, or to `none` / `off` / `false` to disable. Implemented by `get_collapsed_repos()`; covered by `execution/test_summary_date.py` §8.
+
 ## Inputs
 
 | Input | Source | Notes |
@@ -53,6 +67,7 @@ Worked example with `EMAIL_SEND_HOUR=23`, `America/New_York`:
 | Time window | The covered day, `[00:00, 23:59:59]` in `EMAIL_TIMEZONE` | `_resolve_window()`; day comes from `_target_local()`, NOT run time. Clamped to now on a pre-midnight run |
 | Scheduling target | `EMAIL_TIMEZONE` + `EMAIL_SEND_HOUR` + `EMAIL_SEND_MINUTE` + `EMAIL_SEND_WINDOW_MIN` variables | All four have defaults — see Trigger section |
 | Delivery method | `DELIVERY_METHOD` variable | Comma-separated: `email` (default), `airtable`, `slack`, `discord`. `both` = `email,airtable` |
+| Collapsed repos | `COLLAPSE_REPOS` variable (default `z2w-agent-coordination`) | One line, no bullets, no AI call. `none` disables. See Collapsed coordination repos |
 | Skill Vault tally | `SKILL_VAULT_TALLY` variable (default on) | Set `false` to hide the headline Skill Vault line. Reads `stats/skill-vault.json` from the coordination repo via `PAT_GITHUB` — no extra secret. See Step 3a |
 | Airtable PAT | `AIRTABLE_PAT` secret | Required when delivery includes `airtable` |
 | Airtable IDs | `AIRTABLE_BASE_ID`, `AIRTABLE_TABLE_SUMMARIES`, `AIRTABLE_TABLE_REPOS` variables | All IDs (`appXXX`, `tblXXX`), never names |

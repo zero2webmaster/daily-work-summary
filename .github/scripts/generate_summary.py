@@ -64,6 +64,30 @@ SUMMARY_SCHEMA = "daily-summary/v2"
 def summary_stamp(covers: str) -> str:
     return f'<!-- {SUMMARY_SCHEMA} covers="{covers}" -->'
 
+
+# Repos whose commits are agent/coordination BOOKKEEPING rather than product work.
+# They are real commits and stay in the totals, but they're rendered as a single
+# collapsed line with no bullets and no AI call.
+#
+# Why: every Z2W agent writes its session notes into the coordination repo, so it
+# routinely tops a digest that sorts purely by commit count — on 2026-06-22 it
+# contributed 64 commits and out-ranked every product repo, spending roughly a
+# third of the email on bulletin bookkeeping. Kerry's call (2026-07-31): keep the
+# signal that agents were active, drop the line-by-line detail.
+#
+# Override with the COLLAPSE_REPOS Action variable (comma-separated repo names);
+# set it to an empty-ish value like "none" to disable collapsing entirely.
+DEFAULT_COLLAPSED_REPOS = {"z2w-agent-coordination"}
+
+
+def get_collapsed_repos() -> set[str]:
+    raw = os.environ.get("COLLAPSE_REPOS")
+    if raw is None or not raw.strip():
+        return set(DEFAULT_COLLAPSED_REPOS)
+    if raw.strip().lower() in {"none", "off", "false"}:
+        return set()
+    return {r.strip() for r in raw.split(",") if r.strip()}
+
 DEFAULT_TIMEZONE = "America/New_York"
 DEFAULT_SEND_HOUR = 22
 DEFAULT_SEND_MINUTE = 30
@@ -588,6 +612,7 @@ def generate_summary() -> dict[str, Any]:
 
     structured_repos: list[dict[str, Any]] = []
     ai_summary_bullets: list[str] = []
+    collapsed_repos = get_collapsed_repos()
 
     for owner in sorted(owner_repos.keys()):
         repos_data = owner_repos[owner]
@@ -602,6 +627,25 @@ def generate_summary() -> dict[str, Any]:
             full_name = f"{owner}/{repo_name}"
             count = len(messages)
             commit_label = f"{count} commit{'s' if count != 1 else ''}"
+
+            # Coordination bookkeeping: one line, no bullets, no AI call. Still
+            # counted in the totals and still written to Airtable in full.
+            if repo_name in collapsed_repos:
+                lines.append(
+                    f"**{repo_name}:** {count} coordination "
+                    f"commit{'s' if count != 1 else ''}"
+                )
+                lines.append("")
+                structured_repos.append({
+                    "full_name": full_name,
+                    "url": repo_urls.get(full_name, f"https://github.com/{full_name}"),
+                    "owner": owner,
+                    "commits": count,
+                    "messages": messages,
+                    "ai_summary": None,
+                })
+                print(f"  {full_name}: collapsed ({count} coordination commits)")
+                continue
 
             ai_summary = generate_ai_repo_summary(messages)
             lines.append(f"### {repo_name} ({commit_label})")

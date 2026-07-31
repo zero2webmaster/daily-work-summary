@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.12.0] - 2026-07-31
+
+### Changed
+- **Coordination-repo commits are collapsed to a single line in the email.** Answering Kerry's 2026-06-22 question ("some of these look like just bulletin messages — are those actual commits and should they be here?"). They *are* real commits — every Z2W agent writes its session notes into `z2w-agent-coordination` — but because the digest sorts purely by commit count, that repo out-ranked every product repo (64 commits on the day he asked) and spent roughly a third of the email on bookkeeping. Such repos now render as `z2w-agent-coordination: 32 coordination commits` with no bullet list, and no AI call is spent summarizing them. They still count toward the headline totals and Airtable still receives their full commit list — only the email body is condensed. Configurable via the `COLLAPSE_REPOS` Action variable (default `z2w-agent-coordination`; `none` disables). ([`generate_summary.py`](.github/scripts/generate_summary.py))
+- Test suite extended to 31 checks covering `COLLAPSE_REPOS` parsing (default, blank, `none`/`off`/`false`, explicit list, stray whitespace). Collapse rendering verified live against 2026-06-22 data.
+
 ## [1.11.0] - 2026-07-31
 
 ### Fixed

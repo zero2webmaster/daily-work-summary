@@ -48,6 +48,9 @@ jobs:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           EMAIL_TIMEZONE: ${{ vars.EMAIL_TIMEZONE }}
           AI_PROVIDER: ${{ vars.AI_PROVIDER }}
+          # Repos rendered as a single collapsed line (agent/coordination
+          # bookkeeping). Unset = z2w-agent-coordination; set to "none" to disable.
+          COLLAPSE_REPOS: ${{ vars.COLLAPSE_REPOS }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
