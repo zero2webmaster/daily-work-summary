@@ -64,10 +64,17 @@ jobs:
         id: subject
         if: steps.summary.outputs.should_run == 'true' && steps.summary.outputs.has_summary == 'true'
         env:
-          EMAIL_TIMEZONE: ${{ vars.EMAIL_TIMEZONE }}
+          # The date the summary REPORTS ON, emitted by the script — not the
+          # wall-clock date here. The nightly run usually fires after midnight,
+          # so `date` would name the following day and the subject would
+          # disagree with the heading inside the email (the off-by-one Kerry
+          # reported 2026-06-23 and 2026-06-27).
+          LOCAL_DATE: ${{ steps.summary.outputs.local_date }}
         run: |
-          SUBJECT_DATE=$(TZ="${EMAIL_TIMEZONE:-America/New_York}" date +'%a %b %d')
+          set -euo pipefail
+          SUBJECT_DATE=$(date -u -d "${LOCAL_DATE}" +'%a %b %d, %Y')
           echo "subject_date=$SUBJECT_DATE" >> $GITHUB_OUTPUT
+          echo "Subject date: $SUBJECT_DATE (from local_date=${LOCAL_DATE})"
 
       - name: Commit summary to repo
         if: steps.summary.outputs.should_run == 'true' && steps.summary.outputs.has_summary == 'true'

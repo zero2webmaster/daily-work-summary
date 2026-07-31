@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.0] - 2026-07-31
+
+### Fixed
+- **The daily summary was dated one day later than the work it described.** Kerry reported this twice (2026-06-23 and 2026-06-27): an email arriving at 12:11 AM on June 27 was headed *"Sat Jun 27"* but contained June 26's commits. Root cause was a disagreement inside `generate_summary.py`: the send-window guard correctly anchored to the **most recent past** occurrence of `EMAIL_SEND_HOUR:EMAIL_SEND_MINUTE` (stepping back a day after midnight, added in v1.5.2), but `_resolve_window()` independently labeled the summary with `_now_local()` — the wall-clock date at run time — while fetching a rolling 24-hour window. Because GitHub throttles cron overnight and typically delivers the 23:00 ET slot around 00:30 the next morning, essentially every summary since v1.5.2 was misdated. The failing run's own log shows both halves: `target 23:00 America/New_York (Jul 30)` followed by `Local date label: 2026-07-31`.
+
+  The fix introduces `_target_local()` as the single anchor both the guard and the label read, so they cannot drift apart again. The nightly path now uses **closed calendar-day** windows — `[D 00:00, D 23:59:59]` local, clamped to now for a rare pre-midnight run — identical to the backfill path, so a nightly summary and a backfilled one for the same date cover exactly the same commits. Verified against the real failure: regenerating 2026-07-31's misdated file under the fix produces `daily-summary-2026-07-30.md` with 160 commits/40 repos vs. the original's 157/40 — same work, correct label.
+- **The email subject was computed separately and had the same bug.** `daily-summary.yml` derived the subject from a shell `date` call at run time rather than from the script's `local_date` output, so it could disagree with the heading inside the email it titled. It now reads `steps.summary.outputs.local_date`.
+- **Duplicate-send guard was keyed on the wrong day.** It compared against `_now_local()`, so once the label moved to the covered day the 00:31 and 04:31 runs would both have passed it on the same morning and sent two emails for one day. Now keyed on the covered day.
+- **README documented a 60-minute send window; the code has used 480 since v1.5.2.** Corrected in all three places, with the reason (overnight cron throttling) stated.
+
+### Added
+- **Provenance stamp in every archived summary** — an inert `<!-- daily-summary/v2 covers="YYYY-MM-DD" -->` comment at the top of the file, invisible in email clients and renderers. The duplicate-send guard now requires this stamp to match before treating a day as already sent, which is what makes the fix safe to deploy over a misdated archive: a legacy unstamped file is regenerated in place rather than silently suppressing that day's email. Without this, the first correct run would have found `daily-summary-2026-07-31.md` already present and sent nothing.
+- **`execution/test_summary_date.py`** — 25-check clock-frozen regression test covering slot anchoring (including the year boundary and the 22:59/23:00 edge), window/label agreement, pre-midnight clamping, unchanged backfill semantics, guard firing at the real observed run times, and stamp-gated idempotency.
+
+### Note on the existing archive
+Summaries written between **2026-06-18 and 2026-07-31** are named one day later than the work they contain. June 6–16 were produced by the backfill workflow and are correctly dated. The nightly job self-heals from 2026-08-01 forward; realigning the older files requires a **Backfill Summaries** run over that range.
+
 ## [1.10.0] - 2026-06-19
 
 ### Added

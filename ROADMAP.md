@@ -196,6 +196,32 @@ python3 execution/session_metrics.py ~/.claude/projects/<proj>/<session>.jsonl
 
 ---
 
+## Phase: Correct Summary Dating ✅
+**Status:** Complete (2026-07-31, v1.11.0)
+
+Kerry reported twice (2026-06-23, 2026-06-27) that the daily email arrives ~12:11 AM dated that morning instead of the day it summarizes. Both reports sat un-ACK'd in the bulletin inbox; a third report on 2026-07-31 triggered this fix.
+
+**Tasks:**
+- [x] Reproduce from the live run log — `target ... (Jul 30)` vs `Local date label: 2026-07-31` in run `30604355032`
+- [x] Add `_target_local()` as the single slot anchor shared by the send guard and the date label
+- [x] Switch the nightly path to closed calendar-day windows, identical to backfill
+- [x] Fix the email subject, which re-derived the date from a shell `date` call
+- [x] Re-key the duplicate-send guard on the covered day (would otherwise double-send)
+- [x] Add the `daily-summary/v2` provenance stamp so the fix deploys safely over the misdated archive
+- [x] Correct README's documented send window (60 → 480, drifted since v1.5.2)
+- [x] Update `directives/generate_daily_summary.md` to v1.5.0 with a "Which day a summary covers" section
+
+**Verification:**
+```bash
+python3 execution/test_summary_date.py                      # 25/25 clock-frozen checks
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+```
+Live end-to-end run confirmed the fix: the archive file labeled "Fri Jul 31" (157 commits/40 repos) regenerates as `daily-summary-2026-07-30.md` (160/40) — same work, correct label.
+
+**Follow-up (needs Kerry's go-ahead):** `summaries/` files dated 2026-06-18 → 2026-07-31 remain off by one. Realigning them = a `Backfill Summaries` run over that range, which spends OpenRouter credits (~44 days x ~10 repos).
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:
@@ -207,4 +233,4 @@ python3 execution/session_metrics.py ~/.claude/projects/<proj>/<session>.jsonl
 
 ---
 
-*Last Updated: 2026-06-18 (v1.9.0)*
+*Last Updated: 2026-07-31 (v1.11.0)*

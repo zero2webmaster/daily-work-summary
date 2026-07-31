@@ -1,14 +1,14 @@
 # Directive: Generate Daily Work Summary
 
-**Version:** 1.4.0
-**Last Updated:** 2026-06-18
+**Version:** 1.5.0
+**Last Updated:** 2026-07-31
 **Owner:** Kerry Kriger
 
 ---
 
 ## Goal
 
-Generate a smart daily summary of all GitHub commits across every zero2webmaster and personal repository from the last 24 hours. Deliver via email, Airtable, Slack, and/or Discord, and save a Markdown archive.
+Generate a smart daily summary of all GitHub commits across every zero2webmaster and personal repository for **the calendar day of the send slot being delivered** (see "Which day a summary covers" below). Deliver via email, Airtable, Slack, and/or Discord, and save a Markdown archive.
 
 ## Trigger
 
@@ -18,7 +18,31 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 - **Backfill (recovery):** the separate `Backfill Summaries` workflow (`workflow_dispatch` with `start_date`/`end_date`) regenerates summaries for a past range from git history. Sets `BACKFILL_DATE=YYYY-MM-DD` per day → the script summarizes that whole local calendar day (`[00:00, 23:59:59]` in `EMAIL_TIMEZONE`, a closed window). Forces `DELIVERY_METHOD=airtable` (archive + Airtable only — never email/Slack/Discord), sends no heartbeat ping, and relies on Airtable's per-date duplicate detection so re-runs are safe. Use after an outage where the cron skipped days.
 - **Timezone:** `EMAIL_TIMEZONE` variable (Settings → Actions → Variables). IANA format (e.g. `America/New_York`, `Europe/London`). [Full list](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Default: `America/New_York`. Now controls ALL date labels: subject date, markdown heading, filename in `summaries/`, "Generated at" footer timestamp, commit message, AND the scheduling guard. Previously controlled only subject + footer.
 - **Send time:** `EMAIL_SEND_HOUR` (0–23, default `22`) and `EMAIL_SEND_MINUTE` (0–59, default `30`) — local target in `EMAIL_TIMEZONE`. Default = 10:30 PM in `America/New_York`.
-- **Window:** `EMAIL_SEND_WINDOW_MIN` (default `480` = 8h) — minutes AFTER the target during which a delayed cron still counts. One-sided: never fires earlier than the target, and the target is anchored to the most recent PAST occurrence of HH:MM (so a run after midnight measures its lateness against last night's target, not tonight's). The 8h default is deliberately wide to survive GitHub's throttled scheduler and its 00:30–04:30 ET dead zone. **Idempotency:** at most one scheduled summary per local day — if `summaries/daily-summary-<local-date>.md` already exists on checkout, a later same-day run bows out instead of double-sending. Manual `workflow_dispatch` runs bypass both the window and the idempotency check.
+- **Window:** `EMAIL_SEND_WINDOW_MIN` (default `480` = 8h) — minutes AFTER the target during which a delayed cron still counts. One-sided: never fires earlier than the target, and the target is anchored to the most recent PAST occurrence of HH:MM (so a run after midnight measures its lateness against last night's target, not tonight's). The 8h default is deliberately wide to survive GitHub's throttled scheduler and its 00:30–04:30 ET dead zone. **Idempotency:** at most one scheduled summary per COVERED day — if `summaries/daily-summary-<covered-date>.md` exists on checkout AND carries the matching `<!-- daily-summary/v2 covers="..." -->` stamp, a later run in the same window bows out instead of double-sending. An unstamped (pre-v1.11.0, misdated) file does NOT count as already-sent and is regenerated in place — that is what let v1.11.0 deploy over a misdated archive without swallowing a day's email. Manual `workflow_dispatch` runs bypass both the window and the idempotency check.
+
+## Which day a summary covers (v1.11.0)
+
+**A summary is labeled — and populated — with the calendar day of the send slot it delivers, never the wall-clock date at run time.**
+
+`_target_local()` is the single source of truth: the most recent PAST occurrence of `EMAIL_SEND_HOUR:EMAIL_SEND_MINUTE` in `EMAIL_TIMEZONE`. Both `should_run_now()` (the guard) and `_resolve_window()` (the label + window) read it, so they cannot disagree.
+
+Worked example with `EMAIL_SEND_HOUR=23`, `America/New_York`:
+
+| | |
+|---|---|
+| Slot being delivered | 23:00 Thu Jul 30 |
+| Cron actually fired | 00:31 Fri Jul 31 (GitHub throttling) |
+| `_target_local()` | 2026-07-30 |
+| Commits fetched | 2026-07-30 00:00:00 → 23:59:59 ET |
+| Subject / heading / filename / Airtable row / commit message | **2026-07-30** |
+
+**Why this matters and how it broke.** Before v1.11.0 the guard already anchored correctly (v1.5.2) but `_resolve_window()` independently used `_now_local()` plus a rolling 24h window. Since GitHub reliably delivers the 23:00 slot after midnight, every nightly summary from 2026-06-18 to 2026-07-31 was named one day later than its contents. The failing run's log shows both halves at once: `target 23:00 America/New_York (Jul 30)` then `Local date label: 2026-07-31`. **If you change scheduling logic, change `_target_local()` — never re-derive a date from `_now_local()` for labeling.**
+
+**Archive provenance.** Every summary starts with an inert `<!-- daily-summary/v2 covers="YYYY-MM-DD" -->` comment (constant `SUMMARY_SCHEMA` + `summary_stamp()`). Invisible in email clients and renderers. It is the idempotency guard's input, and it means a filename is never the only record of what a file contains. If you change the archive format, bump the schema string and tell `z2w-agent-command-center` (it renders these files).
+
+**Known archive debt:** files dated 2026-06-18 → 2026-07-31 are off by one day. June 6–16 came from the backfill path and are correct. Realigning the rest requires a `Backfill Summaries` run over that range (costs one AI call per repo per day).
+
+**Regression test:** `execution/test_summary_date.py` (25 clock-frozen checks). Run before touching any scheduling or labeling code.
 
 ## Inputs
 
@@ -26,7 +50,7 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 |-------|--------|-------|
 | GitHub PAT | `PAT_GITHUB` secret | Scopes: `repo`, `read:user` |
 | Email credentials | `EMAIL_USERNAME`, `EMAIL_PASSWORD` secrets | Gmail App Password |
-| Time window | Last 24 hours from run time | Uses `datetime.now(timezone.utc) - timedelta(hours=24)` |
+| Time window | The covered day, `[00:00, 23:59:59]` in `EMAIL_TIMEZONE` | `_resolve_window()`; day comes from `_target_local()`, NOT run time. Clamped to now on a pre-midnight run |
 | Scheduling target | `EMAIL_TIMEZONE` + `EMAIL_SEND_HOUR` + `EMAIL_SEND_MINUTE` + `EMAIL_SEND_WINDOW_MIN` variables | All four have defaults — see Trigger section |
 | Delivery method | `DELIVERY_METHOD` variable | Comma-separated: `email` (default), `airtable`, `slack`, `discord`. `both` = `email,airtable` |
 | Skill Vault tally | `SKILL_VAULT_TALLY` variable (default on) | Set `false` to hide the headline Skill Vault line. Reads `stats/skill-vault.json` from the coordination repo via `PAT_GITHUB` — no extra secret. See Step 3a |
@@ -43,7 +67,7 @@ Generate a smart daily summary of all GitHub commits across every zero2webmaster
 - Skip forks (optional — currently included)
 
 ### Step 2: Collect Commits
-- For each repo, query commits from last 24 hours
+- For each repo, query commits inside the covered day's closed window (`since`/`until` from `_resolve_window()`)
 - Filter to commits authored by the authenticated user
 - Collect: repo name, commit message (first line), SHA, timestamp
 
@@ -131,7 +155,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 
 | Scenario | Handling |
 |----------|----------|
-| No commits in 24h | "No commits today — well rested! ✅" |
+| No commits on the covered day | "No commits today — well rested! ✅" |
 | Long commit message | Truncate to 80 chars with `...` |
 | 403 PAT error | Log clear error + link to token settings |
 | Empty repo (no commits ever) | Skip silently |

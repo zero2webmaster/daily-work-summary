@@ -49,6 +49,21 @@ MAX_RETRIES = 3
 SUMMARY_DIR = "summaries"
 HTML_FONT_SIZE = "18px"
 
+# Machine-readable provenance stamped into the top of every archived summary as
+# an inert HTML comment (invisible in email clients and in the command center's
+# render). It states the day the file REPORTS ON, which the filename alone can no
+# longer be trusted to convey: every summary written between 2026-06-18 and
+# 2026-07-31 was named for the day the cron ran rather than the day it covers.
+#
+# The per-day idempotency guard requires this stamp to match before it treats an
+# existing file as already-sent, so a legacy misdated file is regenerated in
+# place instead of silently suppressing that day's email.
+SUMMARY_SCHEMA = "daily-summary/v2"
+
+
+def summary_stamp(covers: str) -> str:
+    return f'<!-- {SUMMARY_SCHEMA} covers="{covers}" -->'
+
 DEFAULT_TIMEZONE = "America/New_York"
 DEFAULT_SEND_HOUR = 22
 DEFAULT_SEND_MINUTE = 30
@@ -103,6 +118,40 @@ def _parse_int_env(name: str, default: int) -> int:
         return default
 
 
+def _target_local(now_local: datetime | None = None) -> datetime:
+    """Return the most recent PAST occurrence of the configured send time.
+
+    This is the single anchor for BOTH the send-window guard and the summary's
+    date label, and the two must never disagree.
+
+    GitHub's scheduler is throttled hard enough that the nightly job almost
+    always lands AFTER midnight — a 23:00 America/New_York send slot is
+    typically delivered around 00:30 the next morning. That run is delivering
+    the digest for the *previous* evening's slot, so both the window it fetches
+    and the date it prints must be the previous day. Labeling it with the
+    wall-clock date at run time is what produced the long-standing off-by-one
+    ("Daily Work Summary — Fri Jul 31" containing Thursday's commits).
+
+    Falls back to the module defaults on an invalid HH:MM so labeling always
+    yields a usable date; should_run_now() does the strict validation.
+    """
+    tz = _get_email_timezone()
+    hour = _parse_int_env("EMAIL_SEND_HOUR", DEFAULT_SEND_HOUR)
+    minute = _parse_int_env("EMAIL_SEND_MINUTE", DEFAULT_SEND_MINUTE)
+    if not (0 <= hour <= 23 and 0 <= minute <= 59):
+        hour, minute = DEFAULT_SEND_HOUR, DEFAULT_SEND_MINUTE
+
+    if now_local is None:
+        now_local = datetime.now(tz)
+
+    target = now_local.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    # Step back a day when we're before today's send time, so the target is
+    # always the slot we are currently delivering rather than a future one.
+    if now_local < target:
+        target -= timedelta(days=1)
+    return target
+
+
 def should_run_now() -> tuple[bool, str]:
     """Decide whether the current wall-clock time falls inside the configured
     send window. Returns (allowed, reason_string).
@@ -128,14 +177,11 @@ def should_run_now() -> tuple[bool, str]:
         return False, f"invalid target time {hour:02d}:{minute:02d} (must be 00:00–23:59)"
 
     now_local = datetime.now(tz)
-    target = now_local.replace(hour=hour, minute=minute, second=0, microsecond=0)
-    # Anchor to the most recent PAST occurrence of HH:MM. Without this, a cron
-    # run that lands after midnight (the only runs GitHub reliably fires are
-    # ~00:39–02:01 ET) computes a target ~22h in the future, making delta hugely
-    # negative so the guard never fires. Stepping back a day when we're before
-    # today's target makes delta the minutes since the last scheduled send time.
-    if now_local < target:
-        target -= timedelta(days=1)
+    # Anchor to the most recent PAST occurrence of HH:MM (see _target_local).
+    # Without this, a cron run that lands after midnight (the only runs GitHub
+    # reliably fires are ~00:39–02:01 ET) computes a target ~22h in the future,
+    # making delta hugely negative so the guard never fires.
+    target = _target_local(now_local)
     delta_min = (now_local - target).total_seconds() / 60
 
     label = (
@@ -326,32 +372,52 @@ Commits:
 def _resolve_window() -> tuple[datetime, datetime | None, str]:
     """Return (since_utc, until_utc_or_None, date_label) for this run.
 
-    Normal nightly run: a rolling 24h window ending now (until=None → to HEAD),
-    labeled with today's local date.
+    Normal nightly run: the calendar day of the send slot being delivered —
+    [D 00:00 local, D 23:59:59 local], clamped to now so a pre-midnight run
+    can't claim commits that haven't happened yet. D comes from _target_local(),
+    NOT from the wall-clock date at run time: GitHub's throttled scheduler
+    usually fires the 23:00 slot around 00:30 the following morning, and that
+    run is reporting the previous day's work, so it must be labeled with the
+    previous day. (Before this, the nightly path used a rolling 24h window
+    labeled `now`, which is why a 00:31 run on Jul 31 fetched Jul 30's commits
+    and then printed "Fri Jul 31" over them.)
 
     Backfill (env BACKFILL_DATE=YYYY-MM-DD): a CLOSED window covering that whole
     calendar day in EMAIL_TIMEZONE — [D 00:00 local, D 23:59:59 local] — labeled D.
-    Calendar-day boundaries give clean, gap-free, non-overlapping coverage across
-    a backfilled date range, and "the summary for June 10 = what you committed on
-    June 10" is the most intuitive reading of the archive.
+
+    Both paths now use identical calendar-day semantics, so a nightly summary
+    and a backfilled one for the same date cover exactly the same commits.
+    Calendar-day boundaries give clean, gap-free, non-overlapping coverage, and
+    "the summary for June 10 = what you committed on June 10" is the most
+    intuitive reading of the archive.
     """
+    tz = _get_email_timezone()
     backfill = (os.environ.get("BACKFILL_DATE") or "").strip()
+
     if backfill:
-        tz = _get_email_timezone()
         try:
             d = datetime.strptime(backfill, "%Y-%m-%d").date()
         except ValueError:
             print(f"ERROR: BACKFILL_DATE='{backfill}' is not YYYY-MM-DD.")
             sys.exit(1)
-        start_local = datetime(d.year, d.month, d.day, 0, 0, 0, tzinfo=tz)
-        end_local = datetime(d.year, d.month, d.day, 23, 59, 59, tzinfo=tz)
-        since = start_local.astimezone(timezone.utc)
-        until = end_local.astimezone(timezone.utc)
+        clamp_to_now = False
         print(f"BACKFILL mode: whole local day {backfill} ({tz.key})")
-        return since, until, backfill
+    else:
+        d = _target_local().date()
+        clamp_to_now = True
 
-    since = datetime.now(timezone.utc) - timedelta(hours=24)
-    return since, None, _now_local().strftime("%Y-%m-%d")
+    start_local = datetime(d.year, d.month, d.day, 0, 0, 0, tzinfo=tz)
+    end_local = datetime(d.year, d.month, d.day, 23, 59, 59, tzinfo=tz)
+    # A run that fires BEFORE its own send slot's midnight (rare — GitHub almost
+    # always delivers after midnight) must not claim the rest of the evening.
+    if clamp_to_now:
+        now_local = datetime.now(tz)
+        if end_local > now_local:
+            end_local = now_local
+
+    since = start_local.astimezone(timezone.utc)
+    until = end_local.astimezone(timezone.utc)
+    return since, until, d.isoformat()
 
 
 def format_skill_vault_tally(stats: dict, today: str) -> str | None:
@@ -443,14 +509,14 @@ def generate_summary() -> dict[str, Any]:
         print(f"Fetching commits until: {until.isoformat()}")
     print(f"Local date label: {today} ({_get_email_timezone().key})")
 
-    # Datetime used only for human-readable labels (heading + "Generated at").
-    # Normal run = now; backfill = noon of the backfilled day, so the heading
-    # reads the right date instead of today's.
-    if until is not None:
-        _y, _m, _d = (int(x) for x in today.split("-"))
-        label_local = datetime(_y, _m, _d, 12, 0, tzinfo=_get_email_timezone())
-    else:
-        label_local = _now_local()
+    # Datetime used only for the human-readable heading. Anchored to noon of the
+    # day being REPORTED ON (never the wall-clock date at run time), so a 00:31
+    # run delivering the previous evening's slot still prints that day's date.
+    # Both the nightly and backfill paths resolve a concrete day, so this is
+    # unconditional. "Generated at" below deliberately uses the real clock —
+    # that line documents when the run happened, which is a different fact.
+    _y, _m, _d = (int(x) for x in today.split("-"))
+    label_local = datetime(_y, _m, _d, 12, 0, tzinfo=_get_email_timezone())
 
     # Headline Skill Vault tally (optional; never breaks the email if it fails).
     vault_line = fetch_skill_vault_tally(g, today)
@@ -485,7 +551,11 @@ def generate_summary() -> dict[str, Any]:
             f'<p style="font-size: 14px; color: #666;">Need to change the timing or timezone of these emails? '
             f'<a href="{SCHEDULE_DOCS_URL}">Click here</a> for instructions.</p>'
         )
-        html = f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;"><p>{msg}</p>{vault_html}{footer}</div>'
+        html = (
+            f'{summary_stamp(today)}'
+            f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;">'
+            f'<p>{msg}</p>{vault_html}{footer}</div>'
+        )
         markdown_out = msg + (f"\n\n{vault_line}" if vault_line else "")
         return {
             "html": html,
@@ -566,12 +636,18 @@ def generate_summary() -> dict[str, Any]:
         f"[Click here]({SCHEDULE_DOCS_URL}) for instructions."
     )
     lines.append("")
-    lines.append(f"*Generated at {label_local.strftime('%Y-%m-%d %H:%M %Z')}*")
+    lines.append(
+        f"*Covers {label_local.strftime('%a %b %d, %Y')} · "
+        f"generated {_now_local().strftime('%Y-%m-%d %H:%M %Z')}*"
+    )
     lines.append("")
 
     markdown_body = "\n".join(lines)
     html_content = markdown_lib.markdown(markdown_body, extensions=["nl2br"])
-    html = f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;">{html_content}</div>'
+    html = (
+        f'{summary_stamp(today)}'
+        f'<div style="font-size: {HTML_FONT_SIZE}; line-height: 1.6;">{html_content}</div>'
+    )
 
     return {
         "html": html,
@@ -846,10 +922,30 @@ def main():
         # guard they would each generate and email a duplicate. The summary file
         # is committed back to the repo, so a later run on the same day sees it
         # on checkout and bows out here. Manual runs (handled above) always run.
-        today_local = _now_local().strftime("%Y-%m-%d")
-        existing = Path(SUMMARY_DIR) / f"daily-summary-{today_local}.md"
+        #
+        # Keyed on the REPORTED day (_target_local), matching the filename that
+        # _resolve_window/main will actually write. Keying it on the wall-clock
+        # date instead would let the 00:31 and 04:31 runs both pass this guard
+        # on the same morning — they'd write the same file and send two emails.
+        #
+        # An existing file only counts as "already sent" if it carries this
+        # slot's provenance stamp. Legacy files (written before v1.11.0) are
+        # named for the day the cron RAN, not the day they cover, so treating
+        # their mere existence as proof would suppress the first correctly-dated
+        # email for that date. Regenerating over one is the intended repair.
+        slot_date = _target_local().date().isoformat()
+        existing = Path(SUMMARY_DIR) / f"daily-summary-{slot_date}.md"
+        stamped = False
         if existing.exists():
-            print(f"Summary for {today_local} already exists ({existing}) — "
+            try:
+                stamped = summary_stamp(slot_date) in existing.read_text()
+            except OSError as e:
+                print(f"WARNING: could not read {existing} ({e}) — regenerating.")
+            if not stamped:
+                print(f"{existing} exists but is not stamped for {slot_date} "
+                      "(pre-v1.11.0 misdated file) — regenerating it.")
+        if stamped:
+            print(f"Summary for {slot_date} already exists ({existing}) — "
                   "skipping to avoid a duplicate send.")
             github_output = os.environ.get("GITHUB_OUTPUT")
             if github_output:

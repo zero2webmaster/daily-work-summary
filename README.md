@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.10.0
+**Version:** 1.11.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -144,7 +144,7 @@ Set these under **Settings → Secrets and variables → Actions → Variables**
 | `EMAIL_TIMEZONE` | IANA timezone identifier — see [Customizing the email schedule](#customizing-the-email-schedule) below | `America/New_York` |
 | `EMAIL_SEND_HOUR` | Local hour (0–23) at which the email should go out — see [Customizing the email schedule](#customizing-the-email-schedule) | `22` |
 | `EMAIL_SEND_MINUTE` | Local minute (0–59) | `30` |
-| `EMAIL_SEND_WINDOW_MIN` | Acceptable delay after the target time, in minutes — rides out GitHub cron's typical 5–15 min jitter | `60` |
+| `EMAIL_SEND_WINDOW_MIN` | Acceptable delay after the target time, in minutes — wide by default because GitHub throttles cron hard overnight | `480` |
 | `SKILL_VAULT_TALLY` | Set to `false` to hide the Skill Vault headline line — see [Skill Vault tally](#skill-vault-tally-optional) below | `true` (shown) |
 | `AIRTABLE_BASE_ID` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
 | `AIRTABLE_TABLE_SUMMARIES` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
@@ -198,9 +198,36 @@ So out of the box, the email arrives around **10:30 PM in `America/New_York`**. 
 
 #### Step 3 — (Optional) widen or tighten the window
 
-GitHub's cron is often delayed 5–15 minutes during peak hours. The script accepts a window of minutes AFTER your target time during which the run still counts. Default is **60 minutes** — generous enough that a 30-minute cron delay still fires the email, narrow enough that two consecutive hourly runs never both fire.
+GitHub's cron is heavily throttled on low-traffic repos — in practice it often fires *nothing* between roughly 00:30 and 04:30 ET, then delivers a late-evening slot after midnight. The script accepts a window of minutes AFTER your target time during which the run still counts. Default is **480 minutes (8 hours)** — wide enough that a badly-delayed run still sends, which is what a narrow window got wrong (see [Which day does a summary cover?](#which-day-does-a-summary-cover) and the v1.5.2 entry in `CHANGELOG.md`).
+
+A wide window can't double-send: the script writes at most one summary per covered day and skips if that day's summary already exists.
 
 Set `EMAIL_SEND_WINDOW_MIN` if you need a different window. The window is one-sided (only AFTER the target), so the email never goes out earlier than your configured time.
+
+#### Which day does a summary cover?
+
+**A summary is always labeled — and always contains — the calendar day of the send slot it is delivering, in your `EMAIL_TIMEZONE`.** Not the day the job happened to run.
+
+This distinction is load-bearing because of the throttling above. With `EMAIL_SEND_HOUR=23`, GitHub commonly runs the job at 00:30 the *following* morning. That run is delivering the 23:00 slot from the night before, so:
+
+| | |
+|---|---|
+| Send slot being delivered | 23:00 on Thu Jul 30 |
+| Job actually ran at | 00:31 on Fri Jul 31 |
+| Commits included | Thu Jul 30, 00:00:00 → 23:59:59 (local) |
+| Email subject, heading, filename, commit message | **Thu Jul 30** |
+
+Every date the system shows you — the email subject, the markdown heading, the `summaries/daily-summary-YYYY-MM-DD.md` filename, the Airtable row, and the archive commit message — names that same covered day, so they can never disagree with each other.
+
+Each archived file also carries an inert provenance comment naming the day it covers:
+
+```html
+<!-- daily-summary/v2 covers="2026-07-30" -->
+```
+
+It is invisible in email clients and in any renderer, and it is what the duplicate-send guard checks — so the filename is never the only record of what a file contains.
+
+> **Fixed in v1.11.0.** Before that release the nightly job labeled each summary with the wall-clock date at run time while fetching a rolling 24-hour window, so a 00:31 run produced an email headed "Fri Jul 31" containing Thursday's work. Summaries written between 2026-06-18 and 2026-07-31 are named one day later than the work they describe; regenerate any of them with the **Backfill Summaries** workflow.
 
 #### Why this works the way it does
 
@@ -220,7 +247,7 @@ You live in Berlin, you usually wrap up work around 11 PM, and you want the emai
 | `EMAIL_SEND_HOUR` | `23` |
 | `EMAIL_SEND_MINUTE` | `15` |
 
-Done. The 23:00–23:59 hourly run will send the email; every other hour's run will exit in seconds. The email subject's date, the markdown heading inside the email, the filename in `summaries/`, the commit message, and the "Generated at" timestamp at the bottom of the email will all show the Berlin-local date, so the email arriving at 23:15 on June 5 will reference June 5's work (not June 6 like a UTC-anchored summary would).
+Done. The 23:00–23:59 hourly run will send the email; every other hour's run will exit in seconds. The email subject's date, the markdown heading inside the email, the filename in `summaries/`, the commit message, and the "Covers …" line at the bottom of the email will all show the Berlin-local date of the **slot being delivered**, so a run that slips past midnight still reports June 5's work as June 5 (not June 6 like a UTC-anchored or run-time-anchored summary would).
 
 #### When the cron line itself might still need a change
 
@@ -363,7 +390,7 @@ Only add the AI key(s) you actually have. One is enough.
 | `EMAIL_TIMEZONE` | `America/New_York` — see [Customizing the email schedule](#customizing-the-email-schedule) for format and the [full list of valid names](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) |
 | `EMAIL_SEND_HOUR` | `22` (local hour 0–23, default 22 = 10 PM) |
 | `EMAIL_SEND_MINUTE` | `30` (local minute 0–59, default 30) |
-| `EMAIL_SEND_WINDOW_MIN` | `60` (acceptable cron delay in minutes, default 60) |
+| `EMAIL_SEND_WINDOW_MIN` | `480` (acceptable cron delay in minutes, default 480 = 8h) |
 | `AI_PROVIDER` | `openrouter` *(only needed if you set multiple AI keys)* |
 | `DELIVERY_METHOD` | `email,airtable` *(comma-separated; default is `email`. Options: `email`, `airtable`, `slack`, `discord`)* |
 | `AIRTABLE_BASE_ID` | `appXXXXXXXXXXXXXX` *(only needed if not stored as a Secret)* |
@@ -442,4 +469,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.10.0 | Last Updated: 2026-06-19*
+*Version: 1.11.0 | Last Updated: 2026-07-31*

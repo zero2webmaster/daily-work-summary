@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-06-19 (v1.10.0)
+**Last Updated:** 2026-07-31 (v1.11.0)
 
 ---
 
@@ -36,6 +36,14 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Backward compatible — existing users see no change. Airtable is purely opt-in via setting the variable to `airtable` or `both`.
 
+### Decision: A summary is dated by the SLOT it delivers, not the run time
+**Date:** 2026-07-31 (v1.11.0)
+**Rationale:** GitHub throttles cron overnight and typically fires the 23:00 ET slot around 00:30 the next morning. Dating a summary by wall-clock run time therefore names the wrong day on essentially every run — the bug Kerry reported on 2026-06-23 and again on 2026-06-27. `_target_local()` is now the single anchor both the send guard and the date label read, and the nightly path uses closed calendar-day windows identical to the backfill path. Corollary rule for future work: **never re-derive a date from `_now_local()` for labeling.**
+
+### Decision: Stamp archive files with the day they cover
+**Date:** 2026-07-31 (v1.11.0)
+**Rationale:** Deploying the date fix over an archive whose filenames were already wrong would have made the first correct run see `daily-summary-2026-07-31.md` present and skip — costing a day's email silently. An inert `<!-- daily-summary/v2 covers="..." -->` comment gates the idempotency check instead of bare file existence, so legacy misdated files are regenerated rather than trusted. Also means a filename is never the only record of a file's contents.
+
 ### Decision: Comma-separated DELIVERY_METHOD for Slack/Discord
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
@@ -44,8 +52,8 @@ None currently.
 
 ## ✅ Next Actions
 
-1. Configure Airtable: Create base, run `setup_airtable.py`, add secrets/variables
-2. Test with `DELIVERY_METHOD=both` via manual workflow run
+1. **Confirm the first correctly-dated email** — the run after ~00:30 EDT on 2026-08-01 should be subject-lined **Fri Aug 01** and contain Aug 1's commits. (Under the old code it would have said Aug 2.)
+2. **Kerry's call — realign the misdated archive.** `summaries/` files dated 2026-06-18 → 2026-07-31 are named one day later than their contents. Fixing them means a `Backfill Summaries` run over that range (44 days x ~10 repos of AI calls — a real OpenRouter spend, so not run unilaterally). The command center reads this archive, so leaving it means its per-day view stays off by one for those dates.
 3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
 4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
 
@@ -58,6 +66,17 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-07-31 - Fix the one-day-late summary date (v1.11.0)
+
+**Reported twice by Kerry and unanswered in the bulletin inbox since June** (2026-06-23 and 2026-06-27): the email arrives ~12:11 AM and is dated that morning rather than the day it summarizes.
+
+- **Root cause:** `should_run_now()` correctly anchored to the most recent past send slot (v1.5.2), but `_resolve_window()` independently labeled with `_now_local()` and fetched a rolling 24h window. The failing run's log shows the disagreement outright: `target 23:00 America/New_York (Jul 30)` / `Local date label: 2026-07-31`.
+- **Fix:** `_target_local()` is now the single anchor for guard + label; nightly uses closed calendar-day windows matching backfill.
+- **Also fixed:** the email subject was computed by a separate shell `date` call (same bug, independently); the duplicate-send guard was keyed on run date and would have double-sent once the label moved; README claimed a 60-min window vs the code's 480 since v1.5.2.
+- **Transition safety:** new `daily-summary/v2` provenance stamp gates idempotency so the fix deploys over the misdated archive without swallowing a day's email.
+- **Verified:** 25/25 clock-frozen checks (`execution/test_summary_date.py`); both workflow YAMLs parse; live end-to-end run reproduced the failure and confirmed the fix — the file labeled "Fri Jul 31" (157 commits/40 repos) regenerates as `daily-summary-2026-07-30.md` (160/40).
+- **Open:** archive realignment for 2026-06-18 → 2026-07-31 awaits Kerry's go-ahead (paid AI calls).
 
 ### Session: 2026-06-19 - Answer Kerry's inbox Qs + AI Engine survey; messages-sent metric (v1.10.0)
 - **Session-metrics report now headlines messages-sent.** Answers Kerry's 2026-06-18 inbox ask: "do we track total chats sent in to the agent by the admin?" The count already existed internally (`user_turns`) but was buried as "over N of your turns"; it's now the lead: *"you sent N message(s) to the agent and answered X question(s)…"*. Exact count — real typed admin messages only, excluding tool-results (also "user" transcript lines) and harness `isMeta`/`isSidechain` lines. Module docstring updated to document it.
