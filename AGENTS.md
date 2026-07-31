@@ -852,9 +852,9 @@ Be pragmatic. Be reliable. Self-anneal.
 
 ## Capture Learnings (session end)
 
-<!-- cursor-project-templates capture-learnings-block v1.0.0 -->
+<!-- cursor-project-templates capture-learnings-block v1.1.0 -->
 
-*(↓ copy this section, including this heading AND the HTML fingerprint comment above, verbatim into each project's `CLAUDE.md` and `AGENTS.md`. The fingerprint lets `grep` detect drift across projects. Canonical source: `Resources/CAPTURE_LEARNINGS_BLOCK.md` in `zero2webmaster/cursor-project-templates`.)*
+*(↓ copy this section, including this heading AND the HTML fingerprint comment above, verbatim into each project's `CLAUDE.md`, and into `AGENTS.md`/`GEMINI.md` **where the project already keeps them** — never create those files just to hold this block. The fingerprint lets `grep` detect drift across projects. Canonical source: `Resources/CAPTURE_LEARNINGS_BLOCK.md` in `zero2webmaster/cursor-project-templates`.)*
 
 **At the end of every session, decide whether anything you learned this session should become a skill — and state the verdict in your recap.** This fires by default, unasked. It is **never** a question you put to the project owner ("want me to make a skill?"); it is a decision you make and report.
 
