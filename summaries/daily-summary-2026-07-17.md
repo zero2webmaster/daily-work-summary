@@ -1,90 +1,77 @@
-<div style="font-size: 18px; line-height: 1.6;"><h1>Daily Work Summary — Fri Jul 17, 2026</h1>
-<p><strong>60 commits</strong> across <strong>5 repos</strong></p>
-<p>🧠 <strong>Skill Vault:</strong> 75 skills total <em>(Vault stats as of 2026-07-16)</em></p>
+<!-- daily-summary/v2 covers="2026-07-17" --><div style="font-size: 18px; line-height: 1.6;"><h1>Daily Work Summary — Fri Jul 17, 2026</h1>
+<p><strong>31 commits</strong> across <strong>9 repos</strong></p>
+<p>🧠 <strong>Skill Vault:</strong> 1 created, 3 improved today · 95 skills total</p>
 <hr />
 <h2>zero2webmaster</h2>
-<h3>backup-engine (18 commits)</h3>
-<p><em>Backup infrastructure was migrated to a self-hosted runner and reconfigured to handle multiple accounts at scale, with database backup schedules adjusted to accommodate processing constraints</em></p>
+<h3>video-migrator (8 commits)</h3>
+<p><em>Video optimization and migration tooling were developed to safely retrofit customers' existing videos to smaller, more efficient formats while preserving a complete record of each change</em></p>
 <ul>
-<li>docs: STF Airtable backup LIVE-VERIFIED (172/172 ok, 128,357 records, 247 min...</li>
-<li>v0.16.0 - Airtable backup completes: weekly-&gt;monthly cadence + flushed per-ba...</li>
-<li>weekly-airtable: disable schedule — 172-base run exceeds 120-min timeout (not...</li>
-<li>v0.15.0 docs: refresh HANDOFF for STF Airtable; log Kerry's Airtable-&gt;monthly...</li>
-<li>v0.15.0 - STF Airtable (122 bases) onto the weekly tier + cross-account dedup</li>
-<li>v0.14.0 - ACTIVATE: Fly runner live + STF Neon backing up + full cutover (docs)</li>
-<li>restore-verify: add per-entry restore_verify opt-out; exclude STF ledger</li>
-<li>weekly-restore-verify: add NEON_API_KEY_STF (rotation can now pick STF's ledger)</li>
-<li>Activate: cut remaining 3 workflows to self-hosted runner + turn STF Neon led...</li>
-<li>manifest: temporarily disable neon:super-cherry (file-server) — over Neon Fre...</li>
-<li>fly-runner: 2 GB RAM + 2 GB swap (1 GB OOM'd during the Neon dump); log WP-ba...</li>
-<li>fly-runner: document post-deploy 'verify machine is started' step (self-anneal)</li>
-<li>fly-runner: raise machine memory 256 MB -&gt; 1 GB (first smoke test OOM'd mid-c...</li>
-<li>daily-backup: run on self-hosted Fly runner (runs-on: [self-hosted, fly])</li>
-<li>fly-runner: bump Actions runner 2.328.0 -&gt; 2.335.1 (latest) before first deploy</li>
-<li>docs: stamp Fly-runner/STF activation as deliberately deferred to next sessio...</li>
-<li>v0.13.0 - Per-account (multi-tenant) backup coverage + Fly self-hosted runner...</li>
-<li>docs: session wrap-up — Notion fully manual, v2 blob co-design + STF Neon con...</li>
+<li>Record the first real retrofit: charukeshi video optimized live (38% smaller,...</li>
+<li>v10.12.1 - Fix the retrofit filter that was finding zero videos to optimize</li>
+<li>v10.12.0 - Record what each video swap did, so the old file is never lost and...</li>
+<li>v10.11.0 - Build the tool that swaps a customer's big videos for smaller opti...</li>
+<li>Lock in the plan for retrofitting Bansuri's videos to smaller H.265 files</li>
+<li>v10.10.0 - Stay on Bunny Stream, and build the safe first half of retrofit vi...</li>
+<li>v10.9.0 - Migrate customers whose Airtable base is in their own workspace (pe...</li>
+<li>v10.8.0 - Preview a customer's migration before spending a cent (safe --dry-run)</li>
 </ul>
-<h3>grantor (18 commits)</h3>
-<p><em>The application review and decision-making interface was redesigned to streamline the workflow, clarify decision details, and improve information organization across pages</em></p>
+<h3>z2w-agent-command-center (8 commits)</h3>
+<p><em>Decision briefs and incident notifications were improved to make alerts more readable and actionable for users</em></p>
+<ul>
+<li>chore: redeploy to re-prerender /decisions with the now-present decision-brie...</li>
+<li>v0.29.0 - Decision briefs: make the Awaiting page legible + actionable</li>
+<li>docs: lock Decision-briefs impl fork — coordination-repo tooling (Kerry 2026-...</li>
+<li>docs: Phase 0 PROVEN LIVE (push received) + capture "Decision briefs" as next...</li>
+<li>v0.28.0 - Phase 0 phone notifications: Web Push when a new decision needs you</li>
+<li>docs: HANDOFF — 2026-07-17 ACK-parser alignment session (coordination-repo in...</li>
+<li>docs: note the INGEST bridge is scaffolded (separate repo) so it isn't re-sca...</li>
+<li>v0.27.0 - Incidents render widget (RENDER side of the observability arc)</li>
+</ul>
+<h3>videomigrator-dashboard (6 commits)</h3>
+<p><em>The customer console interface was reorganized and refined to improve usability and reflect data migration changes</em></p>
+<ul>
+<li>v1.2.0 - Serve the customer console at the dashboard root instead of /console</li>
+<li>Catalog the comprehensive data-field superset; scope post-v1 increments</li>
+<li>v1.1.0 follow-up - Move savings to the bottom; reflect all migrations</li>
+<li>v1.1.0 follow-up - Refine console per live-smoke feedback</li>
+<li>v1.1.0 follow-up - Order console migration runs by real recency</li>
+<li>v1.1.0 - Show live migration progress in the customer console</li>
+</ul>
+<h3>file-server (2 commits)</h3>
+<p><em>Documentation was updated to record successful backup and database upgrade sessions</em></p>
+<ul>
+<li>docs: seventy-eighth session — Quintesque drive-sync dry-run PASSED (503.5 GB...</li>
+<li>docs: seventy-seventh session — B2 verified byte-intact + Neon upgraded to La...</li>
+</ul>
+<h3>grantor (2 commits)</h3>
+<p><em>Documentation and decision flow processes were updated to support guided workflows with explicit confirmations and classifications</em></p>
 <ul>
 <li>Docs: STATUS/HANDOFF/ROADMAP for v0.24.1 guided decision flow + next-session ...</li>
 <li>Guided decision flow: no default, confirm the amount, classify, require a rea...</li>
-<li>Docs: record v0.24.0 decision-page redesign + roadmap reviewer-comment aggreg...</li>
-<li>Decision page: show requested amount + award basis + reviewer comments; human...</li>
-<li>Docs: record v0.23.1 detail-page cleanup + roadmap the rich decision email</li>
-<li>Application detail cleanup: hide fx/USD noise, Unique ID first, reorder + jum...</li>
-<li>Docs: record v0.22.6 reorder + v0.23.0 decision rebuild in STATUS</li>
-<li>Decision saves its amount + the real Award Announcement letter (v0.23.0)</li>
-<li>Application detail: put Application details above Applicant history (v0.22.6)</li>
-<li>Docs: record v0.22.5 (owner-role fix + amount auto-fill) in STATUS</li>
-<li>Fix owner-role decision link + auto-fill the award amount into the letter (v0...</li>
-<li>Docs: record v0.22.3-v0.22.4 + custom domain live in STATUS</li>
-<li>Add a decision link on the application detail page (v0.22.4)</li>
-<li>Disbursed-by-year chart: always multi-year + a y-axis (v0.22.3)</li>
-<li>Docs: record the v0.22.2 dashboard visual-pass fixes in STATUS</li>
-<li>Dashboard visual-pass fixes + merge country spellings in the scholarship filt...</li>
-<li>Docs: record the v0.22.1 scholarship-queue polish in STATUS</li>
-<li>Scholarships queue: rename "State" to "Status" and add a country filter (v0.2...</li>
 </ul>
-<h3>contact-registry (11 commits)</h3>
-<p><em>Authentication and API key management capabilities were enhanced, alongside contact data integration and consumer key verification tooling</em></p>
+<h3>z2w-observability-bridge (2 commits)</h3>
+<p><em>Initial deployment of an observability bridge worker with the data ingestion component now live, while secret and webhook management remain manual</em></p>
 <ul>
-<li>contact-registry: control-plane auth migration APPLIED; next session = dedica...</li>
-<li>v0.14.0 - Admin magic-link auth spine (Auth.js v5)</li>
-<li>v0.13.0 - revoke:key CLI (retire an API key cleanly)</li>
-<li>v0.12.2 - Consumer integration guide for z2w-social/grantor (deferred half of...</li>
-<li>contact-registry: refresh HANDOFF for session 15 — Phase 3 COMPLETE (verified...</li>
-<li>v0.12.1 - CLI scripts auto-load .env.local (no more source/export dance)</li>
-<li>contact-registry: Phase 3 COMPLETE — live consumer-key verification PASSED 11...</li>
-<li>v0.12.0 - Phase 3: tools to mint a read-only consumer key and verify it live ...</li>
-<li>v0.11.0 - Let apps look up a contact by its WordPress / FluentCRM / Stripe id</li>
-<li>v0.10.0 - SAVE THE FROGS! contact base imported into the Registry (tenant #1)</li>
-<li>contact-registry: mark the live FluentCRM import run as the agreed next-sessi...</li>
+<li>v0.1.0 - Deploy the Worker (INGEST side live; secrets/webhooks still hands-on)</li>
+<li>v0.1.0 - Initial scaffold: observability-bridge Worker (INGEST side of the ob...</li>
 </ul>
-<h3>z2w-skill-vault (7 commits)</h3>
-<p><em>Documentation and operational guidelines were expanded across authentication, deployment infrastructure, and security practices</em></p>
-<ul>
-<li>webhook-fail-closed: add 'missing header must 4xx not 500' rule + how-to-veri...</li>
-<li>github-actions-long-jobs: add §3 — a run-watcher's exit code is not proof of ...</li>
-<li>z2w-magic-link-auth: add Model-B-no-users-table variant (§10.2) + the rate-li...</li>
-<li>env-vars-local-first: add the Node/tsx env-file gold standard + the next-dev-...</li>
-<li>Add github-actions-long-jobs skill — real-time logs + single-runner schedulin...</li>
-<li>Add rocket-net-mysql-ssh-tunnel skill (SSH tunnel to managed-WP MySQL + long-...</li>
-<li>terminal-secret-hygiene: §7.4 name-the-resource rule explicitly covers TOKENS...</li>
-</ul>
-<h3>z2w-seller-suite (6 commits)</h3>
-<p><em>Router interface was simplified and webhook security was hardened with field renaming for clarity</em></p>
+<h3>z2w-seller-suite (1 commit)</h3>
+<p><em>Router interface styling and shared configuration management were refined</em></p>
 <ul>
 <li>Session 149 wrap (cont.): v1.103.3 router-UI cleanup shipped + shared Zero2We...</li>
-<li>v1.103.3 - Multi-site router UI: drop confusing Site ID column, inline copyab...</li>
-<li>docs(directives): shared-account hub/child onboarding + legacy ?wc-api=wc_str...</li>
-<li>Session 149 wrap: v1.103.2 BB webhook hardening + Signing-Secret rename shipp...</li>
-<li>docs(directive): match renamed Webhook Signing Secret field + note v1.103.2 h...</li>
-<li>v1.103.2 - Harden Stripe webhook + rename signing-secret fields</li>
+</ul>
+<h3>z2w-skill-vault (1 commit)</h3>
+<p><em>A shared branding resource was established to provide a single authoritative source for brand guidelines and assets</em></p>
+<ul>
+<li>Add stf-brand-core skill — one canonical source for the shared SAVE THE FROGS...</li>
+</ul>
+<h3>z2w-starter-kit (1 commit)</h3>
+<p><em>Dependency resolution issues in the Cloudflare worker scaffolding tool were resolved by updating package pins to current compatible versions</em></p>
+<ul>
+<li>v0.3.1 - Fix cf-worker scaffold ERESOLVE: coherent, current Cloudflare pins</li>
 </ul>
 <hr />
 <p>Daily Work Summary initially created by <a href="https://zero2webmaster.com/kerry-kriger">Zero2Webmaster Founder Dr. Kerry Kriger</a></p>
 <p>Contribute to the public repository at: https://github.com/zero2webmaster/daily-work-summary</p>
 <p>Need to change the timing or timezone of these emails? <a href="https://github.com/zero2webmaster/daily-work-summary#customizing-the-email-schedule">Click here</a> for instructions.</p>
-<p><em>Generated at 2026-07-17 00:15 EDT</em></p></div>
+<p><em>Covers Fri Jul 17, 2026 · generated 2026-07-31 19:57 EDT</em></p></div>

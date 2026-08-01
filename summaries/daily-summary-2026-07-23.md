@@ -1,86 +1,95 @@
-<div style="font-size: 18px; line-height: 1.6;"><h1>Daily Work Summary — Thu Jul 23, 2026</h1>
-<p><strong>44 commits</strong> across <strong>8 repos</strong></p>
-<p>🧠 <strong>Skill Vault:</strong> 80 skills total <em>(Vault stats as of 2026-07-20)</em></p>
+<!-- daily-summary/v2 covers="2026-07-23" --><div style="font-size: 18px; line-height: 1.6;"><h1>Daily Work Summary — Thu Jul 23, 2026</h1>
+<p><strong>57 commits</strong> across <strong>7 repos</strong></p>
+<p>🧠 <strong>Skill Vault:</strong> 8 improved today · 95 skills total</p>
 <hr />
 <h2>zero2webmaster</h2>
-<h3>z2w-starter-kit (9 commits)</h3>
-<p><em>Documentation and internal coordination processes were refined across multiple releases, along with targeted fixes to dependency management and scaffolding templates</em></p>
+<h3>contact-registry (18 commits)</h3>
+<p><em>Address data management and supporter contact information capabilities were enhanced, including standardized country and state fields, backfill validation, and self-service editing</em></p>
 <ul>
-<li>docs: courses/LMS proposal pass — courses-engine brief + fork resolved (propo...</li>
-<li>docs: ROADMAP — dashboard-engine audit note (audit + coordination only, no sr...</li>
-<li>docs: dashboard-engine audit — STATUS/HANDOFF updated (audit + coordination o...</li>
-<li>docs: v0.5.3 session wrap — STATUS/HANDOFF updated (COORDINATION_ONBOARDING.m...</li>
-<li>v0.5.3 - Participating scaffolds emit COORDINATION_ONBOARDING.md pointer</li>
-<li>docs: v0.5.2 session wrap — STATUS/HANDOFF/ROADMAP (node-service Dockerfile E...</li>
-<li>v0.5.2 - node-service Dockerfile pins npm before npm ci (EBADPLATFORM fix)</li>
-<li>docs: v0.5.1 session wrap — STATUS/HANDOFF/ROADMAP updated (coordination bloc...</li>
-<li>v0.5.1 - Coordination block bumped to canonical v0.1.14 (## Integrations + Li...</li>
+<li>docs: address backfill RAN LIVE + verified for STF (0 -&gt; 12,739 ISO countries...</li>
+<li>docs: STATUS/HANDOFF to v0.24.2 — backfill dry-run validated (green to --appl...</li>
+<li>contact-registry: country normalizer handles 'Name (CODE)' form (v0.24.2)</li>
+<li>contact-registry: --limit N on the FluentCRM import for fast dry-run validati...</li>
+<li>docs: HANDOFF to v0.24.0 (Address surface v2 shipped; 3 pre-campaign terminal...</li>
+<li>contact-registry: address-last-updated date (v0.24.0) — Address surface v2 pa...</li>
+<li>contact-registry: standardized state/province — cascading country-&gt;state drop...</li>
+<li>chore: gitignore .claude/ (local settings); record consent-precedence + addre...</li>
+<li>docs: HANDOFF to v0.22.0 (address backfill built; live run + consent-preceden...</li>
+<li>contact-registry: FluentCRM address backfill mapping (v0.22.0)</li>
+<li>docs: HANDOFF to v0.21.3 (/stf/me polish; address backfill handed to Kerry's ...</li>
+<li>contact-registry: /stf/me polish — section order + country dropdown (v0.21.3)</li>
+<li>docs: address-backfill investigation + plan (Step 13); HANDOFF/ROADMAP to v0....</li>
+<li>docs: STATUS to v0.21.2 (phone country-picker + SMS opt-in; address-backfill ...</li>
+<li>contact-registry: supporter SMS-alerts opt-in (v0.21.2)</li>
+<li>contact-registry: supporter phone entry via country picker + local number (v0...</li>
+<li>contact-registry: self-service supporter-edit surface (v0.21.0)</li>
+<li>docs: SES From must be a real monitored mailbox (contact@, not registry@)</li>
 </ul>
-<h3>email-engine (8 commits)</h3>
-<p><em>The foundational layers of a contact management and email platform were built out, progressing from authentication and data schema through audience segmentation and templating capabilities</em></p>
+<h3>email-engine (10 commits)</h3>
+<p><em>Email campaign functionality was built out with tracking, scheduling, merge fields, and campaign management features</em></p>
 <ul>
-<li>v0.5.0 — Phase 1.3: templates + composer</li>
-<li>v0.4.1 — Phase 1.1 + 1.2 live-verified against the STF tenant</li>
-<li>v0.4.0 — Phase 1.2: segment builder</li>
-<li>v0.3.1 — fold in contact-registry's audience-resolve contract answer</li>
-<li>v0.3.0 — Phase 1.1: Contact Registry audience-query client + contract</li>
-<li>email-engine: Phase 0 — schema + magic-link auth + tenant model (v0.2.0)</li>
-<li>docs: atomic-step ROADMAP (Phase 0 foundation → Phase 3 ecosystem wiring)</li>
-<li>Initial scaffold via @zero2webmaster/starter-kit v0.5.0 (email-engine, nextjs...</li>
+<li>v0.9.0 — Phase 1.7: open + click tracking + per-campaign stats</li>
+<li>docs: HANDOFF next-agent prompt — bundle worker-wiring (batch w/ Phase 1.8) +...</li>
+<li>v0.8.0 — Phase 1.6: send + schedule pipeline</li>
+<li>v0.7.0 — Phase 1.5: campaign dashboard list</li>
+<li>docs: personal-letter merge-field demo re-seeded to prod; note libpq SSL warning</li>
+<li>v0.6.0 — Phase 1.4: per-recipient merge fields + fallbacks + pre-send lint</li>
+<li>docs: Phase 1.3 deployed + send path live-verified (inbox delivery); handoff ...</li>
+<li>chore: db:seed scripts load .env.local (--env-file), matching verify:registry</li>
+<li>v0.5.1 — fix: invalid NEXT_PUBLIC_SITE_URL must not crash the build</li>
+<li>env.example: STF send-from is news@savethefrogs.com (real monitored mailbox, ...</li>
 </ul>
-<h3>project-creator (8 commits)</h3>
-<p><em>The site was prepared for public launch through dependency updates, a search-engine redirect fix, production deployment validation, and runtime error monitoring</em></p>
+<h3>project-creator (9 commits)</h3>
+<p><em>The application's core infrastructure—authentication, form handling, serverless deployment, and email delivery—was stabilized and verified as working in production</em></p>
 <ul>
-<li>docs: domain live + indexability redirect VERIFIED (curl); skill captured</li>
-<li>docs: HANDOFF — domain decided (project-creator.z2w.us) + indexability redire...</li>
-<li>v0.7.1 — fix the *.vercel.app → custom-domain SEO redirect (never fired before)</li>
-<li>docs: first Vercel deployment live — dep swaps validated in prod build</li>
-<li>docs: mark deploy-checklist §C dep swaps done; correct stale ^0.3.0 pin</li>
-<li>deps: consume @zero2webmaster/templates from GitHub Packages (checklist §C2)</li>
-<li>deps: swap @zero2webmaster/starter-kit file: link → published ^0.5.2</li>
-<li>v0.7.0 — wire Sentry runtime error tracking (pre-go-live observability)</li>
+<li>v0.7.5 — bundle @zero2webmaster/templates into the Vercel serverless functions</li>
+<li>v0.7.4 — fix /projects/new preview: submit client FormData, not native form</li>
+<li>v0.7.3 — fix prod-breaking /projects/new 500 (use-server object export)</li>
+<li>docs: prod Stripe webhook LIVE + billing verified (test mode)</li>
+<li>docs: AUTH LIVE IN PROD — Kerry logged in at /projects; wrap + next-agent prompt</li>
+<li>docs: decision — sole login = kerry@zero2webmaster.com; drop savethefrogs fro...</li>
+<li>v0.7.2 — magic-link email: include copyable sign-in URL in HTML</li>
+<li>docs: login FIXED + SES send re-verified live (MissingSecret blocker resolved)</li>
+<li>docs: core §B env — SES email creds set; live test found prod login 500s (Mis...</li>
+</ul>
+<h3>z2w-skill-vault (8 commits)</h3>
+<p><em>Documentation and guidance were improved across setup, configuration, and troubleshooting workflows to address common pitfalls in credential management, resource naming, and service integration</em></p>
+<ul>
+<li>state-the-url-every-time: add "SUGGEST a concrete name for any named resource...</li>
+<li>terminal-command-handoff: cover inline-recap commands + add npm ENOENT signature</li>
+<li>rocket-net-mysql-ssh-tunnel: elevate per-site-key gotcha (password-prompt fal...</li>
+<li>uptime-kuma-monitor: capture the Vercel Deployment Protection 302 gotcha (all...</li>
+<li>terminal-secret-hygiene: §7.4 — suggest the resource/token name INLINE in the...</li>
+<li>email-service-router: guide SES credential setup IN CHAT, not just a directiv...</li>
+<li>email-service-router: keep SES_ACCESS_KEY_ID env name (not SES_ACCESS_KEY) + ...</li>
+<li>email-service-router: Sender Identity §1a — the From must ACTUALLY EXIST, not...</li>
 </ul>
 <h3>backup-engine (7 commits)</h3>
-<p><em>Backup system reliability and monitoring were improved through enhanced status reporting, re-enabled production backups, and added safeguards for data integrity</em></p>
+<p><em>The backup system's status tracking was integrated into multiple automated workflows to enable real-time progress updates</em></p>
 <ul>
-<li>backup-engine: HANDOFF — v0.22.0 backups-status artifact + auto-refresh steps...</li>
-<li>v0.22.0 - backups-status artifact for the Command Center backups panel</li>
-<li>v0.21.1 - super-cherry (file-server Neon) backup re-enabled, daily</li>
-<li>backup-engine: re-enable super-cherry (file-server Neon) daily backup</li>
-<li>backup-engine: queue backups-status artifact for the Command Center panel</li>
-<li>backup-engine: Kuma Monitor #5 DONE — blob dead-man's-switch armed (docs)</li>
-<li>v0.21.0 - blob pilot LANDED + wired + hardened (retry + concurrency)</li>
+<li>v0.22.2 - backups-status auto-refresh COMPLETE (remaining 3 workflows wired)</li>
+<li>backup-engine: wire backups-status auto-refresh into monthly-airtable-backup.yml</li>
+<li>backup-engine: wire backups-status auto-refresh into blob-backup-stf.yml</li>
+<li>backup-engine: wire backups-status auto-refresh into weekly-restore-verify.yml</li>
+<li>backup-engine: daily-backup auto-refresh VERIFIED LIVE (run 30047903995); que...</li>
+<li>backup-engine: harden daily-backup publish step + record smoke-test 1 finding...</li>
+<li>v0.22.1 - auto-refresh wiring for the backups-status artifact (part 1)</li>
 </ul>
-<h3>z2w-skill-vault (6 commits)</h3>
-<p><em>Deployment configuration and project templates were refined to better support multi-host environments and improve onboarding documentation</em></p>
+<h3>courses-engine (4 commits)</h3>
+<p><em>Database schema, security controls, lesson pages with progress tracking, and data import capabilities were established to support the academy platform</em></p>
 <ul>
-<li>portable-stack §14 rule 5b: match ANY *.vercel.app host, don't hardcode one a...</li>
-<li>instantiate-z2w-project v1.14.0 - emit COORDINATION_ONBOARDING.md pointer for...</li>
-<li>instantiate-z2w-project v1.13.1: node-service Dockerfile npm pin + PORT-read fix</li>
-<li>cinematic-showcase-page: rename exemplar #8 Gazette → Bulletin (static-sites ...</li>
-<li>instantiate-z2w-project v1.13.0 - coordination block canonical v0.1.14 (## In...</li>
-<li>cinematic-showcase-page: fold back the STF Gazette build (exemplar #8, 2nd br...</li>
+<li>v0.5.0 — Academy importer remapped to the real base + first live pilot (Phase...</li>
+<li>v0.4.0 — Academy Airtable importer (scaffold + fixture tests, Phase 1 Step 3)</li>
+<li>v0.3.0 — Lesson-page + progress vertical slice (Phase 1 Step 2)</li>
+<li>v0.2.0 — Phase 1 DB foundation (Neon Model A schema + RLS)</li>
 </ul>
-<h3>contact-registry (3 commits)</h3>
-<p><em>The contact registry was extended with an administrative interface for adding contacts and a new API to support email delivery, while consent data structures were migrated across production databases</em></p>
+<h3>z2w-starter-kit (1 commit)</h3>
+<p><em>Documentation was updated to reflect the initial setup and transition of the courses engine component</em></p>
 <ul>
-<li>contact-registry: add-contact /admin form — first human write surface (v0.20.0)</li>
-<li>docs: consent-enum migration 0002 applied LIVE on both tenant DBs (v2-&gt;v3)</li>
-<li>contact-registry: audience-query API for email-engine (v0.19.0)</li>
-</ul>
-<h3>static-sites (2 commits)</h3>
-<p><em>Internal naming conventions were updated to reflect a rebrand from "Gazette" to "Bulletin."</em></p>
-<ul>
-<li>v1.12.1 - Rename exemplar #8: The SAVE THE FROGS! Gazette → Bulletin</li>
-<li>v1.12.0 - The SAVE THE FROGS! Gazette (Fable build, exemplar #8: the 2nd news...</li>
-</ul>
-<h3>courses-engine (1 commit)</h3>
-<p><em>A new courses engine has been created to support course authoring and management</em></p>
-<ul>
-<li>Initial scaffold — courses-engine (Z2W Course Creator)</li>
+<li>docs: courses-engine scaffolded + handed off — STATUS/HANDOFF/ROADMAP updated</li>
 </ul>
 <hr />
 <p>Daily Work Summary initially created by <a href="https://zero2webmaster.com/kerry-kriger">Zero2Webmaster Founder Dr. Kerry Kriger</a></p>
 <p>Contribute to the public repository at: https://github.com/zero2webmaster/daily-work-summary</p>
 <p>Need to change the timing or timezone of these emails? <a href="https://github.com/zero2webmaster/daily-work-summary#customizing-the-email-schedule">Click here</a> for instructions.</p>
-<p><em>Generated at 2026-07-23 00:24 EDT</em></p></div>
+<p><em>Covers Thu Jul 23, 2026 · generated 2026-07-31 20:02 EDT</em></p></div>

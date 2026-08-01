@@ -1,106 +1,113 @@
-<div style="font-size: 18px; line-height: 1.6;"><h1>Daily Work Summary — Mon Jul 13, 2026</h1>
-<p><strong>60 commits</strong> across <strong>9 repos</strong></p>
-<p>🧠 <strong>Skill Vault:</strong> 65 skills total <em>(Vault stats as of 2026-07-12)</em></p>
+<!-- daily-summary/v2 covers="2026-07-13" --><div style="font-size: 18px; line-height: 1.6;"><h1>Daily Work Summary — Mon Jul 13, 2026</h1>
+<p><strong>116 commits</strong> across <strong>11 repos</strong></p>
+<p>🧠 <strong>Skill Vault:</strong> 4 created, 6 improved today · 95 skills total</p>
 <hr />
 <h2>zero2webmaster</h2>
-<h3>z2w-agent-coordination (32 commits)</h3>
-<p><em>Multiple systems across contact management, file organization, product publishing, and agent coordination received incremental feature releases and infrastructure improvements</em></p>
+<p><strong>z2w-agent-coordination:</strong> 54 coordination commits</p>
+<h3>file-server (12 commits)</h3>
+<p><em>File management interface improvements were refined across organization, deletion, and visibility of controls</em></p>
 <ul>
-<li>contact-registry #7: Step 4 Model-B machinery shipped (v0.6.0) — issue-tenant...</li>
-<li>loominus: session 5 — 13 hats live (62 Published); bags cohort copy+titles wr...</li>
-<li>contact-registry: Phase 1 API surface complete — party create + consent set s...</li>
-<li>file-server: v1.39.0 reorganizer select-all/deselect-all shipped (sixty-eight...</li>
-<li>file-server: v1.38.0 reorganizer Copy names button shipped (sixty-seventh ses...</li>
-<li>contact-registry: Step 2 consumer field sets confirmed (no gaps); FluentCRM a...</li>
-<li>v0.1.60 - Buildup sweep + drift-PAT replacement verified end-to-end (45/45 re...</li>
-<li>contact-registry: v0.4.0 — tags/consent reads + tags WRITE (membership projec...</li>
-<li>z2w-agent-coordination: add PAT identity + visibility fail-fast step to drift...</li>
-<li>contact-registry: session wrap — v0.3.0 read API + auth + routing shipped (Te...</li>
-<li>z2w-agent-coordination: document the DRIFT_DETECTION_PAT all-repos broadening...</li>
-<li>loominus: session wrap — 44 products batch-published live (49 total), categor...</li>
-<li>loominus: reply to z2w-ai-suite — v2.240.0 category tools confirmed live (the...</li>
-<li>loominus: v2.240.0 category tools CONFIRMED LIVE (reply to z2w-ai-suite) + [→...</li>
-<li>contact-registry: Phase 1 kickoff shipped (v0.2.0, first code + 37 tests) — s...</li>
-<li>z2w-agent-coordination: buildup sweep — trim 9 resolved [→ Kerry] threads fro...</li>
-<li>loominus: ACK Kerry inbox — Product Name titles go-ahead (doing now) + invent...</li>
-<li>static-sites: ask z2w-starter-kit (Site Control) to track STF Technology page...</li>
-<li>z2w-skill-vault: refresh skill-vault stats artifact</li>
-<li>z2w-ai-engine: test-mode Stripe metered billing verified + deployed (service ...</li>
-<li>z2w-skill-vault: refresh skill-vault stats artifact</li>
-<li>static-sites: v1.4.0 shipped — SAVE THE FROGS! Technology page live (/stf-tec...</li>
-<li>file-server: v1.37.0 shipped — reorganizer multi-select + directional left→ri...</li>
-<li>static-sites: notify creators — committed 3 stranded Vault edits (crowdcommer...</li>
-<li>static-sites: session fable-prep — prepped SAVE THE FROGS! Technology Fable b...</li>
-<li>static-sites: ACK Kerry inbox — Chrome DevTools MCP (yes, install) + Higgsfie...</li>
-<li>z2w-admin-suite: v1.119.1 deployed to all 3 sites; 10.8 complete; ACK debug-l...</li>
-<li>file-server: v1.36.0 dual-pane reorganizer shipped + Current focus/Active ses...</li>
-<li>grantor: queue next-session follow-up — verify renewals-cron heartbeat is tru...</li>
-<li>grantor: renewals-cron Kuma monitor DOWN diagnosed + resolved (§8 daily-cron ...</li>
-<li>z2w-member-match: Session 9 cutover (live at match.bansuribliss.com) + Fathom...</li>
-<li>contact-registry: Phase-0 field-by-field mapping complete (session 2026-07-12)</li>
+<li>docs: v1.42.0 Kerry-confirmed live + bulletin backlog triaged (seventy-third ...</li>
+<li>docs: v1.41.0 + v1.42.0 session wrap — Batch 2 + main-/files delete polish sh...</li>
+<li>v1.42.0 - Main /files delete polish: always-show stats + delete-current-folde...</li>
+<li>v1.41.0 - Reorganizer Batch 2: per-row pencil rename + sortable Name/Type/Siz...</li>
+<li>docs: confirm v1.40.3 deployed + prod-verified (health 1.40.3 both hosts)</li>
+<li>v1.40.3 - Make /files Organize button clearly visible</li>
+<li>Docs: v1.40.2 session confirmations — delete button prod-verified, _diag_any....</li>
+<li>Docs: v1.40.2 session wrap — how-to relocation shipped; flag /files Organize ...</li>
+<li>v1.40.2 - Reorganizer: how-to text moved to page bottom + 'How to use' anchor...</li>
+<li>Docs: v1.40.1 session wrap — reorganizer usability + delete-crash fix; Phase ...</li>
+<li>v1.40.1 - Fix reorganizer delete crash (= ANY array) + Empty badge on both panes</li>
+<li>v1.40.0 - Reorganizer: left-pane click-opens/checkbox-selects, delete-selecte...</li>
 </ul>
-<h3>contact-registry (7 commits)</h3>
-<p><em>A contact database was built from the ground up with API access for other applications, field mappings, and multi-tenant administration capabilities</em></p>
+<h3>project-creator (10 commits)</h3>
+<p><em>The project-creator tool was built from initial scaffolding through multiple phases to enable users to generate and deploy new projects directly to their own GitHub accounts, with authentication, a web interface, and supporting infrastructure along the way</em></p>
 <ul>
-<li>v0.6.0 - Let admins create tenants and roll out schema changes to every tenan...</li>
-<li>v0.5.0 - Let other apps create contacts and record their email/mail preferences</li>
-<li>contact-registry: confirm v1 consumer field sets (no gaps) + tee up FluentCRM...</li>
-<li>v0.4.0 - Let other apps read tags/consent and stamp membership tags onto cont...</li>
-<li>Open the contact database to other apps through locked-down API endpoints</li>
-<li>Turn the contact database design into working code with its first 37 tests</li>
-<li>contact-registry: Phase-0 field-by-field mapping (Airtable → Party schema)</li>
+<li>docs: mark Phase 3 E2E test artifacts cleaned up</li>
+<li>Add guarded gh-delete-repo admin script (cleanup throwaway repos via stored u...</li>
+<li>v0.4.0 - Phase 3: deliver scaffolded repo into the user's own GitHub account</li>
+<li>project-creator: v0.3.0 — Phase 2 web brief-first flow (scaffold → tarball)</li>
+<li>project-creator: v0.2.0 — Phase 1 complete + unit tests + docs</li>
+<li>project-creator: Step 1.3 — login UI, authed shell, project list</li>
+<li>project-creator: Step 1.2 — magic-link auth (Auth.js v5 + JWT + allowlist)</li>
+<li>project-creator: Step 1.1 — Neon metadata schema + Drizzle foundation</li>
+<li>project-creator: re-sync Agent Coordination block to canonical v0.1.11 (+ fin...</li>
+<li>Initial scaffold — project-creator (Tier B web UI over the Z2W scaffolder)</li>
 </ul>
-<h3>z2w-skill-vault (7 commits)</h3>
-<p><em>Multiple capabilities and infrastructure components were added or refined, including credential management improvements, billing integration, connector updates, and new skill integrations</em></p>
+<h3>z2w-starter-kit (10 commits)</h3>
+<p><em>Error monitoring and observability standards were established, and a template library was published alongside foundational project scaffolding and roadmap documentation</em></p>
 <ul>
-<li>gh-account-switching: fine-grained PATs in CI — a wrong-account/no-access tok...</li>
-<li>per-tenant-credential-vault: third reference impl + rotation-safe client-cach...</li>
-<li>wordpress-ide-connector: v2.240.0 category tools confirmed live (gotchas 9/10...</li>
-<li>Add cinematic-showcase-page skill — the Eidolon-class page recipe proven on t...</li>
-<li>Add stripe-metered-billing skill + stripe-restricted-keys §4.2 (meter-writer ...</li>
-<li>Flush 3 stranded Vault skill edits (found uncommitted by static-sites 2026-07...</li>
-<li>Add stock-photo-apis skill — Pexels/Unsplash access + the Pexels-403-is-usual...</li>
+<li>docs: record publishing @zero2webmaster/templates@0.1.0 to GitHub Packages</li>
+<li>v0.3.0 - Publish programmatic API + accumulated v0.3.x standards</li>
+<li>Add Sentry runtime-error/APM observability standard (nextjs / cf-pages)</li>
+<li>z2w-starter-kit: HANDOFF — Sentry observability standard queued as next sessi...</li>
+<li>z2w-starter-kit: scaffolded org-hq (Session D1) — STATUS/ROADMAP/HANDOFF</li>
+<li>z2w-starter-kit: roadmap — push-notifications as a future sanctioned portable...</li>
+<li>z2w-starter-kit: scaffolded project-creator (Session B) — STATUS/ROADMAP/HANDOFF</li>
+<li>z2w-starter-kit: HANDOFF — go-to-market pivot + project-creator greenlit; nex...</li>
+<li>z2w-starter-kit: STATUS — go-to-market pivot (WooCommerce gate parked, sales ...</li>
+<li>Fix scaffolded Next.js apps recording zero Fathom pageviews</li>
 </ul>
-<h3>file-server (5 commits)</h3>
-<p><em>The reorganizer interface was enhanced with multi-select capabilities, directional movement controls, and bulk action options</em></p>
+<h3>z2w-skill-vault (9 commits)</h3>
+<p><em>Internal infrastructure and security practices were enhanced across authentication, package management, error tracking, and secret handling</em></p>
 <ul>
-<li>v1.39.0 - Reorganizer select-all / deselect-all master checkbox</li>
-<li>Docs: v1.38.0 HANDOFF (Copy names shipped + deployed)</li>
-<li>v1.38.0 - Reorganizer "Copy names" button</li>
-<li>v1.37.0 - Reorganizer multi-select + directional left→right move</li>
-<li>v1.36.0 - Dual-pane reorganizer (FileZilla-style move surface) + wider app shell</li>
+<li>Add github-app-repo-creation skill (installation token vs user-to-server for ...</li>
+<li>portable-stack §23: private npm packages → GitHub Packages, not paid npmjs</li>
+<li>z2w-magic-link-auth: add org-hq (§10) — control-plane-bound auth + own-mailer...</li>
+<li>Add sentry-runtime-errors skill + mirror into instantiate-z2w-project</li>
+<li>Add claude-routine-github-access skill</li>
+<li>fixtures-mirror-real-data: new skill — green tests must not lie about wire fo...</li>
+<li>instantiate-z2w-project v1.8.0: Fathom emits the full three-file pattern</li>
+<li>terminal-secret-hygiene: add §7.3 — 3-way match check when a sealing key is c...</li>
+<li>terminal-secret-hygiene: strengthen the SAVE THE FROGS! dquote/history-expans...</li>
 </ul>
-<h3>static-sites (3 commits)</h3>
-<p><em>Static website content was prepared and published to showcase grant history and technology information</em></p>
+<h3>contact-registry (6 commits)</h3>
+<p><em>The contact management system's data import and enrichment capabilities were built out to support multiple tenants with tested import workflows</em></p>
 <ul>
-<li>v1.4.0 - SAVE THE FROGS! Technology showcase page (Fable build)</li>
-<li>static-sites: brief — grants since 2009 (confirmed); tech names OK to publish...</li>
-<li>static-sites: prep SAVE THE FROGS! Technology Fable build</li>
+<li>v0.8.0 - Phase 2 part 2: the FluentCRM → Registry import engine (pure + tested)</li>
+<li>v0.7.0 - Phase 2 foundations: custom-field value write path + enrichment engine</li>
+<li>contact-registry: FluentCRM audit COMPLETE — both tenants (STF + Bansuri Blis...</li>
+<li>contact-registry: FluentCRM audit — SAVE THE FROGS! (STF) complete</li>
+<li>Refresh HANDOFF + STATUS for the live control plane; note master-key 3-way check</li>
+<li>Stand up the control plane + SAVE THE FROGS! as tenant #1 on Neon</li>
 </ul>
-<h3>loominus (2 commits)</h3>
-<p><em>Product catalog content was expanded with new titles, categories, and batch publishing of items across multiple product lines</em></p>
+<h3>org-hq (4 commits)</h3>
+<p><em>Multi-tenant authentication and organization management infrastructure were established with team member login capabilities</em></p>
 <ul>
-<li>loominus: session 5 — 13 hats live (62 Published); bags cohort copy + titles ...</li>
-<li>Batch-publish 44 products live (49 total Published): titles for all 57, categ...</li>
+<li>org-hq: queue deferred items (login smoke, Vercel env, Tier-2 scope) at top o...</li>
+<li>org-hq: magic-link auth + roles — team-member login lands (v0.3.0)</li>
+<li>Stand up the multi-tenant control plane; SAVE THE FROGS! is live as tenant #1</li>
+<li>Initial scaffold — org-hq (Org HQ)</li>
 </ul>
-<h3>z2w-ai-engine (2 commits)</h3>
-<p><em>Session handoff documentation was updated and a non-destructive tenant update capability was added to the core service</em></p>
+<h3>z2w-agent-command-center (4 commits)</h3>
+<p><em>Documentation of infrastructure decisions regarding remote agent capabilities and a bug fix for backlog message counting</em></p>
 <ul>
-<li>docs: session handoff — test-mode Stripe billing verified + deployed (service...</li>
-<li>z2w-ai-engine: service 0.9.1 - non-destructive tenant update (issue-tenant.ts...</li>
+<li>Docs: remote agent-wake PROOF COMPLETE + daily 1am-LA sweep LIVE</li>
+<li>Docs: pin GitHub-org-side repo-grant fix + Claude Pro plan/Dec-2026-expiry pl...</li>
+<li>Docs: Remote agent-wake buy-vs-build spike — verdict BUY (Claude Code Routines)</li>
+<li>v0.23.2 - Fix "biggest backlog / N unread" over-count (honor ↳ received ACK)</li>
 </ul>
-<h3>z2w-admin-suite (1 commit)</h3>
-<p><em>Documentation was updated to reflect the completion of a deployment milestone across all sites</em></p>
+<h3>z2w-seller-suite (3 commits)</h3>
+<p><em>Payment method selection in the checkout flow was debugged and fixed to properly display the card field</em></p>
 <ul>
-<li>docs: v1.119.1 deployed to all 3 sites — ROADMAP 10.8 ✅ Complete; open 10.8.1...</li>
+<li>v1.103.1 - Fix [z2w-checkout] change-payment / pay-for-order (one fix, two bugs)</li>
+<li>Session 145 wrap: both supporters emailed the working add-payment-method link...</li>
+<li>Session 145: root-cause the [z2w-checkout] change-payment bug (no card field ...</li>
 </ul>
-<h3>z2w-member-match (1 commit)</h3>
-<p><em>The application went live in production at match.bansuribliss.com</em></p>
+<h3>z2w-templates (3 commits)</h3>
+<p><em>The package distribution system was configured to use GitHub's private hosting and Templates were published under a new package name</em></p>
 <ul>
-<li>Record the production cutover: live at match.bansuribliss.com</li>
+<li>Target GitHub Packages instead of npmjs (free private hosting)</li>
+<li>Add package.json — publish canonical Templates as @zero2webmaster/templates (...</li>
+<li>sync: 2026-07-13 — refresh from working copy</li>
+</ul>
+<h3>loominus (1 commit)</h3>
+<p><em>Photo audit pipeline correctness and color theme adjustments were addressed in follow-up work</em></p>
+<ul>
+<li>loominus: session 5 follow-ups — photo audit (pipeline correct), Light Yellow...</li>
 </ul>
 <hr />
 <p>Daily Work Summary initially created by <a href="https://zero2webmaster.com/kerry-kriger">Zero2Webmaster Founder Dr. Kerry Kriger</a></p>
 <p>Contribute to the public repository at: https://github.com/zero2webmaster/daily-work-summary</p>
 <p>Need to change the timing or timezone of these emails? <a href="https://github.com/zero2webmaster/daily-work-summary#customizing-the-email-schedule">Click here</a> for instructions.</p>
-<p><em>Generated at 2026-07-13 00:37 EDT</em></p></div>
+<p><em>Covers Mon Jul 13, 2026 · generated 2026-07-31 19:54 EDT</em></p></div>

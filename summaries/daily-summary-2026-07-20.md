@@ -1,110 +1,103 @@
-<div style="font-size: 18px; line-height: 1.6;"><h1>Daily Work Summary — Mon Jul 20, 2026</h1>
-<p><strong>60 commits</strong> across <strong>10 repos</strong></p>
-<p>🧠 <strong>Skill Vault:</strong> 78 skills total <em>(Vault stats as of 2026-07-19)</em></p>
+<!-- daily-summary/v2 covers="2026-07-20" --><div style="font-size: 18px; line-height: 1.6;"><h1>Daily Work Summary — Mon Jul 20, 2026</h1>
+<p><strong>53 commits</strong> across <strong>10 repos</strong></p>
+<p>🧠 <strong>Skill Vault:</strong> 5 created, 1 improved today · 95 skills total</p>
 <hr />
 <h2>zero2webmaster</h2>
-<h3>video-migrator (14 commits)</h3>
-<p><em>Performance optimizations and infrastructure work were completed to support a large-scale video migration batch, including database schema improvements and tooling enhancements to handle video processing more efficiently</em></p>
+<h3>z2w-social (16 commits)</h3>
+<p><em>The application's identity and profile system was redesigned to support username handles with tiered visibility controls, brand name reservations, and an improved members directory</em></p>
 <ul>
-<li>Document the un-embedded skip-redundant-crawl perf note in the directive (v10...</li>
-<li>Halve the sweep time for not-yet-published videos by skipping a redundant crawl</li>
-<li>Let the video-swap tool cleanly handle not-yet-published videos on the delete...</li>
-<li>Mark the batch prerequisite done in the roadmap + add the one-time SSH-access...</li>
-<li>Update session handoff: throttle shipped + Hetzner batch plan; next = run the...</li>
-<li>Add the step-by-step plan for running the big video batch on the Hetzner server</li>
-<li>Slow the video-swap site scan so the 476-video batch can't overload the custo...</li>
-<li>Close out wave #2: diagnose the site 500s as transient load, tee up the 476 b...</li>
-<li>Update session handoff: wave #2 done + status→migration_status rename + dashb...</li>
-<li>Rename the database's ambiguous "status" column to "migration_status" (engine...</li>
-<li>Let the video-swap tool skip fragile parts of a customer's site + optimize 4 ...</li>
-<li>Swap the Desh flute lesson for an optimized video — half the size, quality ve...</li>
-<li>Bansuri's entire video library is now copied into the database (482 videos, v...</li>
-<li>v10.18.0 - Copy the whole video library into the database, so Airtable can ev...</li>
+<li>Notifications subsystem (foundation): in-app bell</li>
+<li>Docs: record brand-reservation expansion + admin username tool + /profile nav...</li>
+<li>Expand brand handle reservation + admin username tool + /profile nav</li>
+<li>Docs: record brand-handle reservation (@savethefrogs admin-only inbox ask)</li>
+<li>Reserve @savethefrogs + look-alike handles for admins only</li>
+<li>Docs: record commit hash for Slice 2 part 2 (username changes)</li>
+<li>Identity Slice 2 part 2: username changes + drop deprecated profiles.is_public</li>
+<li>Docs: two-tier visibility community tier verified live in prod (Kerry's in-br...</li>
+<li>Docs: record Identity Slice 2 part 1 (two-tier visibility) shipped + live</li>
+<li>Identity Slice 2: split profiles into a 3-tier visibility (private/community/...</li>
+<li>Identity Slice 1 verified live: Registry names + auto-profile confirmed in pr...</li>
+<li>Document per-tenant REGISTRY_* naming for tenant #2 (interim is single-tenant...</li>
+<li>Read member names from the Contact Registry + auto-create profiles at signup</li>
+<li>Docs: record 2026-07-20 quick wins + settled identity/visibility model + next...</li>
+<li>Members directory: show @username reliably, move the "You" badge into the card</li>
+<li>Introductions + directory polish: self-first members, name+username mentions,...</li>
 </ul>
-<h3>file-server (11 commits)</h3>
-<p><em>The work focused on building a manifest export tool for backup operations and refining search capabilities, while streamlining documentation and improving connection reliability</em></p>
+<h3>file-server (8 commits)</h3>
+<p><em>The footer display and folder-tree reconstruction capabilities were completed and verified in production, including safety improvements for file system compatibility and ancestor chain preservation</em></p>
 <ul>
-<li>docs: STATUS.md → v1.44.1 (_NEW_FOLDER default-name quick win, prod-verified ...</li>
-<li>v1.44.1 - New-folder default name _NEW_FOLDER (pins to top)</li>
-<li>docs: document B2_PUSH_* (write key for export_manifest.py --push) in .env.ex...</li>
-<li>execution: add --push to export_manifest.py (B2 manifest drop for backup-engine)</li>
-<li>docs: trim STATUS.md — collapse the line-10 Prev-chain (73KB→25KB) toward the...</li>
-<li>docs: eightieth session wrap — B2→R2 NDJSON manifest-push producer built + pr...</li>
-<li>execution: NDJSON manifest-push producer for backup-engine B2→R2 pilot</li>
-<li>docs: seventy-ninth wrap — Kuma DB-probe removed, neon-postgres skill updated...</li>
-<li>docs: seventy-ninth session — Quintesque drive-sync COMPLETE (503 GB / 103,28...</li>
-<li>v1.44.0 - Extension-tolerant, multi-term account-wide search</li>
-<li>backup_to_external.py: survive Neon connection drops + skip phantom files</li>
+<li>docs: Kerry confirmed footer live + stf/tree Finder spot-check DONE; tree-mir...</li>
+<li>docs: footer stats shipped + prod-verified (v1.45.0, eighty-fourth session)</li>
+<li>v1.45.0 - Footer library stats (folders/files/storage + daily delta)</li>
+<li>docs: navigable folder-tree mirror shipped + placement-verified (eighty-third...</li>
+<li>execution: prune-scope + HFS+ normalization safety for tree reconstruct</li>
+<li>execution: fix --only-folder to keep matched folders' ancestor chain</li>
+<li>execution: --reconstruct-tree mode + expected-manifest wiring (sub-steps 2-3)</li>
+<li>execution: folder_tree.py pure tree planner (HFS+ sanitize + collision/orphan...</li>
 </ul>
-<h3>backup-engine (6 commits)</h3>
-<p><em>Blob object storage backup functionality was built out with multipart streaming for large files, bounded validation options, and automated workflow improvements</em></p>
+<h3>video-migrator (6 commits)</h3>
+<p><em>Video processing and storage improvements were made to prevent data loss, optimize upload performance, and correct broken links to hosted videos</em></p>
 <ul>
-<li>ci: fix set -e pitfall in blob-backup arg builder (test &amp;&amp; assign aborts when...</li>
-<li>ci: blob-backup workflow gains limit/largest_first inputs for a bounded first...</li>
-<li>v0.19.0 - bounded validation pull (--limit / --largest-first) for a cautious ...</li>
-<li>ci: STF blob backup workflow (B2→R2) on the Fly runner — dispatch-only, dry_r...</li>
-<li>v0.18.0 - blob adapter streams large objects (multipart) — fixes the &gt;5GB/OOM...</li>
-<li>v0.17.0 - v2 blob adapter: B2→R2 object-storage backup BUILT + unit-verified ...</li>
-</ul>
-<h3>leaderboard (6 commits)</h3>
-<p><em>Email delivery, instructor administration, and booking contact management were enhanced across the system</em></p>
-<ul>
-<li>v2.4.1 - Admin Instructors: list -&gt; edit page, soft-delete, left padding (Ker...</li>
-<li>v2.4.0 - Instructor booking contacts + admin page, trial routing, LIVE daily ...</li>
-<li>docs: record v2.3.5 email polish + the two booking follow-ups (trial /30min d...</li>
-<li>v2.3.5 - Expiry email copy/CTA polish + web footer legibility (Kerry's inbox ...</li>
-<li>docs: DKIM fix done + post-DKIM inbox test sent to both addresses; roadmap Fl...</li>
-<li>v2.3.4 - Add --test-recipient for safe email deliverability/design self-tests</li>
+<li>Close out the Bunny dashboard-link fix (all 482 records backfilled) and recom...</li>
+<li>Split the video-swap batch into a fast upload phase and a deferred finalize p...</li>
+<li>Fix Bunny dashboard links so they open the actual video again (Bunny changed ...</li>
+<li>Explain why an optimized Bunny video looks bigger than the source file, and p...</li>
+<li>Document the confirm-encode-before-delete gate in the directive (v10.22.2)</li>
+<li>Never delete the old video until the new one is confirmed fully encoded</li>
 </ul>
 <h3>z2w-skill-vault (6 commits)</h3>
-<p><em>Development infrastructure and operational practices were enhanced across testing frameworks, webhook handling, environment configuration, documentation, secret management, and database reliability</em></p>
+<p><em>Technical skills and capabilities were documented across file handling, cloud storage, infrastructure, and system operations</em></p>
 <ul>
-<li>instantiate-z2w-project v1.12.0 — cf-worker scaffold ships a vitest test runner</li>
-<li>Add paypal-sandbox-webhook-replay skill (from financial-engine's PayPal live ...</li>
-<li>env-vars-local-first: §10 — never deliver env vars as a comma-separated prose...</li>
-<li>z2w-dashboard-design: add videomigrator-dashboard Learnings Ledger entry (fir...</li>
-<li>terminal-secret-hygiene: §3b — agent WRITES ready-to-fill KEY= lines into the...</li>
-<li>neon-postgres: add §7 gotcha — long-running job holding one connection gets S...</li>
+<li>Add mac-filename-normalization skill (HFS+ NFD vs NFC + Icon CR)</li>
+<li>Add prune-scope-safety skill (destructive reconcile scope near-miss)</li>
+<li>Add the hetzner-batch-compute skill that was authored but never committed</li>
+<li>Add terminal-command-handoff skill (lead command blocks with cd; bare lines; ...</li>
+<li>Catalog: add s3-large-object-streaming row (README missed the prior commit)</li>
+<li>Add s3-large-object-streaming skill — stream S3 transfers both ways, never bu...</li>
 </ul>
-<h3>contact-registry (5 commits)</h3>
-<p><em>Configuration and tooling were added to enable importing member data from an external system into the email platform, with support for matching and filtering members by organization</em></p>
+<h3>backup-engine (4 commits)</h3>
+<p><em>Data integrity monitoring and recovery processes were enhanced to handle large-scale blob transfers more efficiently and prevent memory issues during verification</em></p>
 <ul>
-<li>docs: Bansuri FluentCRM import RAN — member-active=85, z2w-member-match serve...</li>
-<li>v0.17.0 - Bansuri import config: BANSURI_IMPORT_CONFIG + per-slug selection</li>
-<li>docs: Bansuri provisioned as tenant #2 + member-match served (v0.16.0); impor...</li>
-<li>v0.16.0 - Serve z2w-member-match: tag= list filter + one-call email→membership</li>
-<li>docs: session 20 — z2w-member-match design aligned; Kerry GO on Bansuri tenan...</li>
+<li>backup-engine: monitor session — full blob pull in flight; small-object tail ...</li>
+<li>docs: session wrap — blob pilot LIVE (full pull dispatched); HANDOFF + ROADMA...</li>
+<li>v0.20.0 - add execution/spot_check_archive.py: independent, streamed correctn...</li>
+<li>v0.19.1 - fix: restore-verify streams the re-hash (bounded run's verify OOM o...</li>
 </ul>
-<h3>financial-engine (4 commits)</h3>
-<p><em>The financial payment system was hardened against security vulnerabilities and tested end-to-end with PayPal integration</em></p>
+<h3>femperium-lead-gen (4 commits)</h3>
+<p><em>Documentation was updated to record onboarding progress, establish coordination processes, and capture migration decisions</em></p>
 <ul>
-<li>financial-engine: PayPal proven live (sandbox) — bug #2 verified end-to-end; ...</li>
-<li>v0.8.5 - security-audit LOW finding fixed: PayPal webhook DoS hardening (all ...</li>
-<li>financial-engine: session docs — v0.8.4 security fixes recap (HANDOFF new-ses...</li>
-<li>v0.8.4 - security-audit fixes (2 of 3) before tenant #2: strict per-tenant fi...</li>
+<li>docs: STATUS.md — log Session 36 (coordination-bulletin onboarding); trim Ses...</li>
+<li>docs: onboard onto Z2W agent-coordination bulletin — add canonical Agent Coor...</li>
+<li>docs: MIGRATION.md — fold in Kerry's decisions (keep-now/migrate-at-triggers ...</li>
+<li>docs: combined code + migration audit (MIGRATION.md) — keep-now/migrate-at-tr...</li>
 </ul>
-<h3>z2w-member-match (4 commits)</h3>
-<p><em>Work paused the Bansuri product launch and CSV import functionality to align with Contact Registry integration, while adding administrative tooling for email-based tenant management</em></p>
+<h3>z2w-science-suite (3 commits)</h3>
+<p><em>Migration documentation was created to outline the plan for transitioning away from WordPress while preserving existing content</em></p>
 <ul>
-<li>Record the aligned Contact Registry integration contract</li>
-<li>Record decision A: hold Bansuri launch for Contact Registry integration</li>
-<li>Pause the Bansuri CSV import pending Contact Registry integration</li>
-<li>Add a safe tool to give an email tenant_admin rights on a tenant</li>
+<li>docs: MIGRATION.md — verified live DB (6 articles, no PII), Site Controller i...</li>
+<li>docs: MIGRATION.md — T1 greenlit, clarify 'stays on WP' = sequencing not perm...</li>
+<li>docs: add MIGRATION.md — WP-exit audit (Site Controller destination) + shared...</li>
 </ul>
-<h3>videomigrator-dashboard (2 commits)</h3>
-<p><em>A video library page was added to display all migrated videos with their migration status details</em></p>
+<h3>static-sites (2 commits)</h3>
+<p><em>Documentation was created and refined for a nonprofit publication focused on intensive care topics</em></p>
 <ul>
-<li>v1.6.0 - Add a video library page showing every migrated video and its real s...</li>
-<li>Rename the video "status" column to "migration_status" (read-switch half of a...</li>
+<li>docs: revise NICU Dispatch brief — founded 2021, Fathom QDBWWRJV, verbatim pr...</li>
+<li>docs: Fable brief for Nonprofit ICU 'The Dispatch' (exemplar #7, newspaper-br...</li>
+</ul>
+<h3>z2w-agent-command-center (2 commits)</h3>
+<p><em>Documentation and tooling were updated to support ecosystem integration features including live-status visibility and dependency tracking</em></p>
+<ul>
+<li>docs: next-agent walkthrough for the ecosystem read-only string + queue the p...</li>
+<li>v0.32.0 - Ecosystem integration map: live-status badges + dependency graph (r...</li>
 </ul>
 <h3>z2w-starter-kit (2 commits)</h3>
-<p><em>Release version 0.5.0 now includes an integrated test runner for new projects</em></p>
+<p><em>Documentation was created for the ecosystem integration mapping system, including production status tracking and migration audit records</em></p>
 <ul>
-<li>docs: v0.5.0 PUBLISHED to npm — STATUS/HANDOFF/ROADMAP publish-status updated</li>
-<li>v0.5.0 - cf-worker scaffold ships a vitest test runner</li>
+<li>docs: ecosystem-map registry side built (production_status enum + edges + rol...</li>
+<li>docs: femperium migration-audit session wrap — ecosystem-integration-map prop...</li>
 </ul>
 <hr />
 <p>Daily Work Summary initially created by <a href="https://zero2webmaster.com/kerry-kriger">Zero2Webmaster Founder Dr. Kerry Kriger</a></p>
 <p>Contribute to the public repository at: https://github.com/zero2webmaster/daily-work-summary</p>
 <p>Need to change the timing or timezone of these emails? <a href="https://github.com/zero2webmaster/daily-work-summary#customizing-the-email-schedule">Click here</a> for instructions.</p>
-<p><em>Generated at 2026-07-20 03:20 EDT</em></p></div>
+<p><em>Covers Mon Jul 20, 2026 · generated 2026-07-31 20:00 EDT</em></p></div>

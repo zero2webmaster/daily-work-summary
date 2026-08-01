@@ -1,103 +1,82 @@
-<div style="font-size: 18px; line-height: 1.6;"><h1>Daily Work Summary — Tue Jul 21, 2026</h1>
-<p><strong>53 commits</strong> across <strong>10 repos</strong></p>
-<p>🧠 <strong>Skill Vault:</strong> 80 skills total <em>(Vault stats as of 2026-07-20)</em></p>
+<!-- daily-summary/v2 covers="2026-07-21" --><div style="font-size: 18px; line-height: 1.6;"><h1>Daily Work Summary — Tue Jul 21, 2026</h1>
+<p><strong>36 commits</strong> across <strong>9 repos</strong></p>
+<p>🧠 <strong>Skill Vault:</strong> 2 improved today · 95 skills total</p>
 <hr />
 <h2>zero2webmaster</h2>
-<h3>z2w-social (16 commits)</h3>
-<p><em>The identity and profile system underwent foundational expansion, adding username reservations, multi-tier visibility controls, a contact registry for auto-profile creation, and improvements to how members are discovered and displayed</em></p>
+<h3>z2w-board-suite (9 commits)</h3>
+<p><em>Email delivery and member management features were refined to work correctly with cloud hosting environments and incorporate design feedback on branding and administrative visibility</em></p>
 <ul>
-<li>Notifications subsystem (foundation): in-app bell</li>
-<li>Docs: record brand-reservation expansion + admin username tool + /profile nav...</li>
-<li>Expand brand handle reservation + admin username tool + /profile nav</li>
-<li>Docs: record brand-handle reservation (@savethefrogs admin-only inbox ask)</li>
-<li>Reserve @savethefrogs + look-alike handles for admins only</li>
-<li>Docs: record commit hash for Slice 2 part 2 (username changes)</li>
-<li>Identity Slice 2 part 2: username changes + drop deprecated profiles.is_public</li>
-<li>Docs: two-tier visibility community tier verified live in prod (Kerry's in-br...</li>
-<li>Docs: record Identity Slice 2 part 1 (two-tier visibility) shipped + live</li>
-<li>Identity Slice 2: split profiles into a 3-tier visibility (private/community/...</li>
-<li>Identity Slice 1 verified live: Registry names + auto-profile confirmed in pr...</li>
-<li>Document per-tenant REGISTRY_* naming for tenant #2 (interim is single-tenant...</li>
-<li>Read member names from the Contact Registry + auto-create profiles at signup</li>
-<li>Docs: record 2026-07-20 quick wins + settled identity/visibility model + next...</li>
-<li>Members directory: show @username reliably, move the "You" badge into the card</li>
-<li>Introductions + directory polish: self-first members, name+username mentions,...</li>
+<li>z2w-board-suite: correct the SES env narrative — D-035 premise was a mispaste...</li>
+<li>z2w-board-suite: record v0.19.2 sha in HANDOFF</li>
+<li>z2w-board-suite: SES reads SES_* env-var names (Vercel), not the AWS SDK defa...</li>
+<li>z2w-board-suite: record v0.19.1 sha in HANDOFF</li>
+<li>z2w-board-suite: Fix sign-in email From resolution (Vercel has EMAIL_FROM, no...</li>
+<li>z2w-board-suite: Kerry review round 2 — SES-branded sign-in email, members "n...</li>
+<li>z2w-board-suite: record v0.18.0 commit sha + verified deploy in HANDOFF</li>
+<li>z2w-board-suite: Act on Kerry's live-app review — email branding, due-soon co...</li>
+<li>z2w-board-suite: Term-expiry awareness on /admin/members (v0.17.0, D-031)</li>
 </ul>
-<h3>file-server (8 commits)</h3>
-<p><em>The system's file tree reconstruction logic and footer statistics display were completed and verified in production, with improvements to folder filtering and filesystem safety handling</em></p>
+<h3>contact-registry (6 commits)</h3>
+<p><em>Daily synchronization between FluentCRM and Registry was implemented with improved workflow reliability and multi-tenant support</em></p>
 <ul>
-<li>docs: Kerry confirmed footer live + stf/tree Finder spot-check DONE; tree-mir...</li>
-<li>docs: footer stats shipped + prod-verified (v1.45.0, eighty-fourth session)</li>
-<li>v1.45.0 - Footer library stats (folders/files/storage + daily delta)</li>
-<li>docs: navigable folder-tree mirror shipped + placement-verified (eighty-third...</li>
-<li>execution: prune-scope + HFS+ normalization safety for tree reconstruct</li>
-<li>execution: fix --only-folder to keep matched folders' ancestor chain</li>
-<li>execution: --reconstruct-tree mode + expected-manifest wiring (sub-steps 2-3)</li>
-<li>execution: folder_tree.py pure tree planner (HFS+ sanitize + collision/orphan...</li>
+<li>docs: daily FluentCRM-&gt;Registry sync ENABLED for both tenants (Kuma green); a...</li>
+<li>sync workflow: Kuma heartbeat also fires on a manual apply run (so the dead-m...</li>
+<li>sync workflow: read SSH key as base64 (SSH_PRIVATE_KEY_B64) to survive the Gi...</li>
+<li>sync workflow: dynamic matrix so only_slug runs a single tenant (no phantom job)</li>
+<li>sync workflow: schedule always runs all tenants (avoid null-coercion in RUN_T...</li>
+<li>v0.18.0 - Daily incremental FluentCRM → Registry sync (engine + GitHub Action...</li>
 </ul>
-<h3>video-migrator (6 commits)</h3>
-<p><em>Video processing and storage improvements were completed, including corrected dashboard links, safer deletion procedures, and optimized batch handling</em></p>
+<h3>file-server (4 commits)</h3>
+<p><em>The service API was enhanced to isolate data per consumer, and the underlying file storage system transitioned away from flat files toward a mirrored architecture with cryptographic verification</em></p>
 <ul>
-<li>Close out the Bunny dashboard-link fix (all 482 records backfilled) and recom...</li>
-<li>Split the video-swap batch into a fast upload phase and a deferred finalize p...</li>
-<li>Fix Bunny dashboard links so they open the actual video again (Bunny changed ...</li>
-<li>Explain why an optimized Bunny video looks bigger than the source file, and p...</li>
-<li>Document the confirm-encode-before-delete gate in the directive (v10.22.2)</li>
-<li>Never delete the old video until the new one is confirmed fully encoded</li>
+<li>v1.46.0 - AUDIT M1: per-consumer isolation on the service API</li>
+<li>execution: retire flat files/ mirror (--files-snapshot opt-in, default off)</li>
+<li>docs: Kerry retired drive's flat files/; queue in-code files/ retirement + re...</li>
+<li>docs: tree-mirror goal COMPLETE — full SHA-256 verify RESULT=PASS (2026-07-21)</li>
 </ul>
-<h3>z2w-skill-vault (6 commits)</h3>
-<p><em>Technical skills and capabilities were added across file handling, cloud storage, infrastructure, and command execution</em></p>
+<h3>z2w-social (4 commits)</h3>
+<p><em>Staff can now manage organization identifiers and members have enhanced control over notifications including threaded replies and customizable preferences</em></p>
 <ul>
-<li>Add mac-filename-normalization skill (HFS+ NFD vs NFC + Icon CR)</li>
-<li>Add prune-scope-safety skill (destructive reconcile scope near-miss)</li>
-<li>Add the hetzner-batch-compute skill that was authored but never committed</li>
-<li>Add terminal-command-handoff skill (lead command blocks with cd; bare lines; ...</li>
-<li>Catalog: add s3-large-object-streaming row (README missed the prior commit)</li>
-<li>Add s3-large-object-streaming skill — stream S3 transfers both ways, never bu...</li>
+<li>Let staff view and change an organization's handle (public URL)</li>
+<li>Docs: record 2026-07-21c polish (bell on all shells + org edit-button + large...</li>
+<li>Mount notification bell on feed/members/profile shells + org edit-button and ...</li>
+<li>Add threaded replies and mention/reply notifications with per-member preferences</li>
 </ul>
-<h3>backup-engine (4 commits)</h3>
-<p><em>The backup and restore system was enhanced with improved monitoring, verification streaming to prevent memory issues, and independent correctness checking for archived data</em></p>
+<h3>grantor (3 commits)</h3>
+<p><em>The application gained a new interface for administrators to record and track fund disbursals, including fixes to form data loss and filtering capabilities</em></p>
 <ul>
-<li>backup-engine: monitor session — full blob pull in flight; small-object tail ...</li>
-<li>docs: session wrap — blob pilot LIVE (full pull dispatched); HANDOFF + ROADMA...</li>
-<li>v0.20.0 - add execution/spot_check_archive.py: independent, streamed correctn...</li>
-<li>v0.19.1 - fix: restore-verify streams the re-hash (bounded run's verify OOM o...</li>
+<li>Disbursals: fix form data-loss, filtered totals, human-ID picker, money on th...</li>
+<li>Record disbursals in-app: new admin Disbursals list + form (v0.26.0)</li>
+<li>Track David Montiel's chapter-grant disbursal; queue the disbursals recording UI</li>
 </ul>
-<h3>femperium-lead-gen (4 commits)</h3>
-<p><em>Documentation was updated to record coordination procedures, onboarding decisions, and migration audit findings</em></p>
+<h3>org-hq (3 commits)</h3>
+<p><em>The chat interface was enhanced to make URLs clickable in responses and connected to a new AI engine for production use</em></p>
 <ul>
-<li>docs: STATUS.md — log Session 36 (coordination-bulletin onboarding); trim Ses...</li>
-<li>docs: onboard onto Z2W agent-coordination bulletin — add canonical Agent Coor...</li>
-<li>docs: MIGRATION.md — fold in Kerry's decisions (keep-now/migrate-at-triggers ...</li>
-<li>docs: combined code + migration audit (MIGRATION.md) — keep-now/migrate-at-tr...</li>
+<li>org-hq: make URLs clickable in answers + knowledge docs (v0.9.1)</li>
+<li>org-hq: chat brain is live in production (v0.9.0 shipped)</li>
+<li>org-hq: flip the chat brain live — wire /chat to z2w-ai-engine (v0.9.0)</li>
 </ul>
-<h3>z2w-science-suite (3 commits)</h3>
-<p><em>Migration documentation was created and refined to guide the transition from WordPress to a new site management system</em></p>
+<h3>static-sites (3 commits)</h3>
+<p><em>Documentation was created for newspaper-format content examples and a version release</em></p>
 <ul>
-<li>docs: MIGRATION.md — verified live DB (6 articles, no PII), Site Controller i...</li>
-<li>docs: MIGRATION.md — T1 greenlit, clarify 'stays on WP' = sequencing not perm...</li>
-<li>docs: add MIGRATION.md — WP-exit audit (Site Controller destination) + shared...</li>
+<li>docs: HANDOFF for Session 14 — STF Day Gazette brief written, next up is the ...</li>
+<li>docs: Fable brief for The SAVE THE FROGS! Gazette (exemplar #8, the 2nd newsp...</li>
+<li>v1.11.0 - The Nonprofit ICU Dispatch (Fable build, exemplar #7: the newspaper...</li>
 </ul>
-<h3>static-sites (2 commits)</h3>
-<p><em>Documentation was created and refined for a nonprofit publication focused on intensive care topics</em></p>
+<h3>backup-engine (2 commits)</h3>
+<p><em>Blob backup timeout and throughput handling were adjusted to accommodate longer initial data transfers</em></p>
 <ul>
-<li>docs: revise NICU Dispatch brief — founded 2021, Fathom QDBWWRJV, verbatim pr...</li>
-<li>docs: Fable brief for Nonprofit ICU 'The Dispatch' (exemplar #7, newspaper-br...</li>
+<li>backup-engine: record blob-pull 12h timeout + throughput correction + resume ...</li>
+<li>ci: bump blob-backup timeout 720→1440 min after the first full pull hit the 1...</li>
 </ul>
-<h3>z2w-agent-command-center (2 commits)</h3>
-<p><em>Documentation and user interface improvements were made to support ecosystem integration visibility, including live-status indicators and dependency tracking</em></p>
+<h3>z2w-skill-vault (2 commits)</h3>
+<p><em>Labels and example content were refined across different product areas</em></p>
 <ul>
-<li>docs: next-agent walkthrough for the ecosystem read-only string + queue the p...</li>
-<li>v0.32.0 - Ecosystem integration map: live-status badges + dependency graph (r...</li>
-</ul>
-<h3>z2w-starter-kit (2 commits)</h3>
-<p><em>Documentation updates were made to the ecosystem integration mapping system, including production status tracking and migration audit records</em></p>
-<ul>
-<li>docs: ecosystem-map registry side built (production_status enum + edges + rol...</li>
-<li>docs: femperium migration-audit session wrap — ecosystem-integration-map prop...</li>
+<li>rocket-net skill: panel labels it 'FTP / SSH / SFTP Address' (not host); add ...</li>
+<li>cinematic-showcase-page: fold back exemplar #7 (Nonprofit ICU Dispatch) — bro...</li>
 </ul>
 <hr />
 <p>Daily Work Summary initially created by <a href="https://zero2webmaster.com/kerry-kriger">Zero2Webmaster Founder Dr. Kerry Kriger</a></p>
 <p>Contribute to the public repository at: https://github.com/zero2webmaster/daily-work-summary</p>
 <p>Need to change the timing or timezone of these emails? <a href="https://github.com/zero2webmaster/daily-work-summary#customizing-the-email-schedule">Click here</a> for instructions.</p>
-<p><em>Generated at 2026-07-21 02:37 EDT</em></p></div>
+<p><em>Covers Tue Jul 21, 2026 · generated 2026-07-31 20:00 EDT</em></p></div>

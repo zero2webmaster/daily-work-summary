@@ -1,111 +1,115 @@
-<div style="font-size: 18px; line-height: 1.6;"><h1>Daily Work Summary — Sun Jul 19, 2026</h1>
-<p><strong>57 commits</strong> across <strong>11 repos</strong></p>
-<p>🧠 <strong>Skill Vault:</strong> 77 skills total <em>(Vault stats as of 2026-07-18)</em></p>
+<!-- daily-summary/v2 covers="2026-07-19" --><div style="font-size: 18px; line-height: 1.6;"><h1>Daily Work Summary — Sun Jul 19, 2026</h1>
+<p><strong>65 commits</strong> across <strong>10 repos</strong></p>
+<p>🧠 <strong>Skill Vault:</strong> 1 created, 6 improved today · 95 skills total</p>
 <hr />
 <h2>zero2webmaster</h2>
-<h3>leaderboard (12 commits)</h3>
-<p><em>The system's expiry notification email was developed with security hardening and brand customization, culminating in successful live delivery to customers</em></p>
+<h3>video-migrator (15 commits)</h3>
+<p><em>Video library migration work was optimized for performance and reliability, with database schema improvements to support the bulk transfer of hundreds of videos</em></p>
 <ul>
+<li>Document the un-embedded skip-redundant-crawl perf note in the directive (v10...</li>
+<li>Halve the sweep time for not-yet-published videos by skipping a redundant crawl</li>
+<li>Let the video-swap tool cleanly handle not-yet-published videos on the delete...</li>
+<li>Mark the batch prerequisite done in the roadmap + add the one-time SSH-access...</li>
+<li>Update session handoff: throttle shipped + Hetzner batch plan; next = run the...</li>
+<li>Add the step-by-step plan for running the big video batch on the Hetzner server</li>
+<li>Slow the video-swap site scan so the 476-video batch can't overload the custo...</li>
+<li>Close out wave #2: diagnose the site 500s as transient load, tee up the 476 b...</li>
+<li>Update session handoff: wave #2 done + status→migration_status rename + dashb...</li>
+<li>Rename the database's ambiguous "status" column to "migration_status" (engine...</li>
+<li>Let the video-swap tool skip fragile parts of a customer's site + optimize 4 ...</li>
+<li>Swap the Desh flute lesson for an optimized video — half the size, quality ve...</li>
+<li>Bansuri's entire video library is now copied into the database (482 videos, v...</li>
+<li>v10.18.0 - Copy the whole video library into the database, so Airtable can ev...</li>
+<li>v10.17.0 - New retrofits now save their true savings straight into the databa...</li>
+</ul>
+<h3>file-server (11 commits)</h3>
+<p><em>Backup and manifest export capabilities were enhanced with cloud storage integration, search functionality was improved to handle multiple search terms across accounts, and system resilience was increased against connection interruptions</em></p>
+<ul>
+<li>docs: STATUS.md → v1.44.1 (_NEW_FOLDER default-name quick win, prod-verified ...</li>
+<li>v1.44.1 - New-folder default name _NEW_FOLDER (pins to top)</li>
+<li>docs: document B2_PUSH_* (write key for export_manifest.py --push) in .env.ex...</li>
+<li>execution: add --push to export_manifest.py (B2 manifest drop for backup-engine)</li>
+<li>docs: trim STATUS.md — collapse the line-10 Prev-chain (73KB→25KB) toward the...</li>
+<li>docs: eightieth session wrap — B2→R2 NDJSON manifest-push producer built + pr...</li>
+<li>execution: NDJSON manifest-push producer for backup-engine B2→R2 pilot</li>
+<li>docs: seventy-ninth wrap — Kuma DB-probe removed, neon-postgres skill updated...</li>
+<li>docs: seventy-ninth session — Quintesque drive-sync COMPLETE (503 GB / 103,28...</li>
+<li>v1.44.0 - Extension-tolerant, multi-term account-wide search</li>
+<li>backup_to_external.py: survive Neon connection drops + skip phantom files</li>
+</ul>
+<h3>leaderboard (9 commits)</h3>
+<p><em>Email delivery and instructor management functionality were implemented and refined, including live expiry notifications and an administrative interface for managing instructor contacts</em></p>
+<ul>
+<li>v2.4.1 - Admin Instructors: list -&gt; edit page, soft-delete, left padding (Ker...</li>
+<li>v2.4.0 - Instructor booking contacts + admin page, trial routing, LIVE daily ...</li>
+<li>docs: record v2.3.5 email polish + the two booking follow-ups (trial /30min d...</li>
+<li>v2.3.5 - Expiry email copy/CTA polish + web footer legibility (Kerry's inbox ...</li>
+<li>docs: DKIM fix done + post-DKIM inbox test sent to both addresses; roadmap Fl...</li>
+<li>v2.3.4 - Add --test-recipient for safe email deliverability/design self-tests</li>
 <li>v2.3.3 - Brand-polish the expiry email (tenant-driven navy text + linked logo)</li>
 <li>docs: correct v2.3.2 status — first live email delivered but to SPAM; DKIM do...</li>
 <li>v2.3.2 - First live Guru Bot expiry email SENT + verified end-to-end</li>
-<li>diagnostics: add SES probe to verify-secrets (account id, sandbox status, per...</li>
-<li>docs: record expiry-email self-test progress (secrets added + test purchase);...</li>
-<li>v2.3.1 - Tenant-branded customer From + Reply-To for the expiry email (pre-fi...</li>
-<li>v2.3.0 - Feature #4 increment 3: post-purchase lesson-expiry "Guru Bot" email...</li>
-<li>docs: record web-security-headers Vault skill; steer next session to Feature ...</li>
-<li>v2.2.1 - Flip CSP from Report-Only to enforcing</li>
-<li>v2.2.0 - Security response headers + CSP (Report-Only)</li>
-<li>docs: scope LOW-2 (security headers + CSP) for a future session; set next ses...</li>
-<li>docs: record 2026-07-18 focused security self-audit — verdict CLEAN</li>
 </ul>
-<h3>video-migrator (12 commits)</h3>
-<p><em>Video optimization processing was refined to accurately measure and store savings results while improving quality checks and validation workflows</em></p>
+<h3>z2w-skill-vault (7 commits)</h3>
+<p><em>Testing infrastructure, developer tooling, and operational documentation were improved across project scaffolding, environment configuration, database management, and email delivery systems</em></p>
 <ul>
-<li>v10.17.0 - New retrofits now save their true savings straight into the databa...</li>
-<li>v10.16.0 - Store the true video-optimization savings in a real database so th...</li>
-<li>v10.15.1 - Make the optimized video swap look identical to the original (thum...</li>
-<li>Point the next step at a 2nd 5-video validation wave before the full batch</li>
-<li>Correct the v10.15.0 doc/comment date (2026-07-19 → 2026-07-18)</li>
-<li>v10.15.0 - Fix the quality check that was falsely rejecting half the videos, ...</li>
-<li>v10.14.2 - Record the wave's real storage savings and match Bunny's own units</li>
-<li>v10.14.1 - Optimize 3 more Bansuri lessons and fix a broken thumbnail + a gar...</li>
-<li>Update ROADMAP + HANDOFF: retrofit pilot shipped, pipeline hardened, next ste...</li>
-<li>v10.14.0 - Keep the original thumbnail when swapping a video, and stop the sw...</li>
-<li>Write the plan to move video data into Neon as the single source of truth</li>
-<li>v10.13.0 - Record each video's real Bunny storage before and after, so we see...</li>
-</ul>
-<h3>dashboard-engine (6 commits)</h3>
-<p><em>The dashboard system's data storage was migrated to a cloud region, database tooling was updated, and the project was renamed for clarity</em></p>
-<ul>
-<li>dashboard-engine: v0.1.3 — relocate rollup store to aws-us-east-1 (calm-cell-...</li>
-<li>dashboard-engine: v0.1.2 — adopt drizzle-kit + author 0001 (FK feed→tenant_pa...</li>
-<li>dashboard-engine: record us-east-1 co-location decision + next-session bundle...</li>
-<li>dashboard-engine: v0.1.1 — provision rollup store (Neon, Z2W org) + decide fe...</li>
-<li>docs: parity pass — verbatim canonical Agent Coordination block v0.1.13 + fin...</li>
-<li>dashboard-engine: rename from ecosystem-dashboard (repo/folder/slug/display) ...</li>
-</ul>
-<h3>z2w-skill-vault (6 commits)</h3>
-<p><em>Security practices and email delivery reliability were strengthened across the platform, with new guidance captured for web application hardening</em></p>
-<ul>
+<li>instantiate-z2w-project v1.12.0 — cf-worker scaffold ships a vitest test runner</li>
+<li>Add paypal-sandbox-webhook-replay skill (from financial-engine's PayPal live ...</li>
+<li>env-vars-local-first: §10 — never deliver env vars as a comma-separated prose...</li>
+<li>z2w-dashboard-design: add videomigrator-dashboard Learnings Ledger entry (fir...</li>
+<li>terminal-secret-hygiene: §3b — agent WRITES ready-to-fill KEY= lines into the...</li>
+<li>neon-postgres: add §7 gotcha — long-running job holding one connection gets S...</li>
 <li>email-service-router: two SES deliverability gotchas from leaderboard's first...</li>
-<li>instantiate-z2w-project v1.11.0: propose-first + tool-only instantiation gate...</li>
-<li>terminal-secret-hygiene §7.1: require a LOCATION (vault) in every save-to-1Pa...</li>
-<li>Add web-security-headers skill — HTTP security headers + CSP for Z2W web apps</li>
-<li>Capture z2w-social security-audit learnings into three skills</li>
-<li>instantiate-z2w-project v1.10.0 — Agent Coordination block is now the VERBATI...</li>
 </ul>
-<h3>grantor (4 commits)</h3>
-<p><em>The dashboard and decision-making interfaces were refined with improved navigation, better visual presentation of award options, and enhanced form functionality</em></p>
+<h3>backup-engine (6 commits)</h3>
+<p><em>The blob storage backup system was built out with support for large files, safety limits, and automated cloud-to-cloud transfers</em></p>
 <ul>
-<li>Decision composer: don't show the 'already sent' warning right after a first ...</li>
-<li>Dashboard: click a year in Disbursed-by-year to drill into its months (v0.25.0)</li>
-<li>Award-choice buttons that don't wrap, org auto-fill for chapter grants, clean...</li>
-<li>Restore the three award choices (Requested / Reduced / Increased) on the deci...</li>
+<li>ci: fix set -e pitfall in blob-backup arg builder (test &amp;&amp; assign aborts when...</li>
+<li>ci: blob-backup workflow gains limit/largest_first inputs for a bounded first...</li>
+<li>v0.19.0 - bounded validation pull (--limit / --largest-first) for a cautious ...</li>
+<li>ci: STF blob backup workflow (B2→R2) on the Fly runner — dispatch-only, dry_r...</li>
+<li>v0.18.0 - blob adapter streams large objects (multipart) — fixes the &gt;5GB/OOM...</li>
+<li>v0.17.0 - v2 blob adapter: B2→R2 object-storage backup BUILT + unit-verified ...</li>
 </ul>
-<h3>contact-registry (3 commits)</h3>
-<p><em>Production deployment of the registry service was completed with landing page and SEO preparation</em></p>
+<h3>contact-registry (5 commits)</h3>
+<p><em>Documentation and configuration work was completed to enable member data import and matching functionality for a new tenant instance</em></p>
 <ul>
-<li>docs: production deploy complete — registry.z2w.us live; STATUS/HANDOFF/ROADM...</li>
-<li>v0.15.0 - Production launch prep: honest landing page + OG polish (SEO baseline)</li>
-<li>docs: session 18 — z2w-social waitlist unblocked; PROD DEPLOY set as next goa...</li>
+<li>docs: Bansuri FluentCRM import RAN — member-active=85, z2w-member-match serve...</li>
+<li>v0.17.0 - Bansuri import config: BANSURI_IMPORT_CONFIG + per-slug selection</li>
+<li>docs: Bansuri provisioned as tenant #2 + member-match served (v0.16.0); impor...</li>
+<li>v0.16.0 - Serve z2w-member-match: tag= list filter + one-call email→membership</li>
+<li>docs: session 20 — z2w-member-match design aligned; Kerry GO on Bansuri tenan...</li>
 </ul>
-<h3>videomigrator-dashboard (3 commits)</h3>
-<p><em>The application's video optimization tracking and user account management were improved, along with enhanced privacy controls and documentation for production deployments</em></p>
+<h3>financial-engine (4 commits)</h3>
+<p><em>PayPal integration and financial processing security were hardened ahead of a production handoff</em></p>
 <ul>
-<li>v1.4.0 - Make the videos table the home for real per-video optimization savings</li>
-<li>Document SENTRY_AUTH_TOKEN in .env.example (Vercel Production build only; not...</li>
-<li>v1.3.0 - Add a sign-out button and reduce the personal data Sentry collects</li>
+<li>financial-engine: PayPal proven live (sandbox) — bug #2 verified end-to-end; ...</li>
+<li>v0.8.5 - security-audit LOW finding fixed: PayPal webhook DoS hardening (all ...</li>
+<li>financial-engine: session docs — v0.8.4 security fixes recap (HANDOFF new-ses...</li>
+<li>v0.8.4 - security-audit fixes (2 of 3) before tenant #2: strict per-tenant fi...</li>
 </ul>
-<h3>z2w-agent-command-center (3 commits)</h3>
-<p><em>The application's messaging interface was streamlined with a quick-reply feature, a refresh mechanism for bulletin updates, and improved layout organization</em></p>
+<h3>z2w-member-match (4 commits)</h3>
+<p><em>Contact Registry integration work was prioritized for the Bansuri launch, and administrative tooling was enhanced to support tenant management</em></p>
 <ul>
-<li>v0.31.1 - /sweep: move the "what is this" explainer off the top to a bottom i...</li>
-<li>v0.31.0 - Refresh button: pull fresh bulletin data without killing the app</li>
-<li>v0.30.0 - One-tap "Use this reply": accept Haiku's suggested reply</li>
+<li>Record the aligned Contact Registry integration contract</li>
+<li>Record decision A: hold Bansuri launch for Contact Registry integration</li>
+<li>Pause the Bansuri CSV import pending Contact Registry integration</li>
+<li>Add a safe tool to give an email tenant_admin rights on a tenant</li>
 </ul>
-<h3>z2w-social (3 commits)</h3>
-<p><em>Security vulnerabilities in asset uploads and magic-link authentication were fixed and documented</em></p>
+<h3>videomigrator-dashboard (2 commits)</h3>
+<p><em>A video library page was added to display all migrated videos with their migration status details</em></p>
 <ul>
-<li>Document the MCP-migration / drizzle ledger sync gotcha</li>
-<li>Record the security-audit fixes in STATUS (IDOR + magic-link rate limit)</li>
-<li>Close the asset-upload IDOR and rate-limit magic-link sends</li>
+<li>v1.6.0 - Add a video library page showing every migrated video and its real s...</li>
+<li>Rename the video "status" column to "migration_status" (read-switch half of a...</li>
 </ul>
-<h3>z2w-starter-kit (3 commits)</h3>
-<p><em>Documentation and release notes were updated to accompany the publication of version 0.4.0, which enhanced the scaffolder to emit coordination blocks with improved fidelity</em></p>
+<h3>z2w-starter-kit (2 commits)</h3>
+<p><em>The release process and testing infrastructure for the project were formalized with version 0.5.0 published to npm, which now includes a built-in test runner for new projects</em></p>
 <ul>
-<li>docs: propose-first/tool-only instantiation gate note in OP #2 (mirrors skill...</li>
-<li>docs: v0.4.0 PUBLISHED to npm — STATUS + HANDOFF wrap-up (next session: audit...</li>
-<li>v0.4.0 - Scaffolder emits verbatim canonical Agent Coordination block + finge...</li>
-</ul>
-<h3>z2w-ai-suite (2 commits)</h3>
-<p><em>Development process documentation and internal chat records were cleaned up and excluded from version control</em></p>
-<ul>
-<li>docs: STATUS + HANDOFF for Session 245 (.specstory untrack security hygiene)</li>
-<li>chore: untrack .specstory chat transcripts + add to .gitignore</li>
+<li>docs: v0.5.0 PUBLISHED to npm — STATUS/HANDOFF/ROADMAP publish-status updated</li>
+<li>v0.5.0 - cf-worker scaffold ships a vitest test runner</li>
 </ul>
 <hr />
 <p>Daily Work Summary initially created by <a href="https://zero2webmaster.com/kerry-kriger">Zero2Webmaster Founder Dr. Kerry Kriger</a></p>
 <p>Contribute to the public repository at: https://github.com/zero2webmaster/daily-work-summary</p>
 <p>Need to change the timing or timezone of these emails? <a href="https://github.com/zero2webmaster/daily-work-summary#customizing-the-email-schedule">Click here</a> for instructions.</p>
-<p><em>Generated at 2026-07-19 02:39 EDT</em></p></div>
+<p><em>Covers Sun Jul 19, 2026 · generated 2026-07-31 19:59 EDT</em></p></div>

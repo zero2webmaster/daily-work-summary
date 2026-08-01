@@ -1,68 +1,125 @@
-<div style="font-size: 18px; line-height: 1.6;"><h1>Daily Work Summary — Sat Jul 25, 2026</h1>
-<p><strong>26 commits</strong> across <strong>8 repos</strong></p>
-<p>🧠 <strong>Skill Vault:</strong> 85 skills total <em>(Vault stats as of 2026-07-24)</em></p>
+<!-- daily-summary/v2 covers="2026-07-25" --><div style="font-size: 18px; line-height: 1.6;"><h1>Daily Work Summary — Sat Jul 25, 2026</h1>
+<p><strong>71 commits</strong> across <strong>11 repos</strong></p>
+<p>🧠 <strong>Skill Vault:</strong> 4 created, 22 improved today · 95 skills total</p>
 <hr />
 <h2>zero2webmaster</h2>
+<h3>z2w-skill-vault (20 commits)</h3>
+<p><em>Integration and deployment issues across multiple services were documented and resolved, capturing critical edge cases in payment processing, authentication, email delivery, and infrastructure configuration</em></p>
+<ul>
+<li>portable-stack §15: a fourth failure mode — the CI build break a local build ...</li>
+<li>Two silent-failure gotchas found by unit-testing pure helpers (z2w-member-match)</li>
+<li>Stripe: the browser-side confirm step can refuse a payment before the card is...</li>
+<li>threaded-comments-and-mentions: the shape z2w-social and grantor both landed on</li>
+<li>stripe-amounts-net-vs-gross: id-string balance_transaction gotcha + display-G...</li>
+<li>capture 2 more email-engine E2E learnings</li>
+<li>aws-sns-webhook-verification: SES identity-precedence trap (feedback on the F...</li>
+<li>stripe-restricted-keys: add §4.4 (Payment-Element/PaymentIntent-direct seller...</li>
+<li>stripe-payment-metadata-contract: flush a stranded edit — recurring/subscript...</li>
+<li>consumer-not-monolith: new skill — check which Z2W engine already owns the en...</li>
+<li>gh-account-switching: private-repo-404 diagnosis + pinned-credential escape h...</li>
+<li>Stripe payment metadata contract: new skill + gross-up, two-way idempotency, ...</li>
+<li>nextjs-vercel-prod-only-failures: new skill (4 prod-only Next.js/Vercel bugs)</li>
+<li>github-app-repo-creation: correct App-settings URLs + authorize≠install finding</li>
+<li>z2w-magic-link-auth: new §10.3 — allowlist in an EXTERNAL system of record</li>
+<li>email-service-router: Google-Workspace apex SPF + SES passes DMARC via DKIM/M...</li>
+<li>aws-sns-webhook-verification: capture the SNS setup-ordering trap (+ Standard...</li>
+<li>instantiate-z2w-project: capture the blank-NEXT_PUBLIC_SITE_URL localhost-in-...</li>
+<li>file-server-service-api: check tenant provisioning FIRST (DB or usage probe),...</li>
+<li>drizzle-migration-safety: additive columns are NOT safe to deploy early (§4.1)</li>
+</ul>
+<h3>z2w-crowdcommerce (14 commits)</h3>
+<p><em>Donation capture and campaign discovery functionality were built out across multiple phases, with recent work focusing on correcting payment processing details and preparing production deployment</em></p>
+<ul>
+<li>z2w-crowdcommerce: reset kerry-testing totals to 0/0 (clean testing slate) — ...</li>
+<li>z2w-crowdcommerce: raised = total AMOUNT DONATED (gross) + Phase 4 live-verif...</li>
+<li>z2w-crowdcommerce: past-tense donation success copy + fix net-vs-gross (retri...</li>
+<li>z2w-crowdcommerce: correct Phase-4 Stripe key scopes (drop the over-copied ac...</li>
+<li>z2w-crowdcommerce: version catch-up 0.2.0 -&gt; 0.5.0 + ecosystem-fit decisions ...</li>
+<li>z2w-crowdcommerce: Phase 4 — Stripe donation capture (direct) + fee-cover, bu...</li>
+<li>z2w-crowdcommerce: T2 metadata-contract ping FILED — Phase 4 held pending sel...</li>
+<li>z2w-crowdcommerce: Phase 3 LIVE in prod — docs (SITE_URL fixed + verified, fi...</li>
+<li>z2w-crowdcommerce: admin — move campaign Status next to Title at top of edit ...</li>
+<li>z2w-crowdcommerce: NEXT_PUBLIC_SITE_URL set in prod — canonical/OG/sitemap/ro...</li>
+<li>z2w-crowdcommerce: docs — flag NEXT_PUBLIC_SITE_URL prod SEO fix (canonical e...</li>
+<li>z2w-crowdcommerce: Phase 3 — public SSR campaign pages + discovery + SEO</li>
+<li>z2w-crowdcommerce: HANDOFF — Phase 2 complete + fully smoke-tested; Phase 3 s...</li>
+<li>z2w-crowdcommerce: Phase 2 fully smoke-tested — file-server cover upload work...</li>
+</ul>
+<h3>z2w-member-match (8 commits)</h3>
+<p><em>Runtime error tracking and test infrastructure were added, and several audit findings and membership data sources were addressed</em></p>
+<ul>
+<li>Add Sentry runtime error tracking (audit finding #2)</li>
+<li>Fix the CI build: make the db module import-safe</li>
+<li>Record the audit-remediation session in STATUS, ROADMAP, and HANDOFF</li>
+<li>v0.12.0 - Close the standards drift the audit found</li>
+<li>Put the test suite in the repo, and fix three bugs it found</li>
+<li>Record the Step 11 production ship</li>
+<li>Honor members' existing Gurubhais opt-in answers</li>
+<li>Source Bansuri membership from the Contact Registry</li>
+</ul>
 <h3>email-engine (6 commits)</h3>
-<p><em>Email management capabilities were enhanced with one-click unsubscribe functionality, a preference center for subscribers, and automated handling of bounce and complaint notifications from the email service provider</em></p>
+<p><em>Email delivery and scheduling infrastructure were improved to handle real-world sending scenarios and support multiple provider options</em></p>
 <ul>
-<li>docs: next-session plan (setup batch together, then Phase 1.10) + captured aw...</li>
-<li>v0.11.0 — Phase 1.9: SES bounce/complaint SNS ingestion</li>
-<li>docs: UNSUBSCRIBE_SECRET set (all 3 spots); Phase 1.9 next session</li>
-<li>docs: consent:write key + NEXT_PUBLIC_SITE_URL done; UNSUBSCRIBE_SECRET defer...</li>
-<li>docs: Phase 1.8 shipped + migration 0001 applied to prod + deployed (post-dep...</li>
-<li>v0.10.0 — Phase 1.8: one-click unsubscribe + preference center (RFC 8058)</li>
+<li>docs: full real-audience E2E PROVEN live + SES identity-precedence learning</li>
+<li>v0.11.3 — Resend-optional provider fallback (small sends failed w/o Resend ke...</li>
+<li>v0.11.2 — fix audience-resolve page size (500 → 100) blocking every real send</li>
+<li>v0.11.1 — pre-broadcast setup complete + Cloudflare cron scheduler</li>
+<li>Add Cloudflare Cron Trigger Worker as the reliable send-worker scheduler</li>
+<li>Add GitHub Actions send-worker cron (every 5 min → /api/cron/send)</li>
 </ul>
-<h3>grantor (5 commits)</h3>
-<p><em>The application's country data handling was expanded with a new reference endpoint and database mirror, while error messaging was improved to be more user-friendly and recoverable</em></p>
+<h3>grantor (6 commits)</h3>
+<p><em>Application management capabilities were expanded to support searching, reviewer access levels, feedback collection, discussion workflows, and integration with email communications</em></p>
 <ul>
-<li>Session-end docs: verified /decisions was a transient blip; added error bound...</li>
-<li>Show a friendly, retryable message instead of a bare crash screen (v0.29.1)</li>
-<li>Session-end docs: record the /countries surface + Countries mirror (v0.29.0)</li>
-<li>Add a /countries reference page + mirror the Countries table into Neon (v0.29.0)</li>
-<li>Awards-base audit + fill the country columns it found empty (v0.28.0)</li>
+<li>Find applications by ID and by country name; show amounts on the list</li>
+<li>Read hand-written email pastes, and let the AI read the ones we can't</li>
+<li>Use the real Airtable reviewer numbers, and pin them in config</li>
+<li>Reviewers can leave anonymous feedback for applicants; sort the queue by status</li>
+<li>Let reviewers discuss an application in the app, and import the email chains</li>
+<li>Give the Grants Committee logins: add a reviewer tier to the seed (v0.30.0)</li>
 </ul>
-<h3>z2w-crowdcommerce (4 commits)</h3>
-<p><em>Campaign administration and domain infrastructure were completed and deployed to production, with improved URL readability and documentation of setup requirements</em></p>
+<h3>z2w-starter-kit (5 commits)</h3>
+<p><em>Internal audit and tracking systems were established to monitor code quality and project alignment across the ecosystem</em></p>
 <ul>
-<li>z2w-crowdcommerce: docs — cover-upload root cause (FILE_SERVER_SERVICE_TOKEN ...</li>
-<li>z2w-crowdcommerce: prettier admin URLs — route campaign edit by slug not UUID</li>
-<li>z2w-crowdcommerce: Phase 2 LIVE — prod cutover done (migration applied + depl...</li>
-<li>z2w-crowdcommerce: Phase 2 — domain schema + campaign admin CRUD (code complete)</li>
+<li>docs: audit-engine greenlit — Phase 0 executed + handed off; member-match fin...</li>
+<li>docs: propose audit-engine — one project audits all others; repoint dormant z...</li>
+<li>docs: registry now tracks code + migration audits (4 columns, 14 rows backfil...</li>
+<li>docs: z2w-member-match audit — PASS on integration/fit; gitignored test suite...</li>
+<li>Fix the ecosystem rollup's silent no-op; docs for the crowdcommerce audit ses...</li>
 </ul>
-<h3>z2w-skill-vault (4 commits)</h3>
-<p><em>New integrations and skills were added for Amazon SNS webhook verification and WordPress LearnDash migration, alongside infrastructure improvements for database cold-start handling</em></p>
+<h3>z2w-seller-suite (4 commits)</h3>
+<p><em>Subscription renewal metadata handling in Stripe integrations was verified and documented as working correctly</em></p>
 <ul>
-<li>state-the-url-every-time: promote the always-on trigger to global ~/.claude/C...</li>
-<li>Add aws-sns-webhook-verification skill (verifying Amazon SNS HTTP webhooks)</li>
-<li>neon-postgres: a Neon cold-start blip on a REQUEST shows a bare "Application ...</li>
-<li>Add wordpress-learndash-migration skill</li>
+<li>v1.103.4 - Fix setup_future_usage parity: customer-initiated subscription ren...</li>
+<li>docs: Session 151 wrap — Terry Forrest hold released, order-pay-bug hypothesi...</li>
+<li>docs(finding): Stripe subscription→renewal metadata propagation VERIFIED with...</li>
+<li>docs(handoff): Session 150 — portfolio Stripe metadata contract ratified + ca...</li>
 </ul>
-<h3>courses-engine (2 commits)</h3>
-<p><em>The system was restructured to use LearnDash as the authoritative data source, with migration tooling built and user interface refinements applied to lesson pages</em></p>
+<h3>audit-engine (3 commits)</h3>
+<p><em>The codebase underwent structural reorganization and core component upgrades to clarify the product direction and strengthen foundational systems</em></p>
 <ul>
-<li>v0.6.0 — LearnDash-sourced migration built + Absolute Beginners proof</li>
-<li>v0.5.1 — Lesson-page UI polish + LearnDash source-of-truth pivot (design)</li>
+<li>v2.1.0 - Clear the Phase-0 tail, settle the product question, rewrite Layer 1</li>
+<li>Correct the member-match evidence + install canonical-block v0.1.15</li>
+<li>v2.0.0 - Reposition zero2secure as audit-engine</li>
 </ul>
-<h3>org-hq (2 commits)</h3>
-<p><em>The brand and preferences data structure was established as a shared standard for consistent information across systems</em></p>
+<h3>contact-registry (2 commits)</h3>
+<p><em>Test data provisioning and cleanup capabilities were added to support end-to-end testing workflows</em></p>
 <ul>
-<li>org-hq: refresh HANDOFF for v0.10.0 (brand read contract shipped)</li>
-<li>org-hq: public brand/preferences read contract — Org HQ as source of truth fo...</li>
+<li>seed-e2e-contacts: add --cleanup mode (remove the e2e-test tag from all test ...</li>
+<li>scripts: seed-e2e-contacts — provision a controlled test audience via the RES...</li>
 </ul>
 <h3>project-creator (2 commits)</h3>
-<p><em>GitHub API error handling and template resolution in production environments were improved</em></p>
+<p><em>The preview now automatically scrolls into view when it loads</em></p>
 <ul>
-<li>v0.7.7 — log GitHub API failures in the create-repo route (diagnostic)</li>
-<li>v0.7.6 — resolve Templates in prod (serverExternalPackages + FS fallback)</li>
+<li>docs: flagship repo-delivery VERIFIED LIVE — prod GitHub App (§E) done; wrap</li>
+<li>v0.7.8 — scroll the preview into view when it renders</li>
 </ul>
-<h3>contact-registry (1 commit)</h3>
-<p><em>The contact registry now prioritizes user-provided consent settings over automatic synchronization with FluentCRM</em></p>
+<h3>z2w-agent-command-center (1 commit)</h3>
+<p><em>I don't have access to the full commit details needed to accurately summarize the theme. Could you provide the complete commit messages so I can describe the development work properly?</em></p>
 <ul>
-<li>contact-registry: self-service consent wins over the FluentCRM sync (v0.25.0)</li>
+<li>v0.33.0 - Render the protocol that landed today: Needs-attention queue, decid...</li>
 </ul>
 <hr />
 <p>Daily Work Summary initially created by <a href="https://zero2webmaster.com/kerry-kriger">Zero2Webmaster Founder Dr. Kerry Kriger</a></p>
 <p>Contribute to the public repository at: https://github.com/zero2webmaster/daily-work-summary</p>
 <p>Need to change the timing or timezone of these emails? <a href="https://github.com/zero2webmaster/daily-work-summary#customizing-the-email-schedule">Click here</a> for instructions.</p>
-<p><em>Generated at 2026-07-25 02:25 EDT</em></p></div>
+<p><em>Covers Sat Jul 25, 2026 · generated 2026-07-31 20:03 EDT</em></p></div>
