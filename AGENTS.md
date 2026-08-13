@@ -852,9 +852,9 @@ Be pragmatic. Be reliable. Self-anneal.
 
 ## Capture Learnings (session end)
 
-<!-- cursor-project-templates capture-learnings-block v1.1.0 -->
+<!-- cursor-project-templates capture-learnings-block v1.2.0 -->
 
-*(↓ copy this section, including this heading AND the HTML fingerprint comment above, verbatim into each project's `CLAUDE.md`, and into `AGENTS.md`/`GEMINI.md` **where the project already keeps them** — never create those files just to hold this block. The fingerprint lets `grep` detect drift across projects. Canonical source: `Resources/CAPTURE_LEARNINGS_BLOCK.md` in `zero2webmaster/cursor-project-templates`.)*
+*(↓ copy this section, including this heading AND the HTML fingerprint comment above, verbatim into each project's `CLAUDE.md`, and into `AGENTS.md`/`GEMINI.md` **where the project already keeps them** — never create those files just to hold this block. The fingerprint lets `grep` detect drift across projects. Canonical source: `Resources/CAPTURE_LEARNINGS_BLOCK.md`, in the framework-templates repo named by the fingerprint comment above.)*
 
 **At the end of every session, decide whether anything you learned this session should become a skill — and state the verdict in your recap.** This fires by default, unasked. It is **never** a question you put to the project owner ("want me to make a skill?"); it is a decision you make and report.
 
@@ -870,7 +870,7 @@ Be pragmatic. Be reliable. Self-anneal.
 
 **Report the verdict even when it's negative.** "Nothing worth capturing this session" is a valid and expected outcome, and saying it out loud is the point: a reflex nobody can see is indistinguishable from a reflex nobody ran.
 
-**If you notice this step missing from another project, do not just fix that one file.** Two or more projects missing it means the *enrollment* step is the bug, not the rows. File it with `cursor-project-templates` (owns the canonical block), `z2w-starter-kit` (owns the scaffold/`init` path), and `z2w-agent-coordination` (owns `scripts/check-fingerprint-drift.sh`, the only propagation checker in this ecosystem that has demonstrably worked).
+**If you notice this step missing from another project, do not just fix that one file.** Two or more projects missing it means the *enrollment* step is the bug, not the rows. File it with the three owners — the repo that owns this canonical block, the repo that owns the scaffold/`init` path, and the repo that owns the propagation checker (a fingerprint drift sweep is the only propagation mechanism in this ecosystem that has demonstrably worked) — rather than with whichever project you happened to notice it in. The **`capture-learning`** skill names all three for this organization.
 
 Full routing rubric, worked examples, and the Skill Vault's own commit conventions: the **`capture-learning`** skill.
 
