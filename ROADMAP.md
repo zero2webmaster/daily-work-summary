@@ -222,6 +222,50 @@ Live end-to-end run confirmed the fix: the archive file labeled "Fri Jul 31" (15
 
 ---
 
+## Phase: Digest Signal Density ✅
+**Status:** Complete (2026-08-15, v1.13.0)
+
+Kerry filed two observations on 2026-08-14 after reading the Aug 13 email. Both were about the same thing: the digest spent its space in proportion to commit *count* rather than to how much distinct work happened.
+
+**Tasks:**
+- [x] Roll up work repeated across many repos into one line — `**Across N repos** — <subject>` plus the repo list
+- [x] Restrict the rollup to single-commit repos so a section can never show a count larger than its bullet list
+- [x] Exact subject-line matching only (`normalize_subject()`), never fuzzy — two different commits must never merge into one claim
+- [x] Restore the one-sentence AI theme on collapsed coordination repos (the detail Kerry missed after v1.12.0)
+- [x] Make both behaviours configurable (`ROLLUP_MIN_REPOS`, existing `COLLAPSE_REPOS`)
+- [x] Measure the effect on Kerry's real data rather than asserting it
+
+**Verification:**
+```bash
+source venv/bin/activate
+python execution/run_tests.py                               # 6/6 suites, incl. 30 rollup checks
+python -c "import yaml; yaml.safe_load(open('.github/workflows/daily-summary.yml'))"
+```
+Replaying the real `summaries/daily-summary-2026-08-13.md` archive: **52 repo sections → 13**, 39 repos folded into one rollup line, and 39 AI calls saved. Kerry named three repos in his report; the actual count was 39.
+
+---
+
+## Phase: Tests Runnable by Anyone but Kerry ✅
+**Status:** Complete (2026-08-15, v1.13.0)
+
+Closes the `standards.tests-tracked` **[HIGH]** finding filed by `audit-engine` (2026-08-01). The finding was correct, and understated: not only was there no CI runner, four of the five suites were sitting in the gitignored `.tmp/` directory, so they passed on Kerry's machine and did not exist in any clone.
+
+**Tasks:**
+- [x] Move `test_guard`, `test_portfolio_stats`, `test_session_metrics`, `test_skill_vault_tally` into tracked `execution/`
+- [x] Verify all suites pass from the new location (they did, before and after)
+- [x] Add `execution/run_tests.py` — one command shared by CI and local dev
+- [x] Add the `Tests` workflow (push + PR + manual)
+- [x] Assert at least one suite is present in the clone, so an empty run fails instead of passing
+- [x] Document the suites in README
+
+**Verification:**
+```bash
+python3 execution/run_tests.py    # 6/6 suite(s) passed
+git ls-files 'execution/test_*.py' | wc -l   # 6
+```
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:
@@ -233,4 +277,4 @@ Live end-to-end run confirmed the fix: the archive file labeled "Fri Jul 31" (15
 
 ---
 
-*Last Updated: 2026-07-31 (v1.11.0)*
+*Last Updated: 2026-08-15 (v1.13.0)*

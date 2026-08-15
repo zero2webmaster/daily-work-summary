@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.12.0
+**Version:** 1.13.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -79,10 +79,11 @@ This is a Zero2Webmaster-specific feature; most forks won't have the artifact, s
 
 Some repos hold agent/coordination **bookkeeping** rather than product work. In the Z2W portfolio every agent writes its session notes into `z2w-agent-coordination`, so that repo routinely tops a digest that sorts purely by commit count — on 2026-06-22 it contributed 64 commits and out-ranked every product repo, spending roughly a third of the email on bulletin housekeeping.
 
-Those repos are rendered as a **single line with no bullets**, and no AI call is spent on them:
+Those repos are rendered as a **single line plus a one-sentence theme**, with no per-commit bullets:
 
 ```
 z2w-agent-coordination: 32 coordination commits
+Sessions across the portfolio recorded handoffs and cross-project questions
 ```
 
 They still count toward the headline totals, and Airtable still receives their full commit list — only the email body is condensed.
@@ -92,9 +93,33 @@ They still count toward the headline totals, and Airtable still receives their f
 | Variable | `COLLAPSE_REPOS` |
 | Unset (default) | `z2w-agent-coordination` |
 | Custom | comma-separated repo names, e.g. `repo-a,repo-b` |
-| Disable entirely | `none` (also accepts `off` / `false`) |
+| Disable entirely | `none` (also accepts `off` / `false`) — restores full bullets |
 
 Most forks have no such repo; leaving the variable unset simply has no effect on them.
+
+---
+
+## Rolling up work repeated across many repos
+
+When one action is propagated across the whole portfolio — a shared template bumped, a workflow updated everywhere — each repo lands the **same commit subject**. Without help, the digest gives every one of them its own heading, its own AI-written sentence, and its own bullet, so a single action reads as dozens of separate events. On 2026-08-13 one template bump accounted for **39 of 52** repo sections.
+
+Repos in that situation are folded into one line at the end of their owner's section:
+
+```
+Across 39 repos — cursor-project-templates: update the capture-learnings block to v1.2.0
+audit-engine, backup-engine, commerce-engine, …
+```
+
+**A repo is only rolled up when the shared commit is its only commit that day.** A repo that landed the shared commit *and* did its own work keeps its normal section, so a section never shows a commit count larger than the bullets beneath it. Matching is exact after whitespace/case normalization of the subject line — never fuzzy — so two genuinely different commits are never merged.
+
+Rolled-up repos still count toward the headline totals, and Airtable still receives their full commit list.
+
+| | |
+|---|---|
+| Variable | `ROLLUP_MIN_REPOS` |
+| Unset (default) | `2` — two repos sharing a commit are enough to roll up |
+| Custom | any integer ≥ 2, e.g. `3` to only roll up wider propagation |
+| Disable entirely | `0` (also accepts `none` / `off` / `false`) |
 
 ---
 
@@ -169,6 +194,7 @@ Set these under **Settings → Secrets and variables → Actions → Variables**
 | `EMAIL_SEND_MINUTE` | Local minute (0–59) | `30` |
 | `EMAIL_SEND_WINDOW_MIN` | Acceptable delay after the target time, in minutes — wide by default because GitHub throttles cron hard overnight | `480` |
 | `COLLAPSE_REPOS` | Repos shown as one collapsed line instead of a bullet list — see [Collapsing coordination-repo noise](#collapsing-coordination-repo-noise). `none` disables | `z2w-agent-coordination` |
+| `ROLLUP_MIN_REPOS` | How many repos must share one commit subject before they fold into a single line — see [Rolling up work repeated across many repos](#rolling-up-work-repeated-across-many-repos). `0` disables | `2` |
 | `SKILL_VAULT_TALLY` | Set to `false` to hide the Skill Vault headline line — see [Skill Vault tally](#skill-vault-tally-optional) below | `true` (shown) |
 | `AIRTABLE_BASE_ID` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
 | `AIRTABLE_TABLE_SUMMARIES` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
@@ -436,9 +462,32 @@ Set `EMAIL_TIMEZONE`, `EMAIL_SEND_HOUR`, and `EMAIL_SEND_MINUTE` as Variables in
 
 ## Testing
 
+### End-to-end
+
 1. Go to **Actions** → **Daily Work Summary**
 2. Click **Run workflow** → **Run workflow**
 3. Check the Actions log and your inbox within a minute
+
+### Automated test suites
+
+Every suite lives in `execution/test_*.py`, is tracked in git, and runs on a fresh clone:
+
+```bash
+python3 execution/run_tests.py
+```
+
+The **Tests** workflow runs the same command on every push and pull request that touches
+`.github/scripts/`, `execution/`, or `requirements.txt`. It first asserts that at least one
+suite is actually present in the clone — an empty run reports failure, never a pass.
+
+| Suite | Covers |
+|-------|--------|
+| `test_summary_date.py` | Which day a summary covers (send-window guard + date label) |
+| `test_rollup.py` | Cross-repo repetition rollup and its safety rule |
+| `test_guard.py` | Time-of-day send guard against GitHub's throttled cron |
+| `test_skill_vault_tally.py` | Skill Vault headline line and its staleness note |
+| `test_portfolio_stats.py` | Monthly LoC/doc-line snapshot |
+| `test_session_metrics.py` | Session-metrics Stop hook report |
 
 ---
 
@@ -450,6 +499,7 @@ Set `EMAIL_TIMEZONE`, `EMAIL_SEND_HOUR`, and `EMAIL_SEND_MINUTE` as Variables in
 │   │   ├── daily-summary.yml          # Cron + email + Airtable + webhook workflow
 │   │   ├── backfill-summaries.yml     # Regenerate summaries for past days
 │   │   ├── portfolio-stats.yml        # Monthly LoC/doc snapshot → coordination repo
+│   │   ├── tests.yml                  # Runs every tracked test suite on a fresh clone
 │   │   └── setup-airtable.yml         # One-click Airtable table setup (run once)
 │   └── scripts/
 │       ├── generate_summary.py        # Summary generator + delivery routing
@@ -460,6 +510,8 @@ Set `EMAIL_TIMEZONE`, `EMAIL_SEND_HOUR`, and `EMAIL_SEND_MINUTE` as Variables in
 ├── directives/                        # SOPs
 ├── execution/
 │   ├── setup_airtable.py             # Airtable table creation (used by setup workflow)
+│   ├── run_tests.py                  # Runs every test_*.py suite; one command for CI + local
+│   ├── test_*.py                     # Tracked test suites (see Testing)
 │   └── ...
 └── requirements.txt
 ```
@@ -493,4 +545,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.12.0 | Last Updated: 2026-07-31*
+*Version: 1.13.0 | Last Updated: 2026-08-15*

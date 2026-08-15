@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-07-31 (v1.11.0)
+**Last Updated:** 2026-08-15 (v1.13.0)
 
 ---
 
@@ -44,6 +44,14 @@ None currently.
 **Date:** 2026-07-31 (v1.11.0)
 **Rationale:** Deploying the date fix over an archive whose filenames were already wrong would have made the first correct run see `daily-summary-2026-07-31.md` present and skip — costing a day's email silently. An inert `<!-- daily-summary/v2 covers="..." -->` comment gates the idempotency check instead of bare file existence, so legacy misdated files are regenerated rather than trusted. Also means a filename is never the only record of a file's contents.
 
+### Decision: Roll up repeated commits only for single-commit repos
+**Date:** 2026-08-15 (v1.13.0)
+**Rationale:** The tempting version pulls the shared bullet out of *every* repo that landed it. That leaves a section headed "5 commits" above 4 bullets — the digest contradicting itself, which is worse than the repetition it fixes. Restricting the rollup to repos whose *only* commit is the shared one makes the invariant structural rather than remembered: a section's count always equals its bullet list. It also happens to cover the real case, because mass propagation lands exactly one commit per repo. Corollary for future work: **widen this only if you can state what keeps counts and bullets in agreement.**
+
+### Decision: Match repeated commits exactly, never fuzzily
+**Date:** 2026-08-15 (v1.13.0)
+**Rationale:** Fuzzy matching would catch near-identical commits, but the cost of a false merge is asymmetric — the digest would assert that N repos did the same thing when they did not, and Kerry has no way to detect that from the email. Exact matching on the whitespace/case-normalized **subject line** (bodies carry per-repo trailers) can only ever fail by under-grouping, which is visible and harmless.
+
 ### Decision: Comma-separated DELIVERY_METHOD for Slack/Discord
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
@@ -52,10 +60,11 @@ None currently.
 
 ## ✅ Next Actions
 
-1. **Confirm the first correctly-dated email** — the run after ~00:30 EDT on 2026-08-01 should be subject-lined **Fri Aug 01** and contain Aug 1's commits. (Under the old code it would have said Aug 2.)
-2. **Kerry's call — realign the misdated archive.** `summaries/` files dated 2026-06-18 → 2026-07-31 are named one day later than their contents. Fixing them means a `Backfill Summaries` run over that range (44 days x ~10 repos of AI calls — a real OpenRouter spend, so not run unilaterally). The command center reads this archive, so leaving it means its per-day view stays off by one for those dates.
-3. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-4. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+1. **Confirm the first rolled-up email** — the run after ~00:30 EDT on 2026-08-16 is the first to use v1.13.0. Expect any portfolio-wide template bump to appear once as `Across N repos — <subject>` instead of N separate sections, and `z2w-agent-coordination` to carry a theme sentence under its count line.
+2. **Kerry's call — realign the misdated June archive.** `summaries/` files dated 2026-06-18 → 2026-06-30 are named one day later than their contents (July was repaired 2026-07-31). Fixing them means a `Backfill Summaries` run over that range — a real OpenRouter spend, so not run unilaterally. The command center reads this archive, so its per-day view stays off by one for those 13 dates.
+3. **Bundle the session-metrics Stop hook into the sellable kits** — approved by Kerry 2026-06-19, still not built. Needs a session in `z2w-starter-kit` / `portable-stack`, not this repo.
+4. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
+5. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
 
 ---
 
@@ -66,6 +75,17 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-08-15 - Digest signal density + tests anyone can run (v1.13.0)
+
+Worked Kerry's two unread 2026-08-14 bulletin dispatches and the HIGH audit finding.
+
+- **Repetition rollup.** One action propagated portfolio-wide previously got a full section per repo. Now folded into `**Across N repos** — <subject>` + the repo list. **Measured on the real 2026-08-13 archive: 52 repo sections → 13**, 39 repos folded, 39 AI calls saved. Kerry reported three repeats; it was 39.
+- **Kept deliberately narrow.** Only single-commit repos roll up, so a section can never show a commit count larger than its bullet list. Matching is exact on the normalized subject line — never fuzzy.
+- **Collapsed coordination repos got their theme sentence back** (Kerry's other dispatch: "no longer show details"). One AI call restores the *what* without undoing the v1.12.0 collapse; `COLLAPSE_REPOS=none` still restores full bullets.
+- **Audit finding closed, and it was understated.** `audit-engine` flagged "tests tracked but no runner." True — and 4 of the 5 suites were sitting in gitignored `.tmp/`, passing on Kerry's machine and absent from every clone. All 4 moved to `execution/`, plus `run_tests.py` and a `Tests` workflow that asserts suites are actually present before reporting a pass.
+- **Verified:** 6/6 suites (30 new rollup checks); all 5 workflow YAMLs parse; `py_compile` clean; rollup measured by replaying real archived data rather than asserted.
+- **Correction logged:** I briefly read the archive as missing Aug 13–14 and started investigating an outage. The local clone was simply two commits behind origin — the bot pushes there and nothing had pulled since. No outage; nightly runs are healthy.
 
 ### Session: 2026-07-31 - Fix the one-day-late summary date (v1.11.0)
 
@@ -94,22 +114,6 @@ None currently.
 - **Verified end-to-end:** v1.9.0 manual run succeeded → **confirmed `PAT_GITHUB` has write access** to the coordination repo (no token change needed). The v1.9.1 re-run regenerated `stats/portfolio-2026-06.json` with true numbers: **41 repos (40 active, 1 archived) → 695,618 lines of code + 431,186 lines of documentation** (z2w-ai-suite now 115K LoC vs the bogus 1.32M). No measurement errors.
 - **Session-metrics hook is LIVE globally:** `~/.claude/hooks/session_metrics.py` wired into `~/.claude/settings.json` Stop hook — fires for every session in every project (takes effect next session / after `/hooks` reload). Filed a `[→ z2w-starter-kit]` discussion ask with the LoC/doc numbers (Kerry's curiosity discussion: traditional-dev effort + famous-software comparisons).
 
-### Session: 2026-06-18 - Monthly portfolio-stats job (v1.9.0)
-- **v1.9.0 — monthly portfolio-stats artifact.** New separate `Portfolio Stats` workflow snapshots every Z2W repo's lines-of-code + documentation/comment lines and commits `stats/portfolio-YYYY-MM.json` into the **`z2w-agent-coordination` repo** (not this repo — the command center's token is scoped there). Fulfills the last open no-urgency bulletin ask (`z2w-agent-command-center`, 2026-06-12, amended 2026-06-17).
-- **How:** shallow-clones each repo, runs `cloc --json` (`code`→`loc`, `comment`→`doc_lines`), records `last_commit_date` + `active`/`archived` status, aggregates totals. Schema `portfolio-stats/v1`. Cadence `0 6 1 * *` (monthly) + manual run with optional `month` override.
-- **Cannot affect the email:** it's a *separate* workflow; per-repo work is exception-wrapped (a repo that fails to measure → null counts + `error` note, never aborts); coordination-repo push uses rebase-and-retry for the multi-agent ref-lock race.
-- **No new secret** — reuses `PAT_GITHUB` (needs write to the coordination repo, which it already reads for the Skill Vault tally).
-- **Verified:** offline unit test `.tmp/test_portfolio_stats.py` 21/21 (cloc parser + aggregate builder incl. null metrics, archived split, empty portfolio); `py_compile` clean; both workflow YAMLs valid. New SOP `directives/generate_portfolio_stats.md`.
-- **Next:** all known bulletin feature asks are now closed. No blocking work.
-
-### Session: 2026-06-18 - Skill Vault tally in the daily email (v1.8.0)
-- **v1.8.0 — headline Skill Vault stat in the email.** Each digest now leads with `🧠 Skill Vault: X created, Y improved today · N skills total`, the created-vs-improved split + running total. Fulfills the no-urgency bulletin ask from `z2w-skill-vault` (2026-06-16).
-- **Data source:** reads the pre-computed `stats/skill-vault.json` (schema `skill-vault-stats/v1`) from the `z2w-agent-coordination` repo via the existing `PAT_GITHUB` — **no new secret**, no second clone, no direct dependency on the private skill-vault repo.
-- **Cannot break the email:** the fetch is fully exception-wrapped — missing/unreadable/malformed artifact (or a fork without it) silently drops the line. Honest about staleness: when the artifact has no entry for today it shows the running total + `(Vault stats as of YYYY-MM-DD)` rather than implying "0 created today".
-- New optional `SKILL_VAULT_TALLY` Action variable (default on) hides the line without a code change.
-- **Verified:** offline unit test `.tmp/test_skill_vault_tally.py` 9/9 + live render against the real artifact (`28 skills total`; created/improved split renders on matching days). py_compile + both workflow YAMLs valid.
-- **Next:** remaining no-urgency ask is the monthly portfolio-stats artifact (write `stats/portfolio-YYYY-MM.json` into the coordination repo).
-
-*(Earlier sessions — the v1.5.2→1.7.0 outage-fix + dead-man's-switch + backfill (2026-06-18), and the v1.0.0 / v1.3.0 / v1.4.0 builds (2026-03-11) — trimmed per the STATUS 3-4-session rule; full history in [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).)*
+*(Earlier sessions — the v1.9.0 portfolio-stats job and v1.8.0 Skill Vault tally (2026-06-18), the v1.5.2→1.7.0 outage-fix + dead-man's-switch + backfill (2026-06-18), and the v1.0.0 / v1.3.0 / v1.4.0 builds (2026-03-11) — trimmed per the STATUS 3-4-session rule; full history in [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).)*
 
 ---

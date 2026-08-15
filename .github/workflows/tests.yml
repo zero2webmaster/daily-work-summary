@@ -1,0 +1,59 @@
+name: Tests
+
+# Runs every tracked test suite on a FRESH clone, which is the point: the suites
+# used to live in the gitignored `.tmp/` directory, so they passed on Kerry's
+# machine and did not exist for anyone else. A suite CI cannot run is not a suite.
+#
+# Closes the `standards.tests-tracked` [HIGH] finding filed by `audit-engine`
+# (2026-08-01): tests were tracked but had no configured runner.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/**'
+      - '.github/workflows/tests.yml'
+      - 'execution/**'
+      - 'requirements.txt'
+  pull_request:
+    paths:
+      - '.github/scripts/**'
+      - '.github/workflows/tests.yml'
+      - 'execution/**'
+      - 'requirements.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Confirm the suites are actually in the clone
+        # Guards the original failure mode directly: if the suites ever drift
+        # back into a gitignored directory, fail loudly here rather than let a
+        # zero-suite run report success.
+        run: |
+          count=$(git ls-files 'execution/test_*.py' | wc -l)
+          echo "tracked test suites: $count"
+          git ls-files 'execution/test_*.py'
+          if [ "$count" -lt 1 ]; then
+            echo "::error::No tracked test suites found — an empty run is not a pass."
+            exit 1
+          fi
+
+      - name: Run test suites
+        run: python execution/run_tests.py

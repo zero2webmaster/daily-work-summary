@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.0] - 2026-08-15
+
+### Added
+- **Work repeated across many repos now folds into one line.** Answering Kerry's 2026-08-14 note on the Aug 13 email: *"ideally, repetition would be summarized into something like X action took place on Y repos (repo a, repo b, repo c)"*. When one action is propagated portfolio-wide, every repo lands the same commit subject and each previously got its own heading, its own AI-written sentence, and its own bullet — so a single action read as dozens of separate events. Those repos now render as `**Across 39 repos** — <subject>` followed by the repo list, at the end of their owner's section. Replaying the real 2026-08-13 archive: **52 repo sections became 13**, and **39 AI calls were saved** that had each been paraphrasing the same commit. Kerry noticed three; it was actually 39. Configurable via `ROLLUP_MIN_REPOS` (default `2`; `0`/`none` disables). ([`generate_summary.py`](.github/scripts/generate_summary.py))
+  - **Deliberately narrow, so the digest can never disagree with itself:** a repo is rolled up only when the shared commit is its *only* commit in the window — the real mass-propagation shape. A repo that landed the shared commit *and* did its own work keeps its normal section, so no section is ever left showing a commit count larger than its bullet list. Matching is exact after whitespace/case normalization of the subject line only (bodies carry per-repo trailers), never fuzzy.
+- **`Tests` workflow + `execution/run_tests.py`.** Closes the `standards.tests-tracked` **[HIGH]** finding filed by `audit-engine` on 2026-08-01. Runs every tracked suite on a fresh clone for each push/PR touching `.github/scripts/`, `execution/`, or `requirements.txt`. The workflow first asserts at least one suite is present in the clone, so an empty run fails instead of reporting a pass.
+- `execution/test_rollup.py` — 30 checks covering subject normalization, the single-commit safety rule, thresholds, opt-outs, group ordering, and `ROLLUP_MIN_REPOS` parsing.
+
+### Changed
+- **Collapsed coordination repos get their one-sentence theme back.** Kerry, 2026-08-14: *"daily work summaries no longer show details on agent-coordination agent commits."* The bullet-less line introduced in v1.12.0 told him agents had been active but not what about. Collapsed repos now render the count line plus an AI theme sentence, restoring the *what* at one line instead of N. This costs one AI call and does not undo the collapse; `COLLAPSE_REPOS=none` still restores full bullets without a code change.
+
+### Fixed
+- **Four test suites existed only on one machine.** `test_guard.py`, `test_portfolio_stats.py`, `test_session_metrics.py`, and `test_skill_vault_tally.py` lived in the gitignored `.tmp/` directory, so they passed locally and were absent from every clone — the substance of the audit finding. All four are now tracked under `execution/`. All 6 suites verified passing from their new location before and after the move. (The now-redundant `.tmp/` copies are left in place for Kerry to remove.)
+
 ## [1.12.0] - 2026-07-31
 
 ### Changed

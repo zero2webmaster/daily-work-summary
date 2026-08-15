@@ -44,19 +44,41 @@ Worked example with `EMAIL_SEND_HOUR=23`, `America/New_York`:
 
 **Regression test:** `execution/test_summary_date.py` (25 clock-frozen checks). Run before touching any scheduling or labeling code.
 
-## Collapsed coordination repos (v1.12.0)
+## Collapsed coordination repos (v1.12.0, theme line added v1.13.0)
 
-Repos listed in `COLLAPSE_REPOS` (default: `z2w-agent-coordination`) render as a **single line, no bullets, no AI call**:
+Repos listed in `COLLAPSE_REPOS` (default: `z2w-agent-coordination`) render as a **single line plus a one-sentence theme, no per-commit bullets**:
 
 ```
 z2w-agent-coordination: 32 coordination commits
+*Sessions across the portfolio recorded handoffs and cross-project questions*
 ```
 
 **Why:** every Z2W agent writes its session notes into the coordination repo, and the digest sorts purely by commit count — so bookkeeping out-ranked product work (64 commits on 2026-06-22, roughly a third of that email). Kerry's call, 2026-07-31: keep the "agents were active" signal, drop the detail.
 
+**Why the theme line came back (v1.13.0).** Kerry, 2026-08-14: *"daily work summaries no longer show details on agent-coordination agent commits"* — the bullet-less line told him agents had been active but not what about. The theme sentence restores the *what* at one line instead of N, so it costs one AI call and does not undo the collapse. If he ever wants the full bullets back, that is `COLLAPSE_REPOS=none`, not a code change.
+
 **What is NOT changed:** collapsed repos still count in the headline `N commits across M repos`, and Airtable still receives their full commit list. Only the email/archive body is condensed.
 
 Set `COLLAPSE_REPOS` to a comma-separated list to override, or to `none` / `off` / `false` to disable. Implemented by `get_collapsed_repos()`; covered by `execution/test_summary_date.py` §8.
+
+## Cross-repo repetition rollup (v1.13.0)
+
+When one action is propagated across many repos, every repo lands the **same commit subject** and the digest gives each its own heading, AI sentence, and bullet. Those repos are folded into a single line at the end of their owner's section:
+
+```
+**Across 39 repos** — cursor-project-templates: update the capture-learnings block to v1.2.0
+*audit-engine, backup-engine, commerce-engine, …*
+```
+
+**Why:** Kerry, 2026-08-14, on the Aug 13 email — *"ideally, repetition would be summarized into something like X action took place on Y repos (repo a, repo b, repo c)"*. He named three repos; replaying that day's archive showed **39**. The rollup took it from 52 repo sections to 13, and saved 39 AI calls that were each paraphrasing the same commit.
+
+**The safety rule — read before widening this.** A repo is rolled up ONLY when the shared commit is its **only** commit in the window. That is the real mass-propagation shape (one push per repo), and it guarantees no section is ever left showing a commit count larger than the bullets beneath it. A repo that landed the shared commit *and* did its own work keeps its normal section, shared bullet included.
+
+Matching is exact after whitespace/case normalization on the **subject line only** (`normalize_subject()`) — never fuzzy, so two genuinely different commits cannot be merged into one claim. Bodies are ignored because trailers differ per repo.
+
+**What is NOT changed:** rolled-up repos still count in the headline `N commits across M repos`, and Airtable still receives their full commit list.
+
+Set `ROLLUP_MIN_REPOS` to change the threshold (default `2`), or to `0` / `none` / `off` to disable. Implemented by `find_rollup_groups()`; covered by `execution/test_rollup.py` (30 checks).
 
 ## Inputs
 
@@ -67,7 +89,8 @@ Set `COLLAPSE_REPOS` to a comma-separated list to override, or to `none` / `off`
 | Time window | The covered day, `[00:00, 23:59:59]` in `EMAIL_TIMEZONE` | `_resolve_window()`; day comes from `_target_local()`, NOT run time. Clamped to now on a pre-midnight run |
 | Scheduling target | `EMAIL_TIMEZONE` + `EMAIL_SEND_HOUR` + `EMAIL_SEND_MINUTE` + `EMAIL_SEND_WINDOW_MIN` variables | All four have defaults — see Trigger section |
 | Delivery method | `DELIVERY_METHOD` variable | Comma-separated: `email` (default), `airtable`, `slack`, `discord`. `both` = `email,airtable` |
-| Collapsed repos | `COLLAPSE_REPOS` variable (default `z2w-agent-coordination`) | One line, no bullets, no AI call. `none` disables. See Collapsed coordination repos |
+| Collapsed repos | `COLLAPSE_REPOS` variable (default `z2w-agent-coordination`) | One line + a theme sentence, no per-commit bullets. `none` disables. See Collapsed coordination repos |
+| Repetition rollup | `ROLLUP_MIN_REPOS` variable (default `2`) | Folds single-commit repos sharing one commit subject into one line. `0` / `none` disables. See Cross-repo repetition rollup |
 | Skill Vault tally | `SKILL_VAULT_TALLY` variable (default on) | Set `false` to hide the headline Skill Vault line. Reads `stats/skill-vault.json` from the coordination repo via `PAT_GITHUB` — no extra secret. See Step 3a |
 | Airtable PAT | `AIRTABLE_PAT` secret | Required when delivery includes `airtable` |
 | Airtable IDs | `AIRTABLE_BASE_ID`, `AIRTABLE_TABLE_SUMMARIES`, `AIRTABLE_TABLE_REPOS` variables | All IDs (`appXXX`, `tblXXX`), never names |

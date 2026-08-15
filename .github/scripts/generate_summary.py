@@ -88,6 +88,104 @@ def get_collapsed_repos() -> set[str]:
         return set()
     return {r.strip() for r in raw.split(",") if r.strip()}
 
+
+# ------------------------------------------------------------------
+# Cross-repo repetition rollup
+# ------------------------------------------------------------------
+#
+# When one action is propagated across many repos — a template block bumped
+# everywhere, a shared workflow updated portfolio-wide — each repo lands the
+# SAME commit subject. The digest then spends a full section on each one, and
+# reads as several different things happening when it was one thing happening
+# N times. Kerry, 2026-08-14, on seeing three identical sections in the Aug 13
+# email: "ideally, repetition would be summarized into something like X action
+# took place on Y repos (repo a, repo b, repo c)".
+#
+# Deliberately narrow, so the digest can never disagree with itself: a repo is
+# only rolled up when the shared commit is its ONLY commit in the window. That
+# is exactly the mass-propagation shape (one push per repo), and it means no
+# section is ever left showing a commit count larger than its bullet list. A
+# repo that did the shared work AND its own work keeps its normal section.
+#
+# Matching is exact after whitespace/case normalization — never fuzzy — so two
+# genuinely different commits can't be merged into one claim.
+#
+# Override with the ROLLUP_MIN_REPOS Action variable; set 0/none/off to disable.
+DEFAULT_ROLLUP_MIN_REPOS = 2
+
+
+def get_rollup_min_repos() -> int:
+    """How many repos must share a commit subject before it is rolled up.
+
+    Returns 0 when rollup is disabled.
+    """
+    raw = os.environ.get("ROLLUP_MIN_REPOS")
+    if raw is None or not raw.strip():
+        return DEFAULT_ROLLUP_MIN_REPOS
+    if raw.strip().lower() in {"none", "off", "false"}:
+        return 0
+    try:
+        value = int(raw.strip())
+    except ValueError:
+        print(f"  ROLLUP_MIN_REPOS: invalid value {raw!r}, using default")
+        return DEFAULT_ROLLUP_MIN_REPOS
+    # 1 would "roll up" every single-commit repo on its own — meaningless.
+    return value if value >= 2 else 0
+
+
+def normalize_subject(message: str) -> str:
+    """Key used to decide whether two repos landed the same commit.
+
+    Only the first line matters — commit bodies differ per repo (trailers,
+    co-authors) while the subject is what was propagated.
+    """
+    subject = message.strip().splitlines()[0] if message.strip() else ""
+    return " ".join(subject.split()).lower()
+
+
+def find_rollup_groups(
+    repos_data: dict[str, list[str]],
+    min_repos: int,
+    skip: set[str] | None = None,
+) -> list[tuple[str, list[str]]]:
+    """Find one-commit repos that all landed the same commit subject.
+
+    Args:
+        repos_data: {repo_name: [commit messages]} for a single owner.
+        min_repos: minimum repos sharing a subject before it is rolled up.
+        skip: repo names to leave alone (e.g. collapsed coordination repos).
+
+    Returns:
+        [(display_subject, [repo_name, ...]), ...] sorted by group size
+        descending then subject, with repo names sorted within each group.
+        Empty when rollup is disabled or nothing repeats.
+    """
+    if min_repos < 2:
+        return []
+    skip = skip or set()
+
+    # normalized subject -> (first-seen original subject, [repo names])
+    buckets: dict[str, tuple[str, list[str]]] = {}
+    for repo_name in sorted(repos_data):
+        messages = repos_data[repo_name]
+        if repo_name in skip or len(messages) != 1:
+            continue
+        key = normalize_subject(messages[0])
+        if not key:
+            continue
+        display = messages[0].strip().splitlines()[0].strip()
+        if key not in buckets:
+            buckets[key] = (display, [])
+        buckets[key][1].append(repo_name)
+
+    groups = [
+        (display, repo_names)
+        for display, repo_names in buckets.values()
+        if len(repo_names) >= min_repos
+    ]
+    groups.sort(key=lambda g: (-len(g[1]), g[0].lower()))
+    return groups
+
 DEFAULT_TIMEZONE = "America/New_York"
 DEFAULT_SEND_HOUR = 22
 DEFAULT_SEND_MINUTE = 30
@@ -613,12 +711,20 @@ def generate_summary() -> dict[str, Any]:
     structured_repos: list[dict[str, Any]] = []
     ai_summary_bullets: list[str] = []
     collapsed_repos = get_collapsed_repos()
+    rollup_min_repos = get_rollup_min_repos()
 
     for owner in sorted(owner_repos.keys()):
         repos_data = owner_repos[owner]
         sorted_repos_list = sorted(
             repos_data.items(), key=lambda x: len(x[1]), reverse=True
         )
+
+        # One action propagated across many repos renders as a single line at
+        # the end of this owner's section instead of N near-identical sections.
+        rollup_groups = find_rollup_groups(
+            repos_data, rollup_min_repos, skip=collapsed_repos
+        )
+        rolled_up_repos = {r for _, repos in rollup_groups for r in repos}
 
         lines.append(f"## {owner}")
         lines.append("")
@@ -628,14 +734,9 @@ def generate_summary() -> dict[str, Any]:
             count = len(messages)
             commit_label = f"{count} commit{'s' if count != 1 else ''}"
 
-            # Coordination bookkeeping: one line, no bullets, no AI call. Still
-            # counted in the totals and still written to Airtable in full.
-            if repo_name in collapsed_repos:
-                lines.append(
-                    f"**{repo_name}:** {count} coordination "
-                    f"commit{'s' if count != 1 else ''}"
-                )
-                lines.append("")
+            # Rolled up below with the other repos that landed the same commit.
+            # No section and no AI call, but full fidelity still reaches Airtable.
+            if repo_name in rolled_up_repos:
                 structured_repos.append({
                     "full_name": full_name,
                     "url": repo_urls.get(full_name, f"https://github.com/{full_name}"),
@@ -643,6 +744,32 @@ def generate_summary() -> dict[str, Any]:
                     "commits": count,
                     "messages": messages,
                     "ai_summary": None,
+                })
+                print(f"  {full_name}: rolled up (shared commit)")
+                continue
+
+            # Coordination bookkeeping: one line plus a theme sentence, but no
+            # per-commit bullets. Still counted in the totals and still written
+            # to Airtable in full.
+            if repo_name in collapsed_repos:
+                lines.append(
+                    f"**{repo_name}:** {count} coordination "
+                    f"commit{'s' if count != 1 else ''}"
+                )
+                # Kerry, 2026-08-14: the bullet-less line told him agents had
+                # been active but not what about. The theme sentence is the
+                # detail he missed, at one line instead of N.
+                collapsed_summary = generate_ai_repo_summary(messages)
+                if collapsed_summary:
+                    lines.append(f"*{collapsed_summary}*")
+                lines.append("")
+                structured_repos.append({
+                    "full_name": full_name,
+                    "url": repo_urls.get(full_name, f"https://github.com/{full_name}"),
+                    "owner": owner,
+                    "commits": count,
+                    "messages": messages,
+                    "ai_summary": collapsed_summary,
                 })
                 print(f"  {full_name}: collapsed ({count} coordination commits)")
                 continue
@@ -668,6 +795,19 @@ def generate_summary() -> dict[str, Any]:
                 "messages": messages,
                 "ai_summary": ai_summary,
             })
+
+        # Repeated-everywhere work, last: it is real but low-signal, and the
+        # per-repo sections above are sorted most-active-first.
+        for subject, repo_names in rollup_groups:
+            lines.append(
+                f"**Across {len(repo_names)} repos** — {truncate(subject)}"
+            )
+            lines.append(f"*{', '.join(repo_names)}*")
+            lines.append("")
+            print(
+                f"  rollup: {len(repo_names)} repos share "
+                f"{truncate(subject, 60)!r}"
+            )
 
     lines.append("---")
     lines.append("")
