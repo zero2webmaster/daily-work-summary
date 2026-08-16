@@ -60,7 +60,7 @@ None currently.
 
 ## ✅ Next Actions
 
-1. **Confirm the first rolled-up email** — the run after ~00:30 EDT on 2026-08-16 is the first to use v1.13.0. Expect any portfolio-wide template bump to appear once as `Across N repos — <subject>` instead of N separate sections, and `z2w-agent-coordination` to carry a theme sentence under its count line.
+1. **Confirm the first rolled-up email — the one COVERING 2026-08-15.** v1.13.0 went live 19:19 EDT on 2026-08-15, ahead of that day's 23:00 EDT slot, so the Aug 15 summary is the first to use it. **State the covered day, never the delivery time:** GitHub throttles the overnight cron, so that email typically lands in the small hours of Aug 16 — it is still Aug 15's summary, and its subject, heading, filename and Airtable row all say Aug 15. (This is the v1.11.0 distinction; see the Decisions entry. Kerry corrected an agent for blurring it again on 2026-08-15.) Expect any portfolio-wide template bump to appear once as `Across N repos — <subject>` instead of N separate sections, and `z2w-agent-coordination` to carry a theme sentence under its count line.
 2. **Kerry's call — realign the misdated June archive.** `summaries/` files dated 2026-06-18 → 2026-06-30 are named one day later than their contents (July was repaired 2026-07-31). Fixing them means a `Backfill Summaries` run over that range — a real OpenRouter spend, so not run unilaterally. The command center reads this archive, so its per-day view stays off by one for those 13 dates.
 3. **Bundle the session-metrics Stop hook into the sellable kits** — approved by Kerry 2026-06-19, still not built. Needs a session in `z2w-starter-kit` / `portable-stack`, not this repo.
 4. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
