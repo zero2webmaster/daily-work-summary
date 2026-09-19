@@ -1,0 +1,32 @@
+{
+  "descriptorVersion": 1,
+  "slug": "daily-work-summary",
+  "description": "Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.",
+  "projectType": null,
+  "generatedBy": "scripts/check-descriptor.mjs --write",
+  "generatedOn": "2026-09-19",
+  "backfilled": true,
+  "stack": {
+    "runtime": "none",
+    "database": "unknown",
+    "hasWebUi": false,
+    "hasCron": true
+  },
+  "repo": {
+    "host": "github",
+    "org": "zero2webmaster",
+    "name": "daily-work-summary",
+    "url": "https://github.com/zero2webmaster/daily-work-summary"
+  },
+  "deploy": {
+    "target": null
+  },
+  "coordination": {
+    "participates": true,
+    "bulletinRepo": "zero2webmaster/z2w-agent-coordination",
+    "bulletinFile": "projects/daily-work-summary.md",
+    "agentIdentifier": "daily-work-summary"
+  },
+  "taskSource": "none",
+  "tasks": {}
+}
