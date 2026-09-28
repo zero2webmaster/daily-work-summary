@@ -32,3 +32,6 @@ Thumbs.db
 
 # Specstory
 .specstory/
+
+# Claude Code per-developer settings (the shared .claude/settings.json stays tracked)
+.claude/settings.local.json

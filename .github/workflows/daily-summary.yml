@@ -8,7 +8,21 @@ on:
     # run unless we're inside the configured local window.
     # See: https://github.com/zero2webmaster/daily-work-summary#customizing-the-email-schedule
     - cron: '5 * * * *'
+    # Extra chances near the 23:00 ET send slot (v1.13.1). GitHub drops most
+    # of the hourly runs above — measured 2026-09: ~5-6 runs/day, 3-5h apart —
+    # so the email went out whenever the first surviving run landed (23:14 to
+    # 05:28 over one month). These entries target 23:10/23:25/23:40 in both EDT
+    # (03:xx UTC) and EST (04:xx UTC); the guard skips whichever is outside the
+    # window, and the concurrency group + per-day idempotency prevent a double
+    # send. Only helps when EMAIL_SEND_HOUR is 23 ET; harmless otherwise.
+    - cron: '10,25,40 3,4 * * *'
   workflow_dispatch:
+
+# Serialize runs so two near-simultaneous scheduled runs can't both pass the
+# idempotency check before either has committed the day's archive file.
+concurrency:
+  group: daily-work-summary
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -37,7 +51,7 @@ jobs:
           PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           # Scheduling controls — admins set these in Settings → Actions → Variables.
-          # All four have sensible defaults, so unset = 22:30 America/New_York with a 60-minute window.
+          # All four have sensible defaults, so unset = 22:30 America/New_York with a 480-minute window.
           EMAIL_TIMEZONE: ${{ vars.EMAIL_TIMEZONE }}
           EMAIL_SEND_HOUR: ${{ vars.EMAIL_SEND_HOUR }}
           EMAIL_SEND_MINUTE: ${{ vars.EMAIL_SEND_MINUTE }}

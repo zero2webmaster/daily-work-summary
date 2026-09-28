@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.1] - 2026-09-28
+
+### Changed
+- **More chances for the email to go out near 23:00.** Kerry, 2026-09-17: *"Why is the time that emails get sent to admin so variable from day to day?"* Measured answer: the workflow is scheduled hourly, but GitHub only starts it about 5–6 times a day, 3–5 hours apart, so the email went out whenever the first surviving run landed after 23:00 — between 23:14 and 05:28 ET over the past month. The workflow now also schedules runs at 23:10, 23:25 and 23:40 ET (`'10,25,40 3,4 * * *'`, covering both EDT and EST). Whether GitHub honours these any better than the hourly line is an experiment: compare the archive commit times over the next two weeks against the 23:14–05:28 baseline. ([`daily-summary.yml`](.github/workflows/daily-summary.yml))
+- Added a workflow `concurrency` group so two close-together runs are serialized and cannot both send before the day's archive file is committed.
+
+### Fixed
+- `.gitignore` now ignores `.claude/settings.local.json` (per-developer Claude Code settings), closing `audit-engine`'s `standards.gitignore-entries` [HIGH] finding. The file was never tracked; this is protection that travels with the clone.
+- Stale workflow comment claimed the default send window was 60 minutes; it has been 480 since v1.5.2.
+
+### Tests
+- `execution/test_guard.py` gains 7 clock-frozen checks for the new schedule entries in both summer and winter time, including that the 03:xx UTC entries are *rejected* in winter (22:xx EST, before the slot) rather than sending an hour early.
+
 ## [1.13.0] - 2026-08-15
 
 ### Added

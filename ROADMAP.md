@@ -266,6 +266,26 @@ git ls-files 'execution/test_*.py' | wc -l   # 6
 
 ---
 
+## Phase: Send-Time Consistency 🔄
+**Status:** Shipped 2026-09-28 (v1.13.1) — effect being measured
+
+Kerry asked on 2026-09-17 why the send time varies so much. Measured: the "hourly" cron fires ~5–6×/day, 3–5h apart, so sends ranged 23:14–05:28 ET over the prior month.
+
+**Tasks:**
+- [x] Measure actual scheduled-run times and send times (434 runs since Aug 15)
+- [x] Add slot-targeted cron `'10,25,40 3,4 * * *'` (23:10/23:25/23:40 ET, EDT + EST)
+- [x] Add a `concurrency` group so close runs cannot double-send
+- [x] Clock-frozen guard tests for the new entries in both summer and winter time
+- [ ] **Measure (~2026-10-12):** compare two weeks of archive commit times against the 23:14–05:28 baseline. If no better, the next step is an external precise trigger (e.g. a Cloudflare Worker cron calling `workflow_dispatch`), which needs Kerry's go-ahead plus a guard change, because dispatch runs currently bypass the guard and the idempotency check
+
+**Verification:**
+```bash
+python3 execution/run_tests.py                               # 6/6; test_guard now 14 cases
+TZ=America/New_York git log --since=2026-09-29 --date=format-local:'%a %m-%d %H:%M' --format='%ad %s' -- summaries/
+```
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:
@@ -277,4 +297,4 @@ git ls-files 'execution/test_*.py' | wc -l   # 6
 
 ---
 
-*Last Updated: 2026-08-15 (v1.13.0)*
+*Last Updated: 2026-09-28 (v1.13.1)*

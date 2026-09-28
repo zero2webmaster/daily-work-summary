@@ -49,6 +49,28 @@ for label, t, expect in cases:
     if not ok:
         print(f"        reason: {reason}")
 
+# v1.13.1 slot-targeted cron entries '10,25,40 3,4 * * *' (UTC), checked against
+# Kerry's live config (23:00 ET, 480m). Each UTC time is converted to ET, so
+# these cover both EDT (UTC-4) and EST (UTC-5) — the 03:xx UTC entries land at
+# 22:xx in winter and must be rejected, not sent an hour early.
+slot_cases = [
+    ("03:10 UTC in EDT = 23:10 (send)",  "2026-09-28 03:10", True),
+    ("03:40 UTC in EDT = 23:40 (send)",  "2026-09-28 03:40", True),
+    ("04:25 UTC in EDT = 00:25 (send)",  "2026-09-28 04:25", True),
+    ("03:10 UTC in EST = 22:10 (early)", "2026-12-01 03:10", False),
+    ("03:40 UTC in EST = 22:40 (early)", "2026-12-01 03:40", False),
+    ("04:10 UTC in EST = 23:10 (send)",  "2026-12-01 04:10", True),
+    ("04:40 UTC in EST = 23:40 (send)",  "2026-12-01 04:40", True),
+]
+for label, utc, expect in slot_cases:
+    et = _dt.strptime(utc, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc).astimezone(ET)
+    allowed, reason = run_at(et.strftime("%Y-%m-%d %H:%M"), hour=23, minute=0, window=480)
+    ok = (allowed == expect)
+    fails += not ok
+    print(f"{'PASS' if ok else 'FAIL'}  {label:42s} -> allowed={allowed} (expected {expect})")
+    if not ok:
+        print(f"        reason: {reason}")
+
 # Old-bug regression check: with the OLD 60-min window, the 00:39 run must STILL
 # pass now (proving the anchoring fix is what saves it, independent of width).
 allowed, reason = run_at("2026-06-19 00:39", window=60)

@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-08-15 (v1.13.0)
+**Last Updated:** 2026-09-28 (v1.13.1)
 
 ---
 
@@ -60,9 +60,9 @@ None currently.
 
 ## ✅ Next Actions
 
-1. **Confirm the first rolled-up email — the one COVERING 2026-08-15.** v1.13.0 went live 19:19 EDT on 2026-08-15, ahead of that day's 23:00 EDT slot, so the Aug 15 summary is the first to use it. **State the covered day, never the delivery time:** GitHub throttles the overnight cron, so that email typically lands in the small hours of Aug 16 — it is still Aug 15's summary, and its subject, heading, filename and Airtable row all say Aug 15. (This is the v1.11.0 distinction; see the Decisions entry. Kerry corrected an agent for blurring it again on 2026-08-15.) Expect any portfolio-wide template bump to appear once as `Across N repos — <subject>` instead of N separate sections, and `z2w-agent-coordination` to carry a theme sentence under its count line.
-2. **Kerry's call — realign the misdated June archive.** `summaries/` files dated 2026-06-18 → 2026-06-30 are named one day later than their contents (July was repaired 2026-07-31). Fixing them means a `Backfill Summaries` run over that range — a real OpenRouter spend, so not run unilaterally. The command center reads this archive, so its per-day view stays off by one for those 13 dates.
-3. **Bundle the session-metrics Stop hook into the sellable kits** — approved by Kerry 2026-06-19, still not built. Needs a session in `z2w-starter-kit` / `portable-stack`, not this repo.
+1. **Measure the v1.13.1 send-time change around 2026-10-12.** Baseline before the change: sends landed between 23:14 and 05:28 ET (Aug 25 → Sep 28). Run `TZ=America/New_York git log --since=2026-09-29 --date=format-local:'%a %m-%d %H:%M' --format='%ad %s' -- summaries/` and compare. If there's no improvement, propose an external precise trigger to Kerry (see ROADMAP). Name the covered day, not the delivery time, when reporting (v1.11.0 rule).
+2. **Session-metrics hook: ON HOLD.** Kerry turned the global Stop hook off on 2026-09-23 and asked that it not be re-added without asking him. The approved "bundle into the sellable kits as opt-in" follow-up is paused until he says it's still wanted.
+3. **Kerry's call — realign the misdated June archive** (2026-06-18 → 06-30, 13 files). He chose July-only on 2026-07-31; re-open only if he asks.
 4. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
 5. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
 
@@ -75,6 +75,15 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-09-28 - Bulletin triage + send-time consistency (v1.13.1)
+
+- **Kerry's 2026-09-17 question, "why is the send time so variable?", answered with data.** The workflow is scheduled hourly, but GitHub fired it only ~5–6×/day, 3–5h apart. Sends ranged 23:14–05:28 ET over the prior month. Added slot-targeted runs at 23:10/23:25/23:40 ET (EDT + EST) plus a `concurrency` group. Whether GitHub honours these better is an experiment, to be measured ~Oct 12.
+- **audit-engine `standards.gitignore-entries` [HIGH] closed.** Added `.claude/settings.local.json` to `.gitignore` (never tracked; verified with `check-ignore --no-index` against a null global excludes file).
+- **Kerry's 2026-08-20 question answered:** `z2w-templates` is the private repo holding the canonical Templates folder, the source of the private `@zero2webmaster/templates` package. Its "sync … refresh from working copy" commits are routine mirroring of the local Templates folder.
+- **Checked, not a problem:** no Sep 7 archive file exists because Labor Day had zero commits (the run logged "No commits today"). The heartbeat's "not configured" log line is the step's script being echoed; last night's ping returned `{"ok":true}`.
+- **Closed:** the v1.13.0 watch item. The theme line was live from Aug 15 and the "Across N repos" rollup has appeared in real emails (Sep 19, 22, 24).
+- **Verified:** 6/6 suites; test_guard 14/14 (7 new); all 5 workflow YAMLs parse.
 
 ### Session: 2026-08-15 - Digest signal density + tests anyone can run (v1.13.0)
 
@@ -105,14 +114,6 @@ Worked Kerry's two unread 2026-08-14 bulletin dispatches and the HIGH audit find
 - **Answered Kerry's portability question** (2026-06-18 18:56): the hook is **machine-local only** (script + wiring both under `~/.claude/`), so portable-stack/starter-kit buyers don't get it. Bundling it into the sellable kits is logged as an Open follow-up pending Kerry's go-ahead.
 - **Answered the `z2w-ai-suite` "Z2W AI Engine" survey** in the coordination bulletin's `global.md`: daily-work-summary is the portfolio's strongest model-drift data point (hand-rolls a four-provider `AI_PROVIDERS` registry in `generate_summary.py`) and a pure-summarization product → it would consume the engine's model-registry + summarization slices over **HTTP service** (Python cron, no Node); hard boundary that the daily email must still send if the engine is down.
 - **Next:** all known bulletin feature asks closed; only open item is the optional "bundle the session-metrics hook into the kits" follow-up.
-
-### Session: 2026-06-18 - Portfolio-stats accuracy + faster workflow + session-metrics hook (v1.9.1)
-- **True numbers fix.** First run reported `z2w-ai-suite` at 1.32M LoC; **85% was committed `.specstory` chat transcripts** (1.46M lines) + vendored libs. `portfolio_stats.py` now excludes `.specstory`/vendor/build/minified via `cloc --exclude-dir`/`--not-match-f`, and splits honestly: `loc` = programming-language code; `doc_lines` = code comments + prose/doc files (Markdown). Unit test 23/23.
-  - **Separate finding to flag to Kerry:** `z2w-ai-suite` has `.specstory/` **committed** (528 files) — violates the 2026-06-15 portfolio heads-up to gitignore it (potential secret-leak surface). That's a z2w-ai-suite hygiene fix, tracked for that project's agent.
-- **Faster workflow.** `portfolio-stats.yml` installs only `PyGithub`+`python-dotenv` (not the heavy AI SDKs) + Node-24 env. Next run installs in seconds.
-- **Session-metrics Stop-hook prototype** `execution/session_metrics.py` — reports questions-answered (exact), actions-taken, declined/interrupted from the transcript; honest that plain approvals aren't logged. To be wired **globally** this session via `update-config`.
-- **Verified end-to-end:** v1.9.0 manual run succeeded → **confirmed `PAT_GITHUB` has write access** to the coordination repo (no token change needed). The v1.9.1 re-run regenerated `stats/portfolio-2026-06.json` with true numbers: **41 repos (40 active, 1 archived) → 695,618 lines of code + 431,186 lines of documentation** (z2w-ai-suite now 115K LoC vs the bogus 1.32M). No measurement errors.
-- **Session-metrics hook is LIVE globally:** `~/.claude/hooks/session_metrics.py` wired into `~/.claude/settings.json` Stop hook — fires for every session in every project (takes effect next session / after `/hooks` reload). Filed a `[→ z2w-starter-kit]` discussion ask with the LoC/doc numbers (Kerry's curiosity discussion: traditional-dev effort + famous-software comparisons).
 
 *(Earlier sessions — the v1.9.0 portfolio-stats job and v1.8.0 Skill Vault tally (2026-06-18), the v1.5.2→1.7.0 outage-fix + dead-man's-switch + backfill (2026-06-18), and the v1.0.0 / v1.3.0 / v1.4.0 builds (2026-03-11) — trimmed per the STATUS 3-4-session rule; full history in [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).)*
 

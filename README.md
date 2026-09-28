@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.13.0
+**Version:** 1.13.1
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -301,7 +301,7 @@ Done. The 23:00–23:59 hourly run will send the email; every other hour's run w
 
 #### When the cron line itself might still need a change
 
-The only reason to edit `.github/workflows/daily-summary.yml` directly is if you want to change how often the workflow CHECKS the time. The default `'5 * * * *'` (hourly at :05) is right for almost every use case. If you wanted minute-level precision, you could switch to `'*/15 * * * *'` (every 15 minutes) and tighten the window — but that burns more GitHub Actions minutes for no real benefit.
+The only reason to edit `.github/workflows/daily-summary.yml` directly is if you want to change how often the workflow CHECKS the time. The default `'5 * * * *'` (hourly at :05) is the baseline check. **In practice GitHub fires far fewer of those than scheduled** — measured on this repo in September 2026, about 5–6 runs a day, 3–5 hours apart — so the email goes out on the first run that survives after your target, which can be several hours late. The workflow therefore carries a second line, `'10,25,40 3,4 * * *'`, aimed at 23:10/23:25/23:40 Eastern in both summer and winter time. If you move your send time, move that line to match (UTC hours for your target); leaving it is harmless, since the guard skips any run outside your window and a `concurrency` group prevents double-sends. If you wanted minute-level precision, you could switch to `'*/15 * * * *'` (every 15 minutes) and tighten the window — but that burns more GitHub Actions minutes for no real benefit.
 
 ---
 
@@ -545,4 +545,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.13.0 | Last Updated: 2026-08-15*
+*Version: 1.13.1 | Last Updated: 2026-09-28*
