@@ -4,7 +4,7 @@
 > file joined the Z2W project standard. It is an **unfilled stub** — nothing in it was
 > measured from this repo. Fill it in, or mark it N/A and say why.
 
-**Version:** 1.13.1 | **Last updated:** 2026-09-28
+**Version:** 1.14.0 | **Last updated:** 2026-09-30
 
 This document describes the 3-layer architecture for daily-work-summary per the Z2W canonical AGENTS contract. Fill in concrete details as the project takes shape.
 

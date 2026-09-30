@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.14.0] - 2026-09-30
+
+### Changed
+- **Portfolio stats: "lines of code" now means code.** Kerry asked why `contact-registry` had the most code of any repo (163,469 lines at https://agents.z2w.us/portfolio#code-size). 116,261 of those lines were one Airtable inventory dump. `z2w-agent-command-center` measured that about 30% of the portfolio's non-prose lines were JSON, lockfiles and CSV/SVG/XML. From the 2026-10 snapshot on:
+  - JSON, JSON5, YAML, CSV, XML, SVG, XSD and XSLT lines go to a new **`data_lines`** field instead of `loc`. They are still reported, just not called code.
+  - Lockfiles (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `composer.lock`, `bun.lock`) and Drizzle migration snapshots (`NNNN_snapshot.json`) are no longer counted at all.
+  - Portfolio totals will drop by roughly a third between the 2026-09 and 2026-10 snapshots. That is the counting change, not deleted work.
+
+### Added
+- `data_lines` per repo, `total_data_lines` in the aggregate, and a top-level `loc_method: "code-only"` marker so a reader can tell which months use the new counting (2026-06 → 2026-09 files have no marker).
+- The schema string stays `portfolio-stats/v1`: the command center rejects any other version, and the change only adds fields.
+
+### Tests
+- `execution/test_portfolio_stats.py` grows from 21 to 48 checks: data-language split, the lockfile/snapshot filename filter (including files that must NOT be skipped, like `package.json`), and the new aggregate. The filter was also checked against a real `cloc` run.
+
 ## [1.13.1] - 2026-09-28
 
 ### Changed

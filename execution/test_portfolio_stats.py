@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Offline unit tests for portfolio_stats.py — no GitHub, no cloning, no cloc.
 
-Covers the two pure functions: parse_cloc_sum (cloc JSON → loc/doc) and
+Covers the pure pieces: classify_cloc (cloc JSON → loc/doc/data), the
+NOT_MATCH_F filename filter, and
 build_portfolio_stats (per-repo entries → aggregate + sorted artifact).
 
 Run:
     source venv/bin/activate
-    python .tmp/test_portfolio_stats.py
+    python execution/test_portfolio_stats.py
 """
 
+import re
 import sys
 from pathlib import Path
 
@@ -17,6 +19,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / ".github" / "script
 from portfolio_stats import (  # noqa: E402
     build_portfolio_stats,
     classify_cloc,
+    LOC_METHOD,
+    NOT_MATCH_F,
     SCHEMA_VERSION,
 )
 
@@ -54,48 +58,81 @@ cloc_multi = {
     "JavaScript": {"code": 800, "comment": 80},
     "SUM": {"code": 1800, "comment": 200},
 }
-check("classify_cloc sums multiple code languages", classify_cloc(cloc_multi) == (1800, 200))
+check("classify_cloc sums multiple code languages", classify_cloc(cloc_multi) == (1800, 200, 0))
 
 # 3. Missing / non-dict input
-check("classify_cloc handles non-dict", classify_cloc(None) == (0, 0))
-check("classify_cloc handles list", classify_cloc([1, 2, 3]) == (0, 0))
-check("classify_cloc handles empty", classify_cloc({"header": {}}) == (0, 0))
+check("classify_cloc handles non-dict", classify_cloc(None) == (0, 0, 0))
+check("classify_cloc handles list", classify_cloc([1, 2, 3]) == (0, 0, 0))
+check("classify_cloc handles empty", classify_cloc({"header": {}}) == (0, 0, 0))
 
 # 4. Non-numeric values coerced to 0
 check(
     "classify_cloc coerces bad values to 0",
-    classify_cloc({"PHP": {"code": "x", "comment": None}}) == (0, 0),
+    classify_cloc({"PHP": {"code": "x", "comment": None}}) == (0, 0, 0),
 )
+
+# 5. Data languages go to data_lines, never loc. Modeled on contact-registry,
+#    where one 116k-line JSON dump made it the "biggest codebase".
+cloc_data = {
+    "TypeScript": {"code": 40000, "comment": 2000},
+    "JSON": {"code": 116261, "comment": 0},
+    "YAML": {"code": 300, "comment": 40},
+    "CSV": {"code": 500, "comment": 0},
+    "SVG": {"code": 900, "comment": 0},
+    "Markdown": {"code": 1000, "comment": 0},
+}
+loc_d, doc_d, data_d = classify_cloc(cloc_data)
+check("data languages excluded from loc", loc_d == 40000)
+check("data languages counted in data_lines", data_d == 116261 + 300 + 500 + 900)
+check("data-language comments still count as docs", doc_d == 2000 + 40 + 1000)
+
+# --- NOT_MATCH_F (cloc matches it against each file's basename) -----------
+
+not_match = re.compile(NOT_MATCH_F)
+for skipped in [
+    "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "composer.lock",
+    "bun.lock", "0000_snapshot.json", "0042_snapshot.json",
+    "app.min.js", "style-min.css", "vendor.bundle.js",
+]:
+    check(f"NOT_MATCH_F skips {skipped}", not_match.search(skipped) is not None)
+for kept in [
+    "package.json", "tsconfig.json", "schema.ts", "snapshot.json",
+    "my_snapshot.json", "lock.ts", "yarn.lock.md", "admin.js",
+]:
+    check(f"NOT_MATCH_F keeps {kept}", not_match.search(kept) is None)
 
 # --- build_portfolio_stats ------------------------------------------------
 
 entries = [
     {"name": "small", "owner": "zero2webmaster", "loc": 100, "doc_lines": 10,
-     "last_commit_date": "2026-06-01", "status": "active"},
+     "data_lines": 7, "last_commit_date": "2026-06-01", "status": "active"},
     {"name": "big", "owner": "zero2webmaster", "loc": 5000, "doc_lines": 800,
-     "last_commit_date": "2026-06-17", "status": "active"},
+     "data_lines": 20000, "last_commit_date": "2026-06-17", "status": "active"},
     {"name": "old", "owner": "kerrykriger", "loc": 2000, "doc_lines": 300,
      "last_commit_date": "2025-01-01", "status": "archived"},
 ]
 art = build_portfolio_stats(entries, "2026-06", "2026-06-18T12:00:00Z")
 
-# 5. Schema + metadata
+# 6. Schema + metadata
 check("schema is portfolio-stats/v1", art["schema"] == SCHEMA_VERSION)
+check("loc_method marks the counting method", art["loc_method"] == LOC_METHOD == "code-only")
 check("period preserved", art["period"] == "2026-06")
 check("generated_at preserved", art["generated_at"] == "2026-06-18T12:00:00Z")
 
-# 6. Aggregate math
+# 7. Aggregate math
 agg = art["aggregate"]
 check("repo_count", agg["repo_count"] == 3)
 check("active_repo_count", agg["active_repo_count"] == 2)
 check("archived_repo_count", agg["archived_repo_count"] == 1)
 check("total_loc sums all repos", agg["total_loc"] == 7100)
 check("total_doc_lines sums all repos", agg["total_doc_lines"] == 1110)
+check("total_data_lines sums all repos (missing = 0)", agg["total_data_lines"] == 20007)
+check("data_lines do not affect loc sort", [r["name"] for r in art["repos"]][0] == "big" and agg["total_loc"] == 7100)
 
-# 7. Repos sorted by LoC descending
+# 8. Repos sorted by LoC descending
 check("repos sorted by loc desc", [r["name"] for r in art["repos"]] == ["big", "old", "small"])
 
-# 8. None loc/doc (a repo that failed to measure) doesn't crash aggregation
+# 9. None loc/doc (a repo that failed to measure) doesn't crash aggregation
 entries_with_null = [
     {"name": "failed", "owner": "x", "loc": None, "doc_lines": None,
      "last_commit_date": None, "status": "active", "error": "clone failed"},
@@ -108,10 +145,11 @@ check("null doc treated as 0 in total", art2["aggregate"]["total_doc_lines"] == 
 check("failed repo still counted", art2["aggregate"]["repo_count"] == 2)
 check("failed repo preserved with error note", art2["repos"][-1].get("error") == "clone failed")
 
-# 9. Empty portfolio
+# 10. Empty portfolio
 art3 = build_portfolio_stats([], "2026-06", "2026-06-18T12:00:00Z")
 check("empty portfolio repo_count 0", art3["aggregate"]["repo_count"] == 0)
 check("empty portfolio total_loc 0", art3["aggregate"]["total_loc"] == 0)
+check("empty portfolio total_data_lines 0", art3["aggregate"]["total_data_lines"] == 0)
 check("empty portfolio repos list empty", art3["repos"] == [])
 
 print(f"\n{passed} passed, {failed} failed")

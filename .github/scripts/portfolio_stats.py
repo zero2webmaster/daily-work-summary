@@ -24,11 +24,12 @@ DESIGN
 - Per-repo work is exception-wrapped: one repo that fails to clone or measure is
   recorded with null metrics and an `error` note rather than killing the run.
 - `build_portfolio_stats()` and `parse_cloc_sum()` are PURE/offline so they can
-  be unit-tested without GitHub or cloning (see .tmp/test_portfolio_stats.py).
+  be unit-tested without GitHub or cloning (see execution/test_portfolio_stats.py).
 
 LoC / doc-line counts come from `cloc --json` run over a shallow clone of each
 repo. cloc reports per-language plus a `SUM` block with `code` (→ loc) and
-`comment` (→ doc_lines) line counts. scc/tokei are drop-in alternatives if cloc
+`comment` (→ doc_lines) line counts; data languages (JSON, YAML, ...) go to
+data_lines instead of loc. scc/tokei are drop-in alternatives if cloc
 is ever unavailable — both also report code + comment separately.
 
 Run locally:
@@ -63,15 +64,35 @@ EXCLUDE_DIRS = [
     ".specstory", "node_modules", "vendor", "third_party", "third-party",
     "dist", "build", ".next", "out", "coverage", "__pycache__", ".venv", "venv",
 ]
-# File patterns cloc must skip — minified/bundled assets are machine-generated,
-# not authored code.
-NOT_MATCH_F = r"(\.min\.(js|css)|-min\.(js|css)|\.bundle\.js)$"
+# File patterns cloc must skip (matched against the file's BASENAME). All are
+# machine-generated, not authored: minified/bundled assets, package-manager
+# lockfiles, and Drizzle migration snapshots (`drizzle/meta/0007_snapshot.json`)
+# — each snapshot is a full copy of the schema, so they grow with every migration.
+NOT_MATCH_F = (
+    r"(\.min\.(js|css)|-min\.(js|css)|\.bundle\.js)$"
+    r"|^(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|composer\.lock|bun\.lock"
+    r"|\d+_snapshot\.json)$"
+)
 
 # cloc language names that are prose/documentation, not programming-language
 # source. Their lines count toward doc_lines, never toward loc.
 DOC_LANGUAGES = {
     "Markdown", "Text", "reStructuredText", "AsciiDoc", "Org", "Pod", "TeX",
 }
+
+# cloc language names that are DATA or markup, not program code. Their lines go
+# to data_lines, never to loc. Before 2026-10 these counted as loc, and one
+# 116k-line Airtable inventory dump made contact-registry the "biggest" repo;
+# about 30% of the portfolio's non-prose lines were data (measured 2026-09-30
+# by z2w-agent-command-center). They are reported, not dropped, so nothing is hidden.
+DATA_LANGUAGES = {
+    "JSON", "JSON5", "YAML", "CSV", "XML", "SVG", "XSD", "XSLT",
+}
+
+# Written into every artifact so a reader can tell which counting method a
+# month used. Files for 2026-06 → 2026-09 have no `loc_method`: their loc
+# still includes data languages and lockfiles.
+LOC_METHOD = "code-only"
 
 
 # ----------------------------------------------------------------------
@@ -85,22 +106,24 @@ def _int(v) -> int:
         return 0
 
 
-def classify_cloc(cloc_json: dict) -> tuple[int, int]:
-    """From a `cloc --json` payload, return (loc, doc_lines).
+def classify_cloc(cloc_json: dict) -> tuple[int, int, int]:
+    """From a `cloc --json` payload, return (loc, doc_lines, data_lines).
 
     Uses the PER-LANGUAGE breakdown (not just SUM) so we can split honestly:
-      loc       = code lines in programming languages (prose languages excluded)
-      doc_lines = all comment lines  +  the lines of prose/doc files
-                  (Markdown, Text, etc.)
+      loc        = code lines in programming languages (prose + data excluded)
+      doc_lines  = all comment lines  +  the lines of prose/doc files
+                   (Markdown, Text, etc.)
+      data_lines = code lines in data/markup languages (JSON, YAML, CSV, ...)
 
-    So a README or docs/ markdown counts as documentation, not as code; and a
-    language's inline comments count as documentation too. Returns (0, 0) for
-    malformed input so a weird cloc payload can never raise.
+    So a README counts as documentation, a JSON fixture counts as data, and
+    neither inflates the code count. Returns (0, 0, 0) for malformed input so
+    a weird cloc payload can never raise.
     """
     if not isinstance(cloc_json, dict):
-        return 0, 0
+        return 0, 0, 0
     loc = 0
     doc = 0
+    data = 0
     for lang, vals in cloc_json.items():
         if lang in ("header", "SUM") or not isinstance(vals, dict):
             continue
@@ -108,10 +131,13 @@ def classify_cloc(cloc_json: dict) -> tuple[int, int]:
         comment = _int(vals.get("comment"))
         if lang in DOC_LANGUAGES:
             doc += code + comment
+        elif lang in DATA_LANGUAGES:
+            data += code
+            doc += comment
         else:
             loc += code
             doc += comment
-    return loc, doc
+    return loc, doc, data
 
 
 def build_portfolio_stats(
@@ -135,18 +161,21 @@ def build_portfolio_stats(
     archived = [r for r in repos if r.get("status") == "archived"]
     total_loc = sum((r.get("loc") or 0) for r in repos)
     total_doc = sum((r.get("doc_lines") or 0) for r in repos)
+    total_data = sum((r.get("data_lines") or 0) for r in repos)
 
     return {
         "schema": schema,
         "generated_for": GENERATED_FOR,
         "period": period,
         "generated_at": generated_at,
+        "loc_method": LOC_METHOD,
         "aggregate": {
             "repo_count": len(repos),
             "active_repo_count": len(active),
             "archived_repo_count": len(archived),
             "total_loc": total_loc,
             "total_doc_lines": total_doc,
+            "total_data_lines": total_data,
         },
         "repos": repos,
     }
@@ -186,11 +215,11 @@ def get_token() -> str:
     return token
 
 
-def measure_repo_loc(clone_dir: str) -> tuple[int, int]:
-    """Run cloc over a checked-out repo and return (loc, doc_lines).
+def measure_repo_loc(clone_dir: str) -> tuple[int, int, int]:
+    """Run cloc over a checked-out repo and return (loc, doc_lines, data_lines).
 
     Never raises: if cloc is missing, errors, or emits unparseable output,
-    returns (0, 0) so the repo is still recorded (with zero metrics) rather
+    returns zeros so the repo is still recorded (with zero metrics) rather
     than aborting the whole run.
     """
     try:
@@ -207,26 +236,26 @@ def measure_repo_loc(clone_dir: str) -> tuple[int, int]:
         )
     except FileNotFoundError:
         print("    cloc not found on PATH — recording 0 LoC")
-        return 0, 0
+        return 0, 0, 0
     except subprocess.TimeoutExpired:
         print("    cloc timed out — recording 0 LoC")
-        return 0, 0
+        return 0, 0, 0
 
     # cloc exits non-zero / prints nothing for an empty repo (no source files).
     out = (proc.stdout or "").strip()
     if not out:
-        return 0, 0
+        return 0, 0, 0
     try:
         return classify_cloc(json.loads(out))
     except json.JSONDecodeError:
         print("    cloc output was not valid JSON — recording 0 LoC")
-        return 0, 0
+        return 0, 0, 0
 
 
 def collect_repo_entry(repo, token: str, workroot: str) -> dict:
     """Shallow-clone one repo, measure it, and return its stats dict.
 
-    Fully wrapped: any failure yields an entry with null loc/doc_lines and an
+    Fully wrapped: any failure yields an entry with null line counts and an
     `error` note, so the aggregate still reflects every repo's existence.
     """
     full_name = repo.full_name
@@ -246,6 +275,7 @@ def collect_repo_entry(repo, token: str, workroot: str) -> dict:
         "owner": owner,
         "loc": None,
         "doc_lines": None,
+        "data_lines": None,
         "last_commit_date": last_commit,
         "status": status,
     }
@@ -265,10 +295,11 @@ def collect_repo_entry(repo, token: str, workroot: str) -> dict:
             print(f"  {full_name}: clone failed (rc={result.returncode})")
             return entry
 
-        loc, doc_lines = measure_repo_loc(clone_dir)
+        loc, doc_lines, data_lines = measure_repo_loc(clone_dir)
         entry["loc"] = loc
         entry["doc_lines"] = doc_lines
-        print(f"  {full_name}: {loc} loc, {doc_lines} doc ({status})")
+        entry["data_lines"] = data_lines
+        print(f"  {full_name}: {loc} loc, {doc_lines} doc, {data_lines} data ({status})")
     except subprocess.TimeoutExpired:
         entry["error"] = "clone timed out"
         print(f"  {full_name}: clone timed out")
@@ -324,7 +355,8 @@ def main() -> None:
     print(
         f"\nWrote {out} — {agg['repo_count']} repos "
         f"({agg['active_repo_count']} active, {agg['archived_repo_count']} archived), "
-        f"{agg['total_loc']:,} loc, {agg['total_doc_lines']:,} doc lines"
+        f"{agg['total_loc']:,} loc, {agg['total_doc_lines']:,} doc lines, "
+        f"{agg['total_data_lines']:,} data lines"
     )
 
     github_output = os.environ.get("GITHUB_OUTPUT")

@@ -286,6 +286,26 @@ TZ=America/New_York git log --since=2026-09-29 --date=format-local:'%a %m-%d %H:
 
 ---
 
+## Phase: Portfolio Stats Count Code as Code ✅
+**Status:** Complete (2026-09-30, v1.14.0)
+
+Answers `z2w-agent-command-center`'s 2026-09-30 question: about 30% of the portfolio "lines of code" were data files and lockfiles (one JSON dump was 116k of contact-registry's 163k lines).
+
+**Tasks:**
+- [x] Exclude lockfiles and Drizzle `NNNN_snapshot.json` files via `NOT_MATCH_F`
+- [x] Move JSON/YAML/CSV/XML/SVG lines from `loc` to a new `data_lines` field
+- [x] Keep schema `portfolio-stats/v1` (the command center rejects other versions); add `loc_method: "code-only"` so months are distinguishable
+- [x] Document the 2026-10 effective month in the directive and the coordination repo's `stats/README.md`
+
+**Verification:**
+```bash
+python3 execution/run_tests.py            # 6/6; test_portfolio_stats 48/48
+```
+Real `cloc` run on a scratch fixture: lockfile and snapshot skipped, JSON counted as data, TypeScript as code.
+**Watch (2026-10-01):** the first monthly run should show `loc_method` and a total roughly a third lower than 2026-09.
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:
@@ -297,4 +317,4 @@ TZ=America/New_York git log --since=2026-09-29 --date=format-local:'%a %m-%d %H:
 
 ---
 
-*Last Updated: 2026-09-28 (v1.13.1)*
+*Last Updated: 2026-09-30 (v1.14.0)*

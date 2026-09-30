@@ -1,62 +1,44 @@
 # Handoff — Daily Work Summary
 
-**Last session:** 2026-06-19 | **Version:** 1.10.0
+**Last session:** 2026-09-30 | **Version:** 1.14.0
 
 ## What this project is
 
 A GitHub Actions cron that emails Kerry a daily digest of his commits across all
-Z2W repos (10 PM ET). 3-layer architecture: directives (SOPs) → orchestration →
-deterministic Python in `.github/scripts/`. Delivery: email (Gmail SMTP) +
-optional Airtable/Slack/Discord. A dead-man's-switch heartbeat (Uptime Kuma Push)
-guards against silent outages.
+Z2W repos (target 23:00 ET). 3-layer architecture: directives (SOPs) →
+orchestration → deterministic Python in `.github/scripts/`. Delivery: email
+(Gmail SMTP) plus optional Airtable/Slack/Discord. An Uptime Kuma Push heartbeat
+guards against silent outages. A separate monthly **Portfolio Stats** workflow
+writes `stats/portfolio-YYYY-MM.json` into the `z2w-agent-coordination` repo for
+https://agents.z2w.us/portfolio.
 
-## Shipped this session (v1.10.0)
+## Shipped this session (v1.14.0)
 
-- **v1.10.0 — session-metrics report now headlines messages-sent.** Answered
-  Kerry's 2026-06-18 inbox ask ("do we track total chats sent in to the agent by
-  the admin?"). The count already existed internally (`user_turns`) but was buried
-  as "over N of your turns"; it's now the lead: *"you sent N message(s) to the
-  agent and answered X question(s)…"*. Exact — real typed admin messages only,
-  excluding tool-results and harness `isMeta`/`isSidechain` lines. Source
-  `execution/session_metrics.py` + the deployed global hook re-synced (identical).
-- **Answered Kerry's portability question** (18:56): the hook is **machine-local
-  only** (`~/.claude/` script + wiring), so portable-stack/starter-kit buyers
-  don't get it. Bundling it into the kits is logged as an Open follow-up pending
-  his go-ahead.
-- **Answered the `z2w-ai-suite` "Z2W AI Engine" survey** in the bulletin's
-  `global.md` (daily-work-summary = strongest model-drift data point: a
-  four-provider `AI_PROVIDERS` registry hand-rolled in `generate_summary.py`;
-  HTTP-service form; email must still send if the engine is down).
+- **Portfolio stats now count code as code.** Answered `z2w-agent-command-center`'s
+  2026-09-30 question: about 30% of "lines of code" were JSON dumps, lockfiles and
+  Drizzle snapshots (one Airtable dump was 116k of contact-registry's 163k lines).
+  Lockfiles + `NNNN_snapshot.json` are skipped; JSON/YAML/CSV/XML/SVG go to a new
+  `data_lines` field. Takes effect with the 2026-10-01 run.
+- **Schema deliberately still `portfolio-stats/v1`.** The command center's parser
+  (`src/lib/portfolio-stats.ts`) rejects any other version. The change is
+  additive: `loc_method: "code-only"`, `data_lines`, `total_data_lines`.
+- Tests: 6/6 suites, `test_portfolio_stats` 48 checks; filter verified against a
+  real `cloc` run.
 
-## Verified
+## Outstanding
 
-- New regression test `.tmp/test_session_metrics.py` **6/6** (asserts the
-  messages-sent count ignores tool-results + meta noise).
-- Live run of `session_metrics.py` against a real transcript in **both** hook
-  (JSON stdin) and CLI (path arg) modes — report renders correctly.
-- `diff execution/session_metrics.py ~/.claude/hooks/session_metrics.py` →
-  identical.
+1. **2026-10-01:** confirm `stats/portfolio-2026-10.json` has `loc_method` and a
+   total roughly a third below 2026-09.
+   https://github.com/zero2webmaster/daily-work-summary/actions/workflows/portfolio-stats.yml
+2. **~2026-10-12:** measure the v1.13.1 send-time change (see STATUS Next Actions #1).
+3. Session-metrics hook is OFF at Kerry's request (2026-09-23). Do not re-add it.
 
-## Open / next actions
+## Read first
 
-- **Optional — bundle the session-metrics hook into the sellable kits**
-  (portable-stack / starter-kit) so licensees get it on clone. Answered Kerry's
-  portability question; **pending his go-ahead.** (See bulletin Open follow-ups.)
-- **Optional polish (ROADMAP):** rolling log for cross-session trend tracking.
-- **Reference — last portfolio totals (v1.9.1 re-run, 2026-06-18):** 41 repos →
-  **695,618 LoC + 431,186 doc lines** (`stats/portfolio-2026-06.json`).
-- **For the z2w-ai-suite agent (not this project):** `.specstory/` is committed
-  there (528 files) — should be gitignored + `git rm --cached`'d per the
-  2026-06-15 portfolio heads-up.
-- No blockers. All known bulletin feature asks are closed.
+`STATUS.md` → `ROADMAP.md` → `directives/generate_daily_summary.md` /
+`directives/generate_portfolio_stats.md`.
 
-## Files to read first
+## Starting prompt
 
-`STATUS.md` · `ROADMAP.md` · this file · `directives/generate_portfolio_stats.md`
-· `directives/generate_daily_summary.md`
-
-## Starting prompt for next session
-
-> Picking up daily-work-summary. Read HANDOFF.md, STATUS.md, ROADMAP.md, and run
-> the bulletin session-start protocol. Confirm the latest Portfolio Stats run is
-> green and the session-metrics hook is wired as intended, then ask what's next.
+> Review the bulletin and proceed with roadmap priorities. Read HANDOFF.md,
+> STATUS.md and ROADMAP.md first.

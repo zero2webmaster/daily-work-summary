@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-09-28 (v1.13.1)
+**Last Updated:** 2026-09-30 (v1.14.0)
 
 ---
 
@@ -52,6 +52,10 @@ None currently.
 **Date:** 2026-08-15 (v1.13.0)
 **Rationale:** Fuzzy matching would catch near-identical commits, but the cost of a false merge is asymmetric — the digest would assert that N repos did the same thing when they did not, and Kerry has no way to detect that from the email. Exact matching on the whitespace/case-normalized **subject line** (bodies carry per-repo trailers) can only ever fail by under-grouping, which is visible and harmless.
 
+### Decision: Data files are not code in portfolio stats, and the schema stays v1
+**Date:** 2026-09-30 (v1.14.0)
+**Rationale:** About 30% of the portfolio's "lines of code" were JSON dumps, lockfiles and Drizzle snapshots, so the biggest-repo ranking was measuring data, not work. Lockfiles and snapshots are generated and now skipped entirely; other data formats move to a separate `data_lines` field so nothing is hidden. The schema string was deliberately **not** bumped: the command center's parser returns nothing for any schema but `portfolio-stats/v1`, so a bump would have blanked `/portfolio` on the next monthly run. The change is additive, and `loc_method: "code-only"` marks which months use it. Corollary: **only bump the schema after the reader accepts the new version.**
+
 ### Decision: Comma-separated DELIVERY_METHOD for Slack/Discord
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
@@ -61,10 +65,11 @@ None currently.
 ## ✅ Next Actions
 
 1. **Measure the v1.13.1 send-time change around 2026-10-12.** Baseline before the change: sends landed between 23:14 and 05:28 ET (Aug 25 → Sep 28). Run `TZ=America/New_York git log --since=2026-09-29 --date=format-local:'%a %m-%d %H:%M' --format='%ad %s' -- summaries/` and compare. If there's no improvement, propose an external precise trigger to Kerry (see ROADMAP). Name the covered day, not the delivery time, when reporting (v1.11.0 rule).
-2. **Session-metrics hook: ON HOLD.** Kerry turned the global Stop hook off on 2026-09-23 and asked that it not be re-added without asking him. The approved "bundle into the sellable kits as opt-in" follow-up is paused until he says it's still wanted.
-3. **Kerry's call — realign the misdated June archive** (2026-06-18 → 06-30, 13 files). He chose July-only on 2026-07-31; re-open only if he asks.
-4. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
-5. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
+2. **Check the 2026-10-01 Portfolio Stats run** (first with v1.14.0 counting). `stats/portfolio-2026-10.json` in the coordination repo should carry `loc_method: "code-only"` and `data_lines`, with `total_loc` roughly a third lower than 2026-09. Run log: https://github.com/zero2webmaster/daily-work-summary/actions/workflows/portfolio-stats.yml
+3. **Session-metrics hook: ON HOLD.** Kerry turned the global Stop hook off on 2026-09-23 and asked that it not be re-added without asking him. The approved "bundle into the sellable kits as opt-in" follow-up is paused until he says it's still wanted.
+4. **Kerry's call — realign the misdated June archive** (2026-06-18 → 06-30, 13 files). He chose July-only on 2026-07-31; re-open only if he asks.
+5. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
+6. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
 
 ---
 
@@ -75,6 +80,14 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-09-30 - Portfolio stats count code as code (v1.14.0)
+
+- **Answered `z2w-agent-command-center`'s 2026-09-30 question** (Kerry had asked why `contact-registry` showed the most code). 116k of its 163k "lines" were one Airtable JSON dump; about 30% of the portfolio total was data and lockfiles.
+- **Changed the counting:** lockfiles and Drizzle `NNNN_snapshot.json` are skipped; JSON/YAML/CSV/XML/SVG move from `loc` to a new `data_lines` field. Takes effect with the 2026-10-01 run.
+- **Kept schema `portfolio-stats/v1`** after reading the command center's parser, which rejects any other version. Added `loc_method: "code-only"` and `total_data_lines` instead.
+- **Verified:** 6/6 suites, `test_portfolio_stats` 21 → 48 checks; one real `cloc` run on a scratch fixture confirmed the filter and the split.
+- **Bulletin:** shared clone had another session's uncommitted edits, so this session read and wrote through a separate worktree instead of pulling over them.
 
 ### Session: 2026-09-28 - Bulletin triage + send-time consistency (v1.13.1)
 
@@ -107,14 +120,6 @@ Worked Kerry's two unread 2026-08-14 bulletin dispatches and the HIGH audit find
 - **Verified:** 25/25 clock-frozen checks (`execution/test_summary_date.py`); both workflow YAMLs parse; live end-to-end run reproduced the failure and confirmed the fix — the file labeled "Fri Jul 31" (157 commits/40 repos) regenerates as `daily-summary-2026-07-30.md` (160/40).
 - **Open:** archive realignment for 2026-06-18 → 2026-07-31 awaits Kerry's go-ahead (paid AI calls).
 
-### Session: 2026-06-19 - Answer Kerry's inbox Qs + AI Engine survey; messages-sent metric (v1.10.0)
-- **Session-metrics report now headlines messages-sent.** Answers Kerry's 2026-06-18 inbox ask: "do we track total chats sent in to the agent by the admin?" The count already existed internally (`user_turns`) but was buried as "over N of your turns"; it's now the lead: *"you sent N message(s) to the agent and answered X question(s)…"*. Exact count — real typed admin messages only, excluding tool-results (also "user" transcript lines) and harness `isMeta`/`isSidechain` lines. Module docstring updated to document it.
-- **Both copies synced.** Updated source `execution/session_metrics.py` and re-copied to the deployed global hook `~/.claude/hooks/session_metrics.py`; verified byte-identical via `diff`.
-- **Verified:** new regression test `.tmp/test_session_metrics.py` 6/6 (asserts the count ignores tool-results + meta noise) + a live run against a real session transcript in both hook (JSON stdin) and CLI (path arg) modes.
-- **Answered Kerry's portability question** (2026-06-18 18:56): the hook is **machine-local only** (script + wiring both under `~/.claude/`), so portable-stack/starter-kit buyers don't get it. Bundling it into the sellable kits is logged as an Open follow-up pending Kerry's go-ahead.
-- **Answered the `z2w-ai-suite` "Z2W AI Engine" survey** in the coordination bulletin's `global.md`: daily-work-summary is the portfolio's strongest model-drift data point (hand-rolls a four-provider `AI_PROVIDERS` registry in `generate_summary.py`) and a pure-summarization product → it would consume the engine's model-registry + summarization slices over **HTTP service** (Python cron, no Node); hard boundary that the daily email must still send if the engine is down.
-- **Next:** all known bulletin feature asks closed; only open item is the optional "bundle the session-metrics hook into the kits" follow-up.
-
-*(Earlier sessions — the v1.9.0 portfolio-stats job and v1.8.0 Skill Vault tally (2026-06-18), the v1.5.2→1.7.0 outage-fix + dead-man's-switch + backfill (2026-06-18), and the v1.0.0 / v1.3.0 / v1.4.0 builds (2026-03-11) — trimmed per the STATUS 3-4-session rule; full history in [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).)*
+*(Earlier sessions — the v1.10.0 messages-sent metric (2026-06-19), the v1.9.0 portfolio-stats job and v1.8.0 Skill Vault tally (2026-06-18), the v1.5.2→1.7.0 outage-fix + dead-man's-switch + backfill (2026-06-18), and the v1.0.0 / v1.3.0 / v1.4.0 builds (2026-03-11) — trimmed per the STATUS 3-4-session rule; full history in [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).)*
 
 ---
