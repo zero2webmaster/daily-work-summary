@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-09-30 (v1.14.0)
+**Last Updated:** 2026-10-12 (v1.15.0)
 
 ---
 
@@ -64,9 +64,9 @@ None currently.
 
 ## ✅ Next Actions
 
-1. **Measure the v1.13.1 send-time change around 2026-10-12.** Baseline before the change: sends landed between 23:14 and 05:28 ET (Aug 25 → Sep 28). Run `TZ=America/New_York git log --since=2026-09-29 --date=format-local:'%a %m-%d %H:%M' --format='%ad %s' -- summaries/` and compare. If there's no improvement, propose an external precise trigger to Kerry (see ROADMAP). Name the covered day, not the delivery time, when reporting (v1.11.0 rule).
-2. **Check the 2026-10-01 Portfolio Stats run** (first with v1.14.0 counting). `stats/portfolio-2026-10.json` in the coordination repo should carry `loc_method: "code-only"` and `data_lines`, with `total_loc` roughly a third lower than 2026-09. Run log: https://github.com/zero2webmaster/daily-work-summary/actions/workflows/portfolio-stats.yml
-3. **Session-metrics hook: ON HOLD.** Kerry turned the global Stop hook off on 2026-09-23 and asked that it not be re-added without asking him. The approved "bundle into the sellable kits as opt-in" follow-up is paused until he says it's still wanted.
+1. **Kerry's call — external send trigger.** v1.13.1's extra cron slots made delivery *later*: median 01:50 ET (Aug 25–Sep 28) → 03:29 ET (Sep 29–Oct 11), range 01:35–05:39. Proposed fix in ROADMAP ("Send Time: External Trigger"); filed as `[→ Kerry]` on the bulletin. Don't build until he answers.
+2. **Check the first v1.15.0 email (covers 2026-10-12, arrives early 10-13).** Most bullets should start with a version; no theme line should ask a question. `summaries/daily-summary-2026-10-12.md`.
+3. **Session-metrics hook: ON HOLD.** Kerry turned the global Stop hook off on 2026-09-23 and asked that it not be re-added without asking him.
 4. **Kerry's call — realign the misdated June archive** (2026-06-18 → 06-30, 13 files). He chose July-only on 2026-07-31; re-open only if he asks.
 5. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
 6. Test Discord delivery: add `DISCORD_WEBHOOK_URL` secret, set `DELIVERY_METHOD=discord`
@@ -80,6 +80,14 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-10-12 - Bullet versions + no-questions theme line (v1.15.0)
+
+- **Kerry's two unread inbox items (Oct 8, Oct 9) done.** The theme line had asked him for "the complete commit messages" three nights running. Cause: the AI was fed 80-char subjects ending in `...`. It now reads whole subjects, and any reply that asks something becomes "More info needed for a summary".
+- **Version first on every bullet** where one exists: subject → `Version:` trailer → the repo's `VERSION` file at that commit. Redundant `repo-name:` prefixes dropped. Truncation 80 → 85.
+- **Send-time experiment measured: it failed.** Median 01:50 → 03:29 ET. Filed `[→ Kerry]` proposing an external trigger.
+- **Oct 1 portfolio stats confirmed:** `loc_method: "code-only"`; total code 2,169,168 → 1,550,714 (−29%); 290,569 data lines; contact-registry 163k → 37k code + 123k data.
+- **Verified:** 7/7 suites (`test_bullets` 35 new checks, built on the real Oct 7–9 replies); `VERSION` lookup checked live on two repos.
 
 ### Session: 2026-09-30 - Portfolio stats count code as code (v1.14.0)
 
@@ -109,17 +117,6 @@ Worked Kerry's two unread 2026-08-14 bulletin dispatches and the HIGH audit find
 - **Verified:** 6/6 suites (30 new rollup checks); all 5 workflow YAMLs parse; `py_compile` clean; rollup measured by replaying real archived data rather than asserted.
 - **Correction logged:** I briefly read the archive as missing Aug 13–14 and started investigating an outage. The local clone was simply two commits behind origin — the bot pushes there and nothing had pulled since. No outage; nightly runs are healthy.
 
-### Session: 2026-07-31 - Fix the one-day-late summary date (v1.11.0)
-
-**Reported twice by Kerry and unanswered in the bulletin inbox since June** (2026-06-23 and 2026-06-27): the email arrives ~12:11 AM and is dated that morning rather than the day it summarizes.
-
-- **Root cause:** `should_run_now()` correctly anchored to the most recent past send slot (v1.5.2), but `_resolve_window()` independently labeled with `_now_local()` and fetched a rolling 24h window. The failing run's log shows the disagreement outright: `target 23:00 America/New_York (Jul 30)` / `Local date label: 2026-07-31`.
-- **Fix:** `_target_local()` is now the single anchor for guard + label; nightly uses closed calendar-day windows matching backfill.
-- **Also fixed:** the email subject was computed by a separate shell `date` call (same bug, independently); the duplicate-send guard was keyed on run date and would have double-sent once the label moved; README claimed a 60-min window vs the code's 480 since v1.5.2.
-- **Transition safety:** new `daily-summary/v2` provenance stamp gates idempotency so the fix deploys over the misdated archive without swallowing a day's email.
-- **Verified:** 25/25 clock-frozen checks (`execution/test_summary_date.py`); both workflow YAMLs parse; live end-to-end run reproduced the failure and confirmed the fix — the file labeled "Fri Jul 31" (157 commits/40 repos) regenerates as `daily-summary-2026-07-30.md` (160/40).
-- **Open:** archive realignment for 2026-06-18 → 2026-07-31 awaits Kerry's go-ahead (paid AI calls).
-
-*(Earlier sessions — the v1.10.0 messages-sent metric (2026-06-19), the v1.9.0 portfolio-stats job and v1.8.0 Skill Vault tally (2026-06-18), the v1.5.2→1.7.0 outage-fix + dead-man's-switch + backfill (2026-06-18), and the v1.0.0 / v1.3.0 / v1.4.0 builds (2026-03-11) — trimmed per the STATUS 3-4-session rule; full history in [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).)*
+*(Earlier sessions — the v1.11.0 date fix (2026-07-31), the v1.10.0 messages-sent metric (2026-06-19), the v1.9.0 portfolio-stats job and v1.8.0 Skill Vault tally (2026-06-18), the v1.5.2→1.7.0 outage-fix + dead-man's-switch + backfill (2026-06-18), and the v1.0.0 / v1.3.0 / v1.4.0 builds (2026-03-11) — trimmed per the STATUS 3-4-session rule; full history in [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).)*
 
 ---

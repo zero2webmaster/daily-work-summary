@@ -24,6 +24,7 @@ locally with PAT_GITHUB set in environment or .env file.
 """
 
 import os
+import re
 import sys
 import time
 from collections import defaultdict
@@ -44,8 +45,32 @@ except ImportError:
     print("ERROR: markdown not installed. Run: pip install markdown")
     sys.exit(1)
 
-MAX_MSG_LENGTH = 80
+# Kerry, 2026-10-08: "make each bullet be about five characters longer prior to
+# truncation" (was 80).
+MAX_MSG_LENGTH = 85
+# The AI reads whole subject lines, not the truncated bullets. Fed "...", it
+# concluded it had partial data and asked Kerry for the full commits (Oct 7-9).
+AI_SUBJECT_LENGTH = 200
 MAX_RETRIES = 3
+
+# Shown in place of the theme sentence when the AI can't write one. Kerry,
+# 2026-10-08: "If a summary can't be created it should just say: More info
+# needed for a summary." It never asks him for anything, because nobody answers.
+AI_NO_SUMMARY_TOKEN = "NOT_ENOUGH_INFO"
+AI_NO_SUMMARY_TEXT = "More info needed for a summary"
+_AI_REQUEST_RE = re.compile(
+    r"\bI (?:don't|do not|cannot|can't) |\bcould you\b|\bplease (?:provide|share)\b"
+    r"|\bmore (?:information|context|details)\b|\bcomplete commit messages?\b",
+    re.IGNORECASE,
+)
+
+# Kerry, 2026-10-08: "Some projects give version number at beginning of each
+# bullet such as podcast-engine: ideally they all would."
+_VERSION_ANYWHERE_RE = re.compile(r"\bv?\d+\.\d+\.\d+\b")
+_VERSION_TRAILER_RE = re.compile(
+    r"^Version:\s*v?(\d+\.\d+\.\d+)\s*$", re.IGNORECASE | re.MULTILINE
+)
+_VERSION_FILE_RE = re.compile(r"^v?(\d+\.\d+\.\d+)\s*$")
 SUMMARY_DIR = "summaries"
 HTML_FONT_SIZE = "18px"
 
@@ -344,6 +369,86 @@ def truncate(msg: str, length: int = MAX_MSG_LENGTH) -> str:
     return first_line[: length - 3] + "..."
 
 
+def bullet_text(message: str, repo_name: str, version_lookup=None) -> str:
+    """Render one commit as a bullet that starts with its version when known.
+
+    The version comes from the subject itself, else a `Version: X.Y.Z` trailer
+    in the body, else `version_lookup()` (the repo's VERSION file at that
+    commit). A subject that already names a version anywhere is left alone so
+    "STATUS — v0.111.1 live" doesn't become "v0.111.1 - STATUS — v0.111.1 live".
+
+    The commit's own text gets MAX_MSG_LENGTH characters; a version the digest
+    adds sits in front of that budget rather than eating into it.
+    """
+    subject = message.split("\n")[0].strip()
+    # "event-engine: v0.118.0 — ..." under the event-engine heading: the repo
+    # name is redundant, and dropping it puts the version first.
+    repo_prefix = f"{repo_name}:"
+    if subject.lower().startswith(repo_prefix.lower()):
+        subject = subject[len(repo_prefix):].lstrip()
+
+    if _VERSION_ANYWHERE_RE.search(subject):
+        return truncate(subject)
+
+    trailer = _VERSION_TRAILER_RE.search(message)
+    version = trailer.group(1) if trailer else None
+    if version is None and version_lookup is not None:
+        try:
+            version = version_lookup()
+        except Exception as e:  # a missing version must never cost the email
+            print(f"  version lookup failed: {e}")
+            version = None
+    if not version:
+        return truncate(subject)
+    return f"v{version} - {truncate(subject)}"
+
+
+class VersionFileReader:
+    """Reads a repo's VERSION file at a given commit, once per commit.
+
+    A repo with no VERSION file is remembered after its first 404, so it costs
+    one API call per run rather than one per commit.
+    """
+
+    def __init__(self) -> None:
+        self._cache: dict[tuple[str, str], str | None] = {}
+        self._no_file: set[str] = set()
+
+    def read(self, repo, sha: str) -> str | None:
+        name = repo.full_name
+        if name in self._no_file:
+            return None
+        key = (name, sha)
+        if key not in self._cache:
+            try:
+                raw = repo.get_contents("VERSION", ref=sha).decoded_content
+                match = _VERSION_FILE_RE.match(raw.decode("utf-8", "replace").strip())
+                self._cache[key] = match.group(1) if match else None
+            except GithubException as e:
+                if e.status == 404:
+                    self._no_file.add(name)
+                    return None
+                raise
+        return self._cache[key]
+
+
+def clean_ai_summary(text: str | None) -> str | None:
+    """Turn a raw model reply into one line, or the fixed fallback text.
+
+    Models sometimes answer "I don't have enough information... could you share
+    the complete commit messages?" over several lines. Nobody reads the digest
+    to answer questions, so any request-shaped reply becomes the fallback.
+    """
+    if text is None:
+        return None
+    one_line = " ".join(text.split()).strip().strip("*_").strip()
+    if not one_line:
+        return None
+    if AI_NO_SUMMARY_TOKEN in one_line or _AI_REQUEST_RE.search(one_line):
+        return AI_NO_SUMMARY_TEXT
+    return one_line.rstrip(".")
+
+
 def fetch_commits_with_retry(repo, since, author, retries=MAX_RETRIES, until=None):
     for attempt in range(retries):
         try:
@@ -422,7 +527,7 @@ def generate_ai_repo_summary(messages: list[str]) -> str | None:
         return None
     print(f"  AI summary: using {provider}/{model}")
 
-    commit_list = "\n".join(truncate(m) for m in messages[:20])
+    commit_list = "\n".join(truncate(m, AI_SUBJECT_LENGTH) for m in messages[:20])
     prompt = f"""In one sentence, summarize the theme of development work from these git commits. Be concise and professional.
 
 Rules:
@@ -434,6 +539,8 @@ Rules:
 - Do NOT say how many commits there were
 - Describe the type of work and what area it touched (e.g., "Authentication and dashboard UI were tightened, and the nightly sync now emails on failure.")
 - If there is only one commit, still describe the theme, not the commit itself
+- These are commit subject lines only; that is all the information there is. Never ask for more, never ask a question, and never mention what you were given.
+- If they genuinely say too little to describe a theme, reply with exactly {AI_NO_SUMMARY_TOKEN} and nothing else
 
 Commits:
 {commit_list}"""
@@ -485,7 +592,7 @@ Commits:
         else:
             return None
 
-        return summary.rstrip(".")
+        return clean_ai_summary(summary)
     except Exception as e:
         print(f"  AI summary error ({provider}): {e}")
         return None
@@ -645,6 +752,10 @@ def generate_summary() -> dict[str, Any]:
 
     owner_repos: dict[str, dict[str, list[str]]] = defaultdict(dict)
     repo_urls: dict[str, str] = {}
+    # Parallel to owner_repos' message lists, for the per-commit version lookup.
+    repo_shas: dict[str, list[str]] = {}
+    repo_objs: dict[str, Any] = {}
+    version_reader = VersionFileReader()
 
     repos = list(user.get_repos(affiliation="owner,organization_member"))
     print(f"Found {len(repos)} repositories")
@@ -659,6 +770,8 @@ def generate_summary() -> dict[str, Any]:
             owner, repo_name = repo.full_name.split("/", 1)
             owner_repos[owner][repo_name] = messages
             repo_urls[repo.full_name] = repo.html_url
+            repo_shas[repo.full_name] = [c.sha for c in commits]
+            repo_objs[repo.full_name] = repo
             print(f"  {repo.full_name}: {len(commits)} commits")
 
     # No commits — return minimal result
@@ -781,8 +894,19 @@ def generate_summary() -> dict[str, Any]:
                 ai_summary_bullets.append(f"- {repo_name}: {ai_summary}")
             lines.append("")
 
-            for msg in messages:
-                bullet = truncate(msg)
+            repo_obj = repo_objs.get(full_name)
+            shas = repo_shas.get(full_name, [])
+            for i, msg in enumerate(messages):
+                sha = shas[i] if i < len(shas) else None
+                bullet = bullet_text(
+                    msg,
+                    repo_name,
+                    version_lookup=(
+                        (lambda r=repo_obj, s=sha: version_reader.read(r, s))
+                        if repo_obj is not None and sha
+                        else None
+                    ),
+                )
                 lines.append(f"* {bullet}")
 
             lines.append("")

@@ -306,6 +306,31 @@ Real `cloc` run on a scratch fixture: lockfile and snapshot skipped, JSON counte
 
 ---
 
+## Phase: Bullet Versions + No-Questions Theme Line ✅
+**Status:** Complete (2026-10-12, v1.15.0)
+
+Kerry's 2026-10-08 and 2026-10-09 inbox items.
+
+**Tasks:**
+- [x] Feed the AI whole subject lines; `NOT_ENOUGH_INFO` sentinel; request-shaped replies → "More info needed for a summary"
+- [x] Version at the start of each bullet (subject → `Version:` trailer → `VERSION` file at the commit)
+- [x] Truncation 80 → 85
+
+**Verification:**
+```bash
+python3 execution/run_tests.py            # 7/7; test_bullets 35 checks
+```
+**Watch:** the next nightly email should show versions on most bullets and no question-shaped theme lines.
+
+---
+
+## Send Time: External Trigger 📋
+**Status:** Pending — Kerry's decision (2026-10-12)
+
+v1.13.1's extra GitHub cron slots made delivery later, not earlier: median 01:50 ET (Aug 25–Sep 28) → 03:29 ET (Sep 29–Oct 11). GitHub does not honour scheduled times under load. Proposed: a Cloudflare Worker Cron Trigger at 23:05 ET that calls a guard-respecting `repository_dispatch`. Needs a fine-grained token with Actions write on this repo only.
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:
@@ -317,4 +342,4 @@ Real `cloc` run on a scratch fixture: lockfile and snapshot skipped, JSON counte
 
 ---
 
-*Last Updated: 2026-09-30 (v1.14.0)*
+*Last Updated: 2026-10-12 (v1.15.0)*

@@ -131,7 +131,15 @@ Set `ROLLUP_MIN_REPOS` to change the threshold (default `2`), or to `0` / `none`
   ...
   ```
 - One bullet per commit; show all commits (no truncation)
-- Truncate individual commit messages to 80 characters
+- Truncate individual commit messages to 85 characters (was 80; Kerry, 2026-10-08)
+- **Every bullet starts with its version when one can be found** (v1.15.0, `bullet_text()`):
+  1. A subject that already names a version anywhere is left as-is (no duplicate prefix).
+  2. A redundant `repo-name:` prefix is dropped first, so `event-engine: v0.118.0 — …` renders as `v0.118.0 — …`.
+  3. Otherwise a `Version: X.Y.Z` trailer in the commit body is used.
+  4. Otherwise the repo's `VERSION` file is read at that commit (`VersionFileReader`; one API call per commit, and a repo with no `VERSION` file costs one 404 per run). Non-release commits therefore show the version they landed on.
+  5. No version found → bullet unchanged. A lookup error never drops a bullet.
+  The 85-character budget applies to the commit's own text; a version the digest adds sits in front of it.
+- **AI theme sentence:** the model reads whole subject lines (up to 200 chars), not the truncated bullets. Fed `...`, it decided it had partial data and asked Kerry for the full commits (Oct 7–9). The prompt now says the subjects are all there is and to reply `NOT_ENOUGH_INFO` if they say too little. `clean_ai_summary()` flattens the reply to one line and replaces the sentinel, or any request-shaped reply ("I don't have…", "Could you…"), with **"More info needed for a summary"**. It never asks the reader anything.
 - If zero commits across all repos: "No commits today — well rested! ✅"
 
 ### Step 3a: Skill Vault tally (headline stat) — added v1.8.0
@@ -194,7 +202,8 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 | Scenario | Handling |
 |----------|----------|
 | No commits on the covered day | "No commits today — well rested! ✅" |
-| Long commit message | Truncate to 80 chars with `...` |
+| Long commit message | Truncate to 85 chars with `...` |
+| AI can't summarize, or asks a question | Theme line reads "More info needed for a summary" |
 | 403 PAT error | Log clear error + link to token settings |
 | Empty repo (no commits ever) | Skip silently |
 | API rate limit (5000/hr) | Exponential backoff, max 3 retries |

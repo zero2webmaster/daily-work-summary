@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.14.0
+**Version:** 1.15.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -545,4 +545,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.14.0 | Last Updated: 2026-09-30*
+*Version: 1.15.0 | Last Updated: 2026-10-12*

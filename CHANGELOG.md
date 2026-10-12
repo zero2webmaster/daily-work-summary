@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.15.0] - 2026-10-12
+
+### Changed
+- **The theme line no longer asks Kerry for more information.** On Oct 7–9 it read *"I don't have enough information to summarize the theme… Could you please share the complete commit messages?"* Kerry, 2026-10-08: *"If a summary can't be created it should just say: More info needed for a summary."* Cause: the AI was fed subjects already cut to 80 characters with `...`, so it decided it had partial data. It now reads whole subject lines (up to 200 characters), is told those are all there is, and replies `NOT_ENOUGH_INFO` when they say too little. Any reply that still asks a question becomes **"More info needed for a summary"**. Multi-line replies are flattened, which also fixes the Oct 8 theme line whose italics broke across two paragraphs.
+- **Every bullet starts with its version when one can be found.** Kerry, 2026-10-08: *"Some projects give version number at beginning of each bullet such as podcast-engine: ideally they all would."* Only 1–30% of bullets carried one (Oct 6–11). The version comes from the subject, else a `Version: X.Y.Z` trailer, else the repo's `VERSION` file at that commit. A redundant `repo-name:` prefix is dropped, so `event-engine: v0.118.0 — …` now starts with the version. A subject that already names a version is never prefixed again. Repos with no `VERSION` file are unchanged.
+- **Bullets are five characters longer** before truncation (80 → 85), as Kerry asked. An added version sits in front of that budget rather than eating into it.
+
+### Tests
+- New `execution/test_bullets.py` (35 checks), using the real Oct 7–9 AI replies. 7/7 suites pass. The `VERSION` lookup was also checked live against two real repos.
+
 ## [1.14.0] - 2026-09-30
 
 ### Changed
