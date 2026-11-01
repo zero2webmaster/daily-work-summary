@@ -1,18 +1,20 @@
 # Handoff — Daily Work Summary
 
-**Last session:** 2026-10-31 | **Version:** 1.15.1
+**Last session:** 2026-10-31 | **Version:** 2.0.0
 
 ## What this project is
 
 A GitHub Actions cron that emails Kerry a daily digest of his commits across all
 Z2W repos (target 23:00 ET). 3-layer architecture: directives (SOPs) →
 orchestration → deterministic Python in `.github/scripts/`. Delivery: email
-(Gmail SMTP) plus optional Airtable/Slack/Discord. An Uptime Kuma Push heartbeat
+(Gmail SMTP) plus optional Slack/Discord. An Uptime Kuma Push heartbeat
 guards against silent outages. A separate monthly **Portfolio Stats** workflow
 writes `stats/portfolio-YYYY-MM.json` into the `z2w-agent-coordination` repo for
 https://agents.z2w.us/portfolio.
 
-## Shipped this session (v1.15.1)
+## Shipped this session (v1.15.1 → v2.0.0)
+
+- **v2.0.0: Airtable delivery removed** (Kerry's yes, 2026-10-31). `DELIVERY_METHOD=email` set live; backfill uses the new `none` mode; leftover `airtable`/`both` values still send the email. 9/9 suites.
 
 - **Fixed the nightly "CI failed: Commit summary to repo" alert (Oct 28–31).**
   Two runs land ~1 min apart near 23:15 ET. The concurrency group serialized
@@ -29,8 +31,7 @@ https://agents.z2w.us/portfolio.
 
 1. **After 2026-11-01:** confirm no push failures, and check send times across
    the DST change (EST from Nov 1 uses the 04:xx UTC cron entries).
-2. **Waiting on Kerry:** switch Airtable off (`DELIVERY_METHOD=email`; still
-   `email,airtable` on 2026-10-31), then remove the Airtable code.
+2. Optional: Kerry may delete the unused `AIRTABLE_*` secrets/variables and the Airtable base.
 3. Session-metrics hook is OFF at Kerry's request (2026-09-23). Do not re-add it.
 
 ## Read first

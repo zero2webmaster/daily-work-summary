@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0] - 2026-10-31
+
+### Removed
+- **Airtable delivery.** Kerry asked on 2026-10-19 to retire the Airtable base because of its API limits, and agreed on 2026-10-31 to switch it off rather than move it to Neon: nothing read the Airtable copy, and `summaries/` on GitHub already holds every day. Removed `airtable_client.py`, `execution/setup_airtable.py`, the `Setup Airtable Tables` workflow, the Airtable functions in `generate_summary.py`, and the `AIRTABLE_*` env vars in both workflows. The live `DELIVERY_METHOD` variable was set to `email` the same day.
+- MAJOR because a fork that delivered to Airtable no longer does. Nobody's email is affected: a leftover `airtable` value is ignored with a note, and the legacy `both` alias now means `email`.
+
+### Changed
+- New `DELIVERY_METHOD=none` writes the archive file and delivers nothing. The backfill workflow uses it (it used `airtable` for this before).
+
+### Tests
+- New `execution/test_delivery.py` (10 checks), including the pre-v2 values `email,airtable`, `both` and `airtable`, which must all still send the email. 9/9 suites pass.
+
 ## [1.15.1] - 2026-10-31
 
 ### Fixed

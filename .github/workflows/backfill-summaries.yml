@@ -2,13 +2,13 @@ name: Backfill Summaries
 
 # One-off recovery: regenerate daily summaries for a past date range from git
 # history (which is permanent — nothing is ever lost) and write them to the
-# summaries/ archive + Airtable. Use this after an outage where the nightly cron
+# summaries/ archive. Use this after an outage where the nightly cron
 # skipped some days. The script's BACKFILL_DATE mode summarizes a whole local
 # calendar day in EMAIL_TIMEZONE (a closed [00:00, 23:59:59] window).
 #
 # Deliberately scoped narrower than the nightly job:
-#   - DELIVERY_METHOD is forced to `airtable` → it writes the archive + Airtable,
-#     but never emails / Slacks / Discords (so a 2-week backfill can't spam you).
+#   - DELIVERY_METHOD is forced to `none` → it writes the archive only and never
+#     emails / Slacks / Discords (so a 2-week backfill can't spam you).
 #   - No heartbeat ping — a backfill is not "today's daily run."
 
 on:
@@ -56,12 +56,8 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          # Backfill writes the archive + Airtable ONLY — never email/Slack/Discord.
-          DELIVERY_METHOD: airtable
-          AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
-          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID || vars.AIRTABLE_BASE_ID }}
-          AIRTABLE_TABLE_SUMMARIES: ${{ secrets.AIRTABLE_TABLE_SUMMARIES || vars.AIRTABLE_TABLE_SUMMARIES }}
-          AIRTABLE_TABLE_REPOS: ${{ secrets.AIRTABLE_TABLE_REPOS || vars.AIRTABLE_TABLE_REPOS }}
+          # Backfill writes the archive ONLY — never email/Slack/Discord.
+          DELIVERY_METHOD: none
           START_DATE: ${{ github.event.inputs.start_date }}
           END_DATE: ${{ github.event.inputs.end_date }}
         run: |

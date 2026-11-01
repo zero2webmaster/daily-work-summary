@@ -9,15 +9,17 @@ summary as Markdown with optional AI-powered repo descriptions.
 Supports multiple delivery methods controlled by the DELIVERY_METHOD
 environment variable (comma-separated list):
   email    — send HTML email via Gmail SMTP (workflow step)
-  airtable — write to Airtable tables
   slack    — POST to Slack incoming webhook (SLACK_WEBHOOK_URL)
   discord  — POST to Discord incoming webhook (DISCORD_WEBHOOK_URL)
-  both     — alias for "email,airtable" (backward-compatible)
+  none     — write the summaries/ archive only, deliver nothing (backfill)
+
+Airtable delivery was removed in v2.0.0. A leftover `airtable` value is
+ignored with a note, and the legacy `both` alias now means `email`.
 
 Examples:
   DELIVERY_METHOD=email
   DELIVERY_METHOD=slack,discord
-  DELIVERY_METHOD=email,slack,airtable
+  DELIVERY_METHOD=email,slack
 
 Runs as part of the GitHub Actions workflow, but can also be tested
 locally with PAT_GITHUB set in environment or .env file.
@@ -848,7 +850,7 @@ def generate_summary() -> dict[str, Any]:
             commit_label = f"{count} commit{'s' if count != 1 else ''}"
 
             # Rolled up below with the other repos that landed the same commit.
-            # No section and no AI call, but full fidelity still reaches Airtable.
+            # No section and no AI call; still counted in the totals.
             if repo_name in rolled_up_repos:
                 structured_repos.append({
                     "full_name": full_name,
@@ -862,8 +864,7 @@ def generate_summary() -> dict[str, Any]:
                 continue
 
             # Coordination bookkeeping: one line plus a theme sentence, but no
-            # per-commit bullets. Still counted in the totals and still written
-            # to Airtable in full.
+            # per-commit bullets. Still counted in the totals.
             if repo_name in collapsed_repos:
                 lines.append(
                     f"**{repo_name}:** {count} coordination "
@@ -973,24 +974,35 @@ def generate_summary() -> dict[str, Any]:
 # Delivery method parsing
 # ------------------------------------------------------------------
 
-VALID_DELIVERY_METHODS = {"email", "airtable", "slack", "discord"}
+VALID_DELIVERY_METHODS = {"email", "slack", "discord"}
+REMOVED_DELIVERY_METHODS = {"airtable"}  # v2.0.0
 
 
 def parse_delivery_methods(raw: str | None) -> set[str]:
     """Parse DELIVERY_METHOD env var into a set of method names.
 
-    Supports comma-separated values and the legacy 'both' alias.
-    Returns {'email'} as the default if nothing valid is set.
+    Comma-separated values. Unset or empty means {'email'}. 'none' means an
+    empty set: the archive file is still written but nothing is delivered
+    (the backfill workflow uses this). 'both' was "email,airtable" before
+    Airtable was removed in v2.0.0 and now means {'email'}.
     """
     raw = (raw or "email").lower().strip()
-    # Backward-compatible alias
+    if raw == "none":
+        return set()
     if raw == "both":
-        raw = "email,airtable"
+        print("  NOTE: DELIVERY_METHOD 'both' meant email + Airtable; Airtable was removed "
+              "in v2.0.0, so this now means 'email'.")
+        raw = "email"
 
     methods = {m.strip() for m in raw.split(",") if m.strip()}
+    removed = methods & REMOVED_DELIVERY_METHODS
+    if removed:
+        print(f"  NOTE: DELIVERY_METHOD value(s) {', '.join(sorted(removed))} were removed in "
+              "v2.0.0 and are ignored. Remove them from the Action variable.")
+        methods -= removed
     unknown = methods - VALID_DELIVERY_METHODS
     if unknown:
-        valid_str = ", ".join(sorted(VALID_DELIVERY_METHODS))
+        valid_str = ", ".join(sorted(VALID_DELIVERY_METHODS | {"none"}))
         print(f"  WARNING: Unknown DELIVERY_METHOD value(s): {', '.join(sorted(unknown))} — ignoring. "
               f"Valid options: {valid_str}")
         methods -= unknown
@@ -1030,165 +1042,6 @@ def send_to_discord(summary_data: dict) -> bool:
 
     print("  Discord: sending message...")
     return send_discord(webhook_url, summary_data)
-
-
-# ------------------------------------------------------------------
-# Airtable delivery
-# ------------------------------------------------------------------
-
-def _get_airtable_config() -> dict[str, str] | None:
-    """Return Airtable config dict if all required vars are set, else None."""
-    pat = os.environ.get("AIRTABLE_PAT")
-    base_id = os.environ.get("AIRTABLE_BASE_ID")
-    table_summaries = os.environ.get("AIRTABLE_TABLE_SUMMARIES")
-    table_repos = os.environ.get("AIRTABLE_TABLE_REPOS")
-
-    if not all([pat, base_id, table_summaries, table_repos]):
-        missing = []
-        if not pat:
-            missing.append("AIRTABLE_PAT")
-        if not base_id:
-            missing.append("AIRTABLE_BASE_ID")
-        if not table_summaries:
-            missing.append("AIRTABLE_TABLE_SUMMARIES")
-        if not table_repos:
-            missing.append("AIRTABLE_TABLE_REPOS")
-        print(f"  Airtable: skipped (missing: {', '.join(missing)})")
-        return None
-
-    return {
-        "pat": pat,
-        "base_id": base_id,
-        "table_summaries": table_summaries,
-        "table_repos": table_repos,
-    }
-
-
-def write_to_airtable(summary_data: dict[str, Any]) -> bool:
-    """Write summary data to Airtable. Returns True on success."""
-    from airtable_client import AirtableClient, AirtableError
-
-    config = _get_airtable_config()
-    if not config:
-        return False
-
-    client = AirtableClient(pat=config["pat"], base_id=config["base_id"])
-    tbl_summaries = config["table_summaries"]
-    tbl_repos = config["table_repos"]
-
-    date_str = summary_data["date"]
-
-    # --- Find or create Repository records (always, even if summary exists) ---
-    repo_record_ids: list[str] = []
-    repos = summary_data.get("repos", [])
-    if not repos:
-        print("  Airtable: no repos in summary (no commits today?)")
-    for repo_info in repos:
-        repo_record_id = _find_or_create_repo(client, tbl_repos, repo_info)
-        if repo_record_id:
-            repo_record_ids.append(repo_record_id)
-    if repos:
-        print(f"  Airtable: {len(repo_record_ids)}/{len(repos)} repo records ready for linking")
-
-    # --- Duplicate detection: did we already create today's summary? ---
-    existing_record = None
-    try:
-        existing = client.query_records(
-            tbl_summaries,
-            filter_formula=f"{{Timestamp}}='{date_str}'",
-            max_records=1,
-        )
-        if existing:
-            existing_record = existing[0]
-    except AirtableError as exc:
-        print(f"  Airtable: warning checking for duplicates: {exc}")
-
-    fields: dict[str, Any] = {
-        "Timestamp": date_str,
-        "Date": date_str,
-        "Summary": summary_data["markdown"],
-        "Repos Worked On": summary_data["total_repos"],
-        "Total Commits": summary_data["total_commits"],
-        "AI Summaries": summary_data["ai_summaries_text"] or "(AI summaries not enabled)",
-    }
-    if repo_record_ids:
-        fields["Repositories"] = repo_record_ids
-
-    def _write_summary(with_repos: bool = True) -> bool:
-        f = fields.copy()
-        if not with_repos and "Repositories" in f:
-            del f["Repositories"]
-        if existing_record:
-            client.update_record(tbl_summaries, existing_record["id"], f)
-            return True
-        record = client.create_record(tbl_summaries, f)
-        print(f"  Airtable: created daily summary record {record['id']} for {date_str}")
-        return True
-
-    if existing_record:
-        # Summary exists — update it to add/refresh repo links (backfill if missing)
-        try:
-            _write_summary(with_repos=True)
-            print(f"  Airtable: updated existing summary {existing_record['id']} for {date_str} (repos linked)")
-            return True
-        except AirtableError as exc:
-            if getattr(exc, "status_code", None) == 422:
-                try:
-                    _write_summary(with_repos=False)
-                    print(f"  Airtable: updated summary (Repositories field missing — run Setup Airtable to add it)")
-                    return True
-                except AirtableError:
-                    pass
-            print(f"  Airtable: warning updating summary: {exc}")
-            return True  # Summary exists, don't fail the run
-
-    # --- Create new Daily Summary record ---
-    try:
-        _write_summary(with_repos=True)
-        return True
-    except AirtableError as exc:
-        if getattr(exc, "status_code", None) == 422:
-            try:
-                _write_summary(with_repos=False)
-                print(f"  Airtable: created summary (Repositories link field missing — run Setup Airtable)")
-                return True
-            except AirtableError as retry_exc:
-                print(f"  Airtable ERROR creating summary: {retry_exc}")
-                return False
-        print(f"  Airtable ERROR creating summary: {exc}")
-        return False
-
-
-def _find_or_create_repo(
-    client: "AirtableClient", table_id: str, repo_info: dict
-) -> str | None:
-    """Find an existing repo record by name, or create one. Returns record ID."""
-    from airtable_client import AirtableError
-
-    full_name = repo_info["full_name"]
-
-    try:
-        existing = client.query_records(
-            table_id,
-            filter_formula=f"{{Name}}='{full_name}'",
-            max_records=1,
-        )
-        if existing:
-            return existing[0]["id"]
-    except AirtableError as exc:
-        print(f"  Airtable: warning looking up repo '{full_name}': {exc}")
-
-    try:
-        record = client.create_record(table_id, {
-            "Name": full_name,
-            "URL": repo_info["url"],
-            "Owner": repo_info["owner"],
-        })
-        print(f"  Airtable: created repo record for {full_name}")
-        return record["id"]
-    except AirtableError as exc:
-        print(f"  Airtable ERROR creating repo '{full_name}': {exc}")
-        return None
 
 
 # ------------------------------------------------------------------
@@ -1278,20 +1131,15 @@ def main():
         else:
             raise
 
-    # Determine delivery methods (comma-separated, 'both' = email+airtable)
+    # Determine delivery methods (comma-separated; 'none' = archive only)
     delivery_methods = parse_delivery_methods(os.environ.get("DELIVERY_METHOD"))
-    print(f"\nDelivery methods: {', '.join(sorted(delivery_methods))}")
+    print(f"\nDelivery methods: {', '.join(sorted(delivery_methods)) or 'none (archive only)'}")
 
     # Write summary file (always, for the archive and email step)
     Path(SUMMARY_DIR).mkdir(exist_ok=True)
     summary_path = Path(SUMMARY_DIR) / f"daily-summary-{summary_data['date']}.md"
     summary_path.write_text(summary_data["html"])
     print(f"Summary written to: {summary_path}")
-
-    # Airtable delivery
-    if "airtable" in delivery_methods and summary_data["has_commits"]:
-        print("\n--- Airtable Delivery ---")
-        write_to_airtable(summary_data)
 
     # Slack delivery
     if "slack" in delivery_methods:
@@ -1306,7 +1154,7 @@ def main():
     # Tell the workflow whether to run the email step
     send_email = "email" in delivery_methods
     if not send_email:
-        active = ", ".join(sorted(delivery_methods - {"email"}))
+        active = ", ".join(sorted(delivery_methods - {"email"})) or "archive-file"
         print(f"\n  Email step: skipped (delivery is {active} only)")
 
     # Write outputs for the workflow to consume

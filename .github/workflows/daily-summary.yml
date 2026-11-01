@@ -78,10 +78,6 @@ jobs:
           # Repos rendered as a single collapsed line (agent/coordination
           # bookkeeping). Unset = z2w-agent-coordination; set to "none" to disable.
           COLLAPSE_REPOS: ${{ vars.COLLAPSE_REPOS }}
-          AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
-          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID || vars.AIRTABLE_BASE_ID }}
-          AIRTABLE_TABLE_SUMMARIES: ${{ secrets.AIRTABLE_TABLE_SUMMARIES || vars.AIRTABLE_TABLE_SUMMARIES }}
-          AIRTABLE_TABLE_REPOS: ${{ secrets.AIRTABLE_TABLE_REPOS || vars.AIRTABLE_TABLE_REPOS }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python .github/scripts/generate_summary.py

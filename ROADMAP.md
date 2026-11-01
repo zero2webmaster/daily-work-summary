@@ -355,6 +355,25 @@ gh run list -R zero2webmaster/daily-work-summary -w "Daily Work Summary" -L 30  
 
 ---
 
+## Retire Airtable Delivery ✅
+**Status:** Complete (2026-10-31, v2.0.0)
+
+Kerry asked 2026-10-19 to drop the Airtable base (API limits); agreed 2026-10-31 to switch it off rather than migrate to Neon, since nothing read it.
+
+**Tasks:**
+- [x] `DELIVERY_METHOD` Action variable set to `email`
+- [x] Removed the Airtable client, setup script, setup workflow, delivery code and env vars
+- [x] Backfill uses the new `DELIVERY_METHOD=none` (archive only)
+- [x] Leftover `airtable` / `both` values keep sending the email (`test_delivery.py`)
+
+**Verification:**
+```bash
+python3 execution/run_tests.py            # 9/9
+grep -rni airtable .github execution      # only the "removed in v2.0.0" notes
+```
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:
@@ -366,4 +385,4 @@ gh run list -R zero2webmaster/daily-work-summary -w "Daily Work Summary" -L 30  
 
 ---
 
-*Last Updated: 2026-10-31 (v1.15.1)*
+*Last Updated: 2026-10-31 (v2.0.0)*

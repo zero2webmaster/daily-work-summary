@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-10-31 (v1.15.1)
+**Last Updated:** 2026-10-31 (v2.0.0)
 
 ---
 
@@ -24,7 +24,11 @@ None currently.
 **Date:** 2026-03-11
 **Rationale:** Git-committed markdown files provide a permanent, searchable history of daily work. Workflow auto-commits after each run.
 
-### Decision: Raw `requests` for Airtable client (not `pyairtable`)
+### Decision: Retire Airtable rather than move it to Neon
+**Date:** 2026-10-31 (v2.0.0)
+**Rationale:** Kerry wanted off Airtable (API limits) and suggested Neon. Nothing read the Airtable copy; the dashboard reads `summaries/` on GitHub, which already holds every day. Migrating would have built a database nobody uses. Old `DELIVERY_METHOD` values are tolerated so a stale variable can never silence the email.
+
+### Decision: Raw `requests` for Airtable client (not `pyairtable`) — superseded by v2.0.0
 **Date:** 2026-03-11
 **Rationale:** Mirrors the PHP class pattern from z2w-ai-suite, avoids adding a new dependency (`requests` is already a transitive dep of PyGithub), gives full control over error handling and retry logic.
 
@@ -69,7 +73,7 @@ None currently.
 ## ✅ Next Actions
 
 1. **Confirm v1.15.1 (after 2026-11-01).** No "Commit summary to repo" failure in the nightly runs; the second run near 23:15 ET should log "already exists … skipping". Note: DST ends Nov 1, so the slot shifts to the 04:xx UTC cron entries — check the Nov 1 and Nov 2 send times too.
-2. **Kerry's call — Airtable.** `DELIVERY_METHOD` is still `email,airtable` (checked 2026-10-31). He asked 10-19 about moving to Neon; the recommendation is to switch Airtable off, not migrate. Once he agrees, set `DELIVERY_METHOD=email` and remove the Airtable code.
+2. **Optional tidy-up, Kerry's call:** the `AIRTABLE_PAT` / `AIRTABLE_BASE_ID` secrets and the `AIRTABLE_TABLE_*` variables are now unused in this repo; the Airtable base itself can be deleted whenever he likes.
 3. **Session-metrics hook: ON HOLD.** Kerry turned the global Stop hook off on 2026-09-23 and asked that it not be re-added without asking him.
 4. **Kerry's call — realign the misdated June archive** (2026-06-18 → 06-30, 13 files). He chose July-only on 2026-07-31; re-open only if he asks.
 5. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
@@ -84,6 +88,11 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-10-31 (cont.) - Airtable retired (v2.0.0)
+
+- Kerry said yes: `DELIVERY_METHOD` set to `email`; Airtable client, setup script and workflow, delivery code and env vars removed. Backfill now uses `DELIVERY_METHOD=none`. Leftover `airtable`/`both` values still send the email (`test_delivery.py`, 10 checks). 9/9 suites.
+- Deleted this session's two temporary git worktrees at Kerry's request (both clean and pushed first).
 
 ### Session: 2026-10-31 - Nightly push failure fixed; outside timer shelved (v1.15.1)
 

@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.15.1
+**Version:** 2.0.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -86,7 +86,7 @@ z2w-agent-coordination: 32 coordination commits
 Sessions across the portfolio recorded handoffs and cross-project questions
 ```
 
-They still count toward the headline totals, and Airtable still receives their full commit list — only the email body is condensed.
+They still count toward the headline totals — only the email body is condensed.
 
 | | |
 |---|---|
@@ -112,7 +112,7 @@ audit-engine, backup-engine, commerce-engine, …
 
 **A repo is only rolled up when the shared commit is its only commit that day.** A repo that landed the shared commit *and* did its own work keeps its normal section, so a section never shows a commit count larger than the bullets beneath it. Matching is exact after whitespace/case normalization of the subject line — never fuzzy — so two genuinely different commits are never merged.
 
-Rolled-up repos still count toward the headline totals, and Airtable still receives their full commit list.
+Rolled-up repos still count toward the headline totals.
 
 | | |
 |---|---|
@@ -159,15 +159,6 @@ Set **one** of these to enable AI-powered repo summaries. If you set multiple ke
 
 > **Tip:** OpenRouter lets you use models from Anthropic, OpenAI, Google, and others with a single key — useful if you want flexibility without managing multiple accounts.
 
-### Optional Airtable Secrets
-
-| Secret | Description |
-|--------|-------------|
-| `AIRTABLE_PAT` | [Airtable Personal Access Token](https://airtable.com/create/tokens) with scopes: `data.records:read`, `data.records:write`, `schema.bases:read`, `schema.bases:write` |
-| `AIRTABLE_BASE_ID` | Your Airtable base ID (`appXXXXXXXXXXXXXX`) — can be stored as a **Secret** *or* a Variable |
-| `AIRTABLE_TABLE_SUMMARIES` | Daily Summaries table ID (`tblXXXXXXXXXXXXXX`) — can be stored as a **Secret** *or* a Variable |
-| `AIRTABLE_TABLE_REPOS` | Repositories table ID (`tblXXXXXXXXXXXXXX`) — can be stored as a **Secret** *or* a Variable |
-
 ### Optional Slack / Discord Secrets
 
 | Secret | Description |
@@ -187,7 +178,7 @@ Set these under **Settings → Secrets and variables → Actions → Variables**
 
 | Variable | Options | Default |
 |----------|---------|---------|
-| `DELIVERY_METHOD` | Comma-separated list: `email`, `airtable`, `slack`, `discord`. Also accepts `both` (= `email,airtable`) | `email` |
+| `DELIVERY_METHOD` | Comma-separated list: `email`, `slack`, `discord`, or `none` (archive file only). Airtable was removed in v2.0.0; a leftover `airtable` or `both` is ignored and the email still goes out | `email` |
 | `AI_PROVIDER` | `openrouter`, `anthropic`, `gemini`, `openai` | Auto-detects from first available key |
 | `EMAIL_TIMEZONE` | IANA timezone identifier — see [Customizing the email schedule](#customizing-the-email-schedule) below | `America/New_York` |
 | `EMAIL_SEND_HOUR` | Local hour (0–23) at which the email should go out — see [Customizing the email schedule](#customizing-the-email-schedule) | `22` |
@@ -196,9 +187,6 @@ Set these under **Settings → Secrets and variables → Actions → Variables**
 | `COLLAPSE_REPOS` | Repos shown as one collapsed line instead of a bullet list — see [Collapsing coordination-repo noise](#collapsing-coordination-repo-noise). `none` disables | `z2w-agent-coordination` |
 | `ROLLUP_MIN_REPOS` | How many repos must share one commit subject before they fold into a single line — see [Rolling up work repeated across many repos](#rolling-up-work-repeated-across-many-repos). `0` disables | `2` |
 | `SKILL_VAULT_TALLY` | Set to `false` to hide the Skill Vault headline line — see [Skill Vault tally](#skill-vault-tally-optional) below | `true` (shown) |
-| `AIRTABLE_BASE_ID` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
-| `AIRTABLE_TABLE_SUMMARIES` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
-| `AIRTABLE_TABLE_REPOS` | *(Optional — use Variable if not stored as a Secret)* | *(none)* |
 
 **`DELIVERY_METHOD` examples:**
 
@@ -209,8 +197,8 @@ Set these under **Settings → Secrets and variables → Actions → Variables**
 | `discord` | Discord embed only |
 | `email,slack` | Email + Slack |
 | `slack,discord` | Both Slack and Discord |
-| `email,airtable,slack,discord` | All four channels |
-| `both` | Email + Airtable (backward-compatible alias) |
+| `email,slack,discord` | All three channels |
+| `none` | Archive file only, nothing delivered (used by backfill) |
 
 ### Customizing the email schedule
 
@@ -267,7 +255,7 @@ This distinction is load-bearing because of the throttling above. With `EMAIL_SE
 | Commits included | Thu Jul 30, 00:00:00 → 23:59:59 (local) |
 | Email subject, heading, filename, commit message | **Thu Jul 30** |
 
-Every date the system shows you — the email subject, the markdown heading, the `summaries/daily-summary-YYYY-MM-DD.md` filename, the Airtable row, and the archive commit message — names that same covered day, so they can never disagree with each other.
+Every date the system shows you — the email subject, the markdown heading, the `summaries/daily-summary-YYYY-MM-DD.md` filename, and the archive commit message — names that same covered day, so they can never disagree with each other.
 
 Each archived file also carries an inert provenance comment naming the day it covers:
 
@@ -302,64 +290,6 @@ Done. The 23:00–23:59 hourly run will send the email; every other hour's run w
 #### When the cron line itself might still need a change
 
 The only reason to edit `.github/workflows/daily-summary.yml` directly is if you want to change how often the workflow CHECKS the time. The default `'5 * * * *'` (hourly at :05) is the baseline check. **In practice GitHub fires far fewer of those than scheduled** — measured on this repo in September 2026, about 5–6 runs a day, 3–5 hours apart — so the email goes out on the first run that survives after your target, which can be several hours late. The workflow therefore carries a second line, `'10,25,40 3,4 * * *'`, aimed at 23:10/23:25/23:40 Eastern in both summer and winter time. If you move your send time, move that line to match (UTC hours for your target); leaving it is harmless, since the guard skips any run outside your window and a `concurrency` group prevents double-sends. If you wanted minute-level precision, you could switch to `'*/15 * * * *'` (every 15 minutes) and tighten the window — but that burns more GitHub Actions minutes for no real benefit.
-
----
-
-## Airtable Integration (Optional)
-
-Save daily summaries and repository data to Airtable for searchable, filterable records with linked relationships. Each day creates a **Daily Summary** record linked to **Repository** records — click a repo to see every day you worked on it.
-
-### Airtable Schema
-
-**Daily Summaries** table:
-- Timestamp (YYYY-MM-DD) — primary field
-- Date — native date for calendar views
-- Summary — full markdown summary
-- Repos Worked On — count
-- Total Commits — count
-- AI Summaries — bulleted AI summaries (no commit details)
-- Repositories — linked to Repositories table
-
-**Repositories** table:
-- Name — `owner/repo-name`
-- URL — GitHub repo link
-- Owner — GitHub org/username
-- Daily Summaries — linked back to Daily Summaries
-
-### Airtable Setup
-
-Everything is done from inside GitHub — no local Python required.
-
-**Step 1 — Create an Airtable base**
-
-Go to [airtable.com](https://airtable.com) → **Add a base** → name it anything (e.g. "GitHub Daily Work Summary"). Copy the base ID from the URL: `https://airtable.com/appXXXXXXXXXXXXXX/...`
-
-**Step 2 — Create an Airtable PAT**
-
-Go to [airtable.com/create/tokens](https://airtable.com/create/tokens), create a token with these scopes: `data.records:read`, `data.records:write`, `schema.bases:read`, `schema.bases:write`. Grant access to the base you just created.
-
-**Step 3 — Add secrets to GitHub**
-
-Under **Settings → Secrets and variables → Actions → Secrets**, add:
-- `AIRTABLE_PAT` — your Airtable Personal Access Token
-- `AIRTABLE_BASE_ID` — the base ID (`appXXXXXXXXXXXXXX`)
-
-**Step 4 — Run the Setup Airtable workflow**
-
-Go to **Actions → Setup Airtable Tables → Run workflow → Run workflow**.
-
-This workflow will:
-- Create the **Daily Summaries** and **Repositories** tables with the correct fields
-- Automatically save `AIRTABLE_TABLE_SUMMARIES` and `AIRTABLE_TABLE_REPOS` as GitHub Variables — no copying or pasting needed
-- Safe to re-run — it skips tables that already exist
-
-**Step 5 — Enable Airtable delivery**
-
-Set the `DELIVERY_METHOD` variable to `email,airtable` (or `airtable` for Airtable only). That's it — the next daily run will populate your base.
-
-**If Daily Summaries has no "Repositories" link field:** Add it manually in Airtable: Daily Summaries table → **+** (add field) → **Link to another record** → choose the Repositories table → name the field `Repositories`. Re-run the Daily Work Summary workflow to backfill the links.
-
-> **Note:** All references use Airtable IDs (`appXXX`, `tblXXX`), not names. You can rename tables/bases freely without breaking the integration.
 
 ---
 
@@ -425,7 +355,6 @@ Both handle message length limits gracefully — long summaries are truncated wi
 | `ANTHROPIC_API_KEY` | *(Optional)* Your Anthropic key |
 | `GOOGLE_API_KEY` | *(Optional)* Your Google AI key |
 | `OPENAI_API_KEY` | *(Optional)* Your OpenAI key |
-| `AIRTABLE_PAT` | *(Optional)* Your Airtable PAT ([create one](https://airtable.com/create/tokens)) |
 | `SLACK_WEBHOOK_URL` | *(Optional)* Slack Incoming Webhook URL |
 | `DISCORD_WEBHOOK_URL` | *(Optional)* Discord channel webhook URL |
 
@@ -442,10 +371,7 @@ Only add the AI key(s) you actually have. One is enough.
 | `EMAIL_SEND_MINUTE` | `30` (local minute 0–59, default 30) |
 | `EMAIL_SEND_WINDOW_MIN` | `480` (acceptable cron delay in minutes, default 480 = 8h) |
 | `AI_PROVIDER` | `openrouter` *(only needed if you set multiple AI keys)* |
-| `DELIVERY_METHOD` | `email,airtable` *(comma-separated; default is `email`. Options: `email`, `airtable`, `slack`, `discord`)* |
-| `AIRTABLE_BASE_ID` | `appXXXXXXXXXXXXXX` *(only needed if not stored as a Secret)* |
-| `AIRTABLE_TABLE_SUMMARIES` | `tblXXXXXXXXXXXXXX` *(only needed if not stored as a Secret)* |
-| `AIRTABLE_TABLE_REPOS` | `tblXXXXXXXXXXXXXX` *(only needed if not stored as a Secret)* |
+| `DELIVERY_METHOD` | `email,slack` *(comma-separated; default is `email`. Options: `email`, `slack`, `discord`, `none`)* |
 
 ### 5. Enable Workflow Permissions
 
@@ -488,6 +414,7 @@ suite is actually present in the clone — an empty run reports failure, never a
 | `test_skill_vault_tally.py` | Skill Vault headline line and its staleness note |
 | `test_portfolio_stats.py` | Monthly LoC/doc/data-line snapshot |
 | `test_session_metrics.py` | Session-metrics Stop hook report |
+| `test_delivery.py` | `DELIVERY_METHOD` parsing; leftover Airtable values still send the email |
 | `test_workflow.py` | Nightly workflow shape: checkout of the branch tip, concurrency group, 23:xx ET slot crons |
 
 ---
@@ -497,20 +424,17 @@ suite is actually present in the clone — an empty run reports failure, never a
 ```
 ├── .github/
 │   ├── workflows/
-│   │   ├── daily-summary.yml          # Cron + email + Airtable + webhook workflow
+│   │   ├── daily-summary.yml          # Cron + email + webhook workflow
 │   │   ├── backfill-summaries.yml     # Regenerate summaries for past days
 │   │   ├── portfolio-stats.yml        # Monthly LoC/doc snapshot → coordination repo
-│   │   ├── tests.yml                  # Runs every tracked test suite on a fresh clone
-│   │   └── setup-airtable.yml         # One-click Airtable table setup (run once)
+│   │   └── tests.yml                  # Runs every tracked test suite on a fresh clone
 │   └── scripts/
 │       ├── generate_summary.py        # Summary generator + delivery routing
 │       ├── portfolio_stats.py         # Monthly portfolio LoC/doc-line stats
-│       ├── airtable_client.py         # Airtable REST API client
 │       └── webhook_client.py          # Slack + Discord webhook delivery
 ├── summaries/                         # Daily archives (auto-generated)
 ├── directives/                        # SOPs
 ├── execution/
-│   ├── setup_airtable.py             # Airtable table creation (used by setup workflow)
 │   ├── run_tests.py                  # Runs every test_*.py suite; one command for CI + local
 │   ├── test_*.py                     # Tracked test suites (see Testing)
 │   └── ...
@@ -546,4 +470,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.15.1 | Last Updated: 2026-10-31*
+*Version: 2.0.0 | Last Updated: 2026-10-31*

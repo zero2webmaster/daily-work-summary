@@ -1,6 +1,6 @@
 # Directive: Generate Daily Work Summary
 
-**Version:** 1.6.2
+**Version:** 2.0.0
 **Last Updated:** 2026-07-31
 **Owner:** Kerry Kriger
 
@@ -8,14 +8,14 @@
 
 ## Goal
 
-Generate a smart daily summary of all GitHub commits across every zero2webmaster and personal repository for **the calendar day of the send slot being delivered** (see "Which day a summary covers" below). Deliver via email, Airtable, Slack, and/or Discord, and save a Markdown archive.
+Generate a smart daily summary of all GitHub commits across every zero2webmaster and personal repository for **the calendar day of the send slot being delivered** (see "Which day a summary covers" below). Deliver via email, Slack, and/or Discord, and save a Markdown archive. (Airtable delivery was removed in v2.0.0, 2026-10-31, at Kerry's request: nothing read it, and the archive in `summaries/` already holds every day.)
 
 ## Trigger
 
 - **Automated:** GitHub Actions cron `5 * * * *` (nominally hourly at `:05` UTC) **plus** slot-targeted `10,25,40 3,4 * * *` (v1.13.1 — 23:10/23:25/23:40 ET in both EDT and EST; the off-season hour lands at 22:xx or 00:xx and the guard handles it). A workflow `concurrency: daily-work-summary` group serializes runs so two near-simultaneous runs can't both pass the idempotency check before the archive file is committed. The slot entries are tuned to Kerry's `EMAIL_SEND_HOUR=23` ET; change them if the send time moves. The Python script's `should_run_now()` time-of-day guard reads `EMAIL_TIMEZONE` + `EMAIL_SEND_HOUR` + `EMAIL_SEND_MINUTE` + `EMAIL_SEND_WINDOW_MIN` Action variables and skips runs outside the configured local send window. This replaces the previous "edit-the-cron-line-in-YAML" approach so admins never touch UTC math or daylight-saving offsets.
   - **GitHub does NOT honor the hourly schedule for this repo.** Its free scheduler is heavily throttled — actual runs land every 2–5 hours (re-measured 2026-09-28: 434 scheduled runs over 44 days ≈ 10/day across all schedule entries; the hourly line alone ~5–6/day, and the send time ranged 23:14–05:28 ET over the month before v1.13.1 — the reason Kerry asked on 2026-09-17 why send time varies so much), and there is a reliable dead zone from roughly **00:30–04:30 ET (≈04:30–08:30 UTC)** where it fires nothing. The runs it *does* fire most consistently are early morning ET (~00:40–02:00 ET). The guard is built around this reality (wide window + most-recent-past anchoring), not around the cron firing on time. **Do not narrow `EMAIL_SEND_WINDOW_MIN` back toward 60** expecting an on-the-minute send — that is what broke v1.5.0→1.5.1 (no summary June 5–17, fixed in v1.5.2).
 - **Manual:** GitHub Actions → "Run workflow" button. `workflow_dispatch` runs bypass the time-of-day guard (so a one-off send always fires).
-- **Backfill (recovery):** the separate `Backfill Summaries` workflow (`workflow_dispatch` with `start_date`/`end_date`) regenerates summaries for a past range from git history. Sets `BACKFILL_DATE=YYYY-MM-DD` per day → the script summarizes that whole local calendar day (`[00:00, 23:59:59]` in `EMAIL_TIMEZONE`, a closed window). Forces `DELIVERY_METHOD=airtable` (archive + Airtable only — never email/Slack/Discord), sends no heartbeat ping, and relies on Airtable's per-date duplicate detection so re-runs are safe. Use after an outage where the cron skipped days.
+- **Backfill (recovery):** the separate `Backfill Summaries` workflow (`workflow_dispatch` with `start_date`/`end_date`) regenerates summaries for a past range from git history. Sets `BACKFILL_DATE=YYYY-MM-DD` per day → the script summarizes that whole local calendar day (`[00:00, 23:59:59]` in `EMAIL_TIMEZONE`, a closed window). Forces `DELIVERY_METHOD=none` (archive file only — never email/Slack/Discord) and sends no heartbeat ping. Re-runs are safe: a regenerated file either matches what's committed (no diff) or replaces it. Use after an outage where the cron skipped days.
 - **Timezone:** `EMAIL_TIMEZONE` variable (Settings → Actions → Variables). IANA format (e.g. `America/New_York`, `Europe/London`). [Full list](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Default: `America/New_York`. Now controls ALL date labels: subject date, markdown heading, filename in `summaries/`, "Generated at" footer timestamp, commit message, AND the scheduling guard. Previously controlled only subject + footer.
 - **Send time:** `EMAIL_SEND_HOUR` (0–23, default `22`) and `EMAIL_SEND_MINUTE` (0–59, default `30`) — local target in `EMAIL_TIMEZONE`. Default = 10:30 PM in `America/New_York`.
 - **Window:** `EMAIL_SEND_WINDOW_MIN` (default `480` = 8h) — minutes AFTER the target during which a delayed cron still counts. One-sided: never fires earlier than the target, and the target is anchored to the most recent PAST occurrence of HH:MM (so a run after midnight measures its lateness against last night's target, not tonight's). The 8h default is deliberately wide to survive GitHub's throttled scheduler and its 00:30–04:30 ET dead zone. **Idempotency:** at most one scheduled summary per COVERED day — if `summaries/daily-summary-<covered-date>.md` exists on checkout (the workflow checks out the branch TIP via `ref: ${{ github.ref }}`, v1.15.1 — the default, the commit the run was QUEUED on, hid the previous run's just-pushed file from a run waiting in the concurrency queue, so it regenerated and failed on push every night Oct 28–31 2026) AND carries the matching `<!-- daily-summary/v2 covers="..." -->` stamp, a later run in the same window bows out instead of double-sending. An unstamped (pre-v1.11.0, misdated) file does NOT count as already-sent and is regenerated in place — that is what let v1.11.0 deploy over a misdated archive without swallowing a day's email. Manual `workflow_dispatch` runs bypass both the window and the idempotency check.
@@ -34,7 +34,7 @@ Worked example with `EMAIL_SEND_HOUR=23`, `America/New_York`:
 | Cron actually fired | 00:31 Fri Jul 31 (GitHub throttling) |
 | `_target_local()` | 2026-07-30 |
 | Commits fetched | 2026-07-30 00:00:00 → 23:59:59 ET |
-| Subject / heading / filename / Airtable row / commit message | **2026-07-30** |
+| Subject / heading / filename / commit message | **2026-07-30** |
 
 **Why this matters and how it broke.** Before v1.11.0 the guard already anchored correctly (v1.5.2) but `_resolve_window()` independently used `_now_local()` plus a rolling 24h window. Since GitHub reliably delivers the 23:00 slot after midnight, every nightly summary from 2026-06-18 to 2026-07-31 was named one day later than its contents. The failing run's log shows both halves at once: `target 23:00 America/New_York (Jul 30)` then `Local date label: 2026-07-31`. **If you change scheduling logic, change `_target_local()` — never re-derive a date from `_now_local()` for labeling.**
 
@@ -57,7 +57,7 @@ z2w-agent-coordination: 32 coordination commits
 
 **Why the theme line came back (v1.13.0).** Kerry, 2026-08-14: *"daily work summaries no longer show details on agent-coordination agent commits"* — the bullet-less line told him agents had been active but not what about. The theme sentence restores the *what* at one line instead of N, so it costs one AI call and does not undo the collapse. If he ever wants the full bullets back, that is `COLLAPSE_REPOS=none`, not a code change.
 
-**What is NOT changed:** collapsed repos still count in the headline `N commits across M repos`, and Airtable still receives their full commit list. Only the email/archive body is condensed.
+**What is NOT changed:** collapsed repos still count in the headline `N commits across M repos`. Only the email/archive body is condensed.
 
 Set `COLLAPSE_REPOS` to a comma-separated list to override, or to `none` / `off` / `false` to disable. Implemented by `get_collapsed_repos()`; covered by `execution/test_summary_date.py` §8.
 
@@ -76,7 +76,7 @@ When one action is propagated across many repos, every repo lands the **same com
 
 Matching is exact after whitespace/case normalization on the **subject line only** (`normalize_subject()`) — never fuzzy, so two genuinely different commits cannot be merged into one claim. Bodies are ignored because trailers differ per repo.
 
-**What is NOT changed:** rolled-up repos still count in the headline `N commits across M repos`, and Airtable still receives their full commit list.
+**What is NOT changed:** rolled-up repos still count in the headline `N commits across M repos`.
 
 Set `ROLLUP_MIN_REPOS` to change the threshold (default `2`), or to `0` / `none` / `off` to disable. Implemented by `find_rollup_groups()`; covered by `execution/test_rollup.py` (30 checks).
 
@@ -88,12 +88,10 @@ Set `ROLLUP_MIN_REPOS` to change the threshold (default `2`), or to `0` / `none`
 | Email credentials | `EMAIL_USERNAME`, `EMAIL_PASSWORD` secrets | Gmail App Password |
 | Time window | The covered day, `[00:00, 23:59:59]` in `EMAIL_TIMEZONE` | `_resolve_window()`; day comes from `_target_local()`, NOT run time. Clamped to now on a pre-midnight run |
 | Scheduling target | `EMAIL_TIMEZONE` + `EMAIL_SEND_HOUR` + `EMAIL_SEND_MINUTE` + `EMAIL_SEND_WINDOW_MIN` variables | All four have defaults — see Trigger section |
-| Delivery method | `DELIVERY_METHOD` variable | Comma-separated: `email` (default), `airtable`, `slack`, `discord`. `both` = `email,airtable` |
+| Delivery method | `DELIVERY_METHOD` variable | Comma-separated: `email` (default), `slack`, `discord`; or `none` (archive only). A leftover `airtable` is ignored and `both` means `email`, so an old value never silences the email |
 | Collapsed repos | `COLLAPSE_REPOS` variable (default `z2w-agent-coordination`) | One line + a theme sentence, no per-commit bullets. `none` disables. See Collapsed coordination repos |
 | Repetition rollup | `ROLLUP_MIN_REPOS` variable (default `2`) | Folds single-commit repos sharing one commit subject into one line. `0` / `none` disables. See Cross-repo repetition rollup |
 | Skill Vault tally | `SKILL_VAULT_TALLY` variable (default on) | Set `false` to hide the headline Skill Vault line. Reads `stats/skill-vault.json` from the coordination repo via `PAT_GITHUB` — no extra secret. See Step 3a |
-| Airtable PAT | `AIRTABLE_PAT` secret | Required when delivery includes `airtable` |
-| Airtable IDs | `AIRTABLE_BASE_ID`, `AIRTABLE_TABLE_SUMMARIES`, `AIRTABLE_TABLE_REPOS` variables | All IDs (`appXXX`, `tblXXX`), never names |
 | Slack webhook | `SLACK_WEBHOOK_URL` secret | Required when delivery includes `slack` |
 | Discord webhook | `DISCORD_WEBHOOK_URL` secret | Required when delivery includes `discord` |
 
@@ -164,12 +162,6 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 - Body: HTML-formatted summary
 - `generate_summary.py` outputs `send_email=true/false` to `$GITHUB_OUTPUT`; workflow email step is conditional on that value
 
-**Airtable** (when `airtable` is in the list):
-- Find or create Repository records for each repo (by full_name)
-- Create Daily Summary record with all fields + linked repo records
-- Duplicate detection: skip if record for today's date already exists
-- All references use IDs (`appXXX`, `tblXXX`), never table/base names
-
 **Slack** (when `slack` is in the list):
 - POST to `SLACK_WEBHOOK_URL` secret
 - Slack Block Kit message: header, stats bar, per-repo sections with linked names, AI summaries in italics, footer
@@ -192,7 +184,6 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 |--------|----------|--------|
 | Email | kerry@zero2webmaster.com | HTML (when `email` in DELIVERY_METHOD) |
 | Archive | `summaries/daily-summary-YYYY-MM-DD.md` | Markdown (always) |
-| Airtable | Daily Summaries + Repositories tables | Structured records (when `airtable` in DELIVERY_METHOD) |
 | Slack | Slack channel | Block Kit message (when `slack` in DELIVERY_METHOD) |
 | Discord | Discord channel | Rich embed (when `discord` in DELIVERY_METHOD) |
 | Logs | GitHub Actions run logs | Plaintext |
@@ -215,10 +206,8 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 | Script | Purpose |
 |--------|---------|
 | `.github/scripts/generate_summary.py` | Main summary generator + delivery routing (Layer 3) |
-| `.github/scripts/airtable_client.py` | Airtable REST API client (Layer 3) |
 | `.github/scripts/webhook_client.py` | Slack + Discord webhook delivery (Layer 3) |
 | `.github/workflows/daily-summary.yml` | Workflow orchestration |
-| `execution/setup_airtable.py` | One-time Airtable table creation |
 
 ## Performance
 
