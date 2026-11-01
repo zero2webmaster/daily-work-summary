@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.15.1] - 2026-10-31
+
+### Fixed
+- **The nightly "CI failed: Daily Work Summary — Commit summary to repo" alert (Oct 28, 29, 30 and 31).** Two scheduled runs land minutes apart near 23:15 ET. The concurrency group did serialize them, but the second run checked out the commit it was *queued* on, not the latest `main`. It never saw the summary file the first run had just pushed, so the once-a-day check missed, it rebuilt the same summary, and its push was rejected. The checkout step now uses `ref: ${{ github.ref }}` (the branch tip), so the second run finds the file and bows out. The email was never sent twice, because the failed push came before the send step. The Airtable record was rewritten with identical content.
+
+### Tests
+- New `execution/test_workflow.py` (7 checks): the checkout uses the branch tip, the concurrency group is set, and the 23:xx ET slot crons are still there. It fails against the v1.15.0 workflow. `PyYAML` added to `requirements.txt` so CI can run it. 8/8 suites pass.
+
+### Measured
+- **The email has arrived between 23:16 and 23:31 ET every night since Oct 17** (14 nights), against 01:35–05:39 ET in early October. GitHub started honouring the v1.13.1 slot crons. The outside timer approved on Oct 15 is therefore not being built; it stays on file in case delivery drifts late again.
+
 ## [1.15.0] - 2026-10-12
 
 ### Changed

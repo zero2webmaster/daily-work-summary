@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-10-12 (v1.15.0)
+**Last Updated:** 2026-10-31 (v1.15.1)
 
 ---
 
@@ -56,6 +56,10 @@ None currently.
 **Date:** 2026-09-30 (v1.14.0)
 **Rationale:** About 30% of the portfolio's "lines of code" were JSON dumps, lockfiles and Drizzle snapshots, so the biggest-repo ranking was measuring data, not work. Lockfiles and snapshots are generated and now skipped entirely; other data formats move to a separate `data_lines` field so nothing is hidden. The schema string was deliberately **not** bumped: the command center's parser returns nothing for any schema but `portfolio-stats/v1`, so a bump would have blanked `/portfolio` on the next monthly run. The change is additive, and `loc_method: "code-only"` marks which months use it. Corollary: **only bump the schema after the reader accepts the new version.**
 
+### Decision: Don't build the approved outside timer while GitHub delivers on time
+**Date:** 2026-10-31 (v1.15.1)
+**Rationale:** Kerry approved a Cloudflare Worker trigger on 2026-10-15 to fix late delivery. From Oct 17 the email arrived 23:16–23:31 ET every night (14 nights), so the problem it was approved for no longer exists. A new token and a second platform are a standing cost; it stays designed in ROADMAP and is re-opened if delivery drifts past ~00:30 ET again. The extra slot crons are now load-bearing and are guarded by `test_workflow.py`.
+
 ### Decision: Comma-separated DELIVERY_METHOD for Slack/Discord
 **Date:** 2026-03-11
 **Rationale:** Allows any combination of channels without combinatorial explosion of named values (e.g. `email,slack,discord`). The `both` alias is preserved for backward compat. Unknown values are warned-and-dropped rather than erroring, so adding new methods in future is non-breaking.
@@ -64,8 +68,8 @@ None currently.
 
 ## ✅ Next Actions
 
-1. **Kerry's call — external send trigger.** v1.13.1's extra cron slots made delivery *later*: median 01:50 ET (Aug 25–Sep 28) → 03:29 ET (Sep 29–Oct 11), range 01:35–05:39. Proposed fix in ROADMAP ("Send Time: External Trigger"); filed as `[→ Kerry]` on the bulletin. Don't build until he answers.
-2. **Check the first v1.15.0 email (covers 2026-10-12, arrives early 10-13).** Most bullets should start with a version; no theme line should ask a question. `summaries/daily-summary-2026-10-12.md`.
+1. **Confirm v1.15.1 (after 2026-11-01).** No "Commit summary to repo" failure in the nightly runs; the second run near 23:15 ET should log "already exists … skipping". Note: DST ends Nov 1, so the slot shifts to the 04:xx UTC cron entries — check the Nov 1 and Nov 2 send times too.
+2. **Kerry's call — Airtable.** `DELIVERY_METHOD` is still `email,airtable` (checked 2026-10-31). He asked 10-19 about moving to Neon; the recommendation is to switch Airtable off, not migrate. Once he agrees, set `DELIVERY_METHOD=email` and remove the Airtable code.
 3. **Session-metrics hook: ON HOLD.** Kerry turned the global Stop hook off on 2026-09-23 and asked that it not be re-added without asking him.
 4. **Kerry's call — realign the misdated June archive** (2026-06-18 → 06-30, 13 files). He chose July-only on 2026-07-31; re-open only if he asks.
 5. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`
@@ -80,6 +84,13 @@ None currently.
 ---
 
 ## 📊 Recent Updates
+
+### Session: 2026-10-31 - Nightly push failure fixed; outside timer shelved (v1.15.1)
+
+- **Nightly "CI failed: Commit summary to repo" (Oct 28–31) fixed.** Not two runs racing, as first thought: the concurrency group did serialize them. The second run checked out the commit it was *queued* on, so it never saw the first run's pushed summary, rebuilt it, and lost the push. Checkout now uses the branch tip. The email was never doubled.
+- **Approved outside timer not built.** Delivery has been 23:16–23:31 ET every night since Oct 17. Re-open criteria in ROADMAP.
+- **Checked, not bugs:** Oct 20–21 had no summary because Kerry's own account made no commits (only bots and phone dispatches, which the digest doesn't count).
+- **Verified:** 8/8 suites; new `test_workflow.py` 7/7 and fails against the old workflow; all 5 workflow YAMLs parse.
 
 ### Session: 2026-10-12 - Bullet versions + no-questions theme line (v1.15.0)
 
@@ -106,17 +117,6 @@ None currently.
 - **Closed:** the v1.13.0 watch item. The theme line was live from Aug 15 and the "Across N repos" rollup has appeared in real emails (Sep 19, 22, 24).
 - **Verified:** 6/6 suites; test_guard 14/14 (7 new); all 5 workflow YAMLs parse.
 
-### Session: 2026-08-15 - Digest signal density + tests anyone can run (v1.13.0)
-
-Worked Kerry's two unread 2026-08-14 bulletin dispatches and the HIGH audit finding.
-
-- **Repetition rollup.** One action propagated portfolio-wide previously got a full section per repo. Now folded into `**Across N repos** — <subject>` + the repo list. **Measured on the real 2026-08-13 archive: 52 repo sections → 13**, 39 repos folded, 39 AI calls saved. Kerry reported three repeats; it was 39.
-- **Kept deliberately narrow.** Only single-commit repos roll up, so a section can never show a commit count larger than its bullet list. Matching is exact on the normalized subject line — never fuzzy.
-- **Collapsed coordination repos got their theme sentence back** (Kerry's other dispatch: "no longer show details"). One AI call restores the *what* without undoing the v1.12.0 collapse; `COLLAPSE_REPOS=none` still restores full bullets.
-- **Audit finding closed, and it was understated.** `audit-engine` flagged "tests tracked but no runner." True — and 4 of the 5 suites were sitting in gitignored `.tmp/`, passing on Kerry's machine and absent from every clone. All 4 moved to `execution/`, plus `run_tests.py` and a `Tests` workflow that asserts suites are actually present before reporting a pass.
-- **Verified:** 6/6 suites (30 new rollup checks); all 5 workflow YAMLs parse; `py_compile` clean; rollup measured by replaying real archived data rather than asserted.
-- **Correction logged:** I briefly read the archive as missing Aug 13–14 and started investigating an outage. The local clone was simply two commits behind origin — the bot pushes there and nothing had pulled since. No outage; nightly runs are healthy.
-
-*(Earlier sessions — the v1.11.0 date fix (2026-07-31), the v1.10.0 messages-sent metric (2026-06-19), the v1.9.0 portfolio-stats job and v1.8.0 Skill Vault tally (2026-06-18), the v1.5.2→1.7.0 outage-fix + dead-man's-switch + backfill (2026-06-18), and the v1.0.0 / v1.3.0 / v1.4.0 builds (2026-03-11) — trimmed per the STATUS 3-4-session rule; full history in [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).)*
+*(Earlier sessions — the v1.13.0 digest-density + tracked-tests build (2026-08-15), the v1.11.0 date fix (2026-07-31), the v1.10.0 messages-sent metric (2026-06-19), the v1.9.0 portfolio-stats job and v1.8.0 Skill Vault tally (2026-06-18), the v1.5.2→1.7.0 outage-fix + dead-man's-switch + backfill (2026-06-18), and the v1.0.0 / v1.3.0 / v1.4.0 builds (2026-03-11) — trimmed per the STATUS 3-4-session rule; full history in [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).)*
 
 ---

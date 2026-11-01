@@ -324,10 +324,34 @@ python3 execution/run_tests.py            # 7/7; test_bullets 35 checks
 
 ---
 
-## Send Time: External Trigger 📋
-**Status:** Pending — Kerry's decision (2026-10-12)
+## Send Time: External Trigger ⏸
+**Status:** Approved by Kerry 2026-10-15; **not built, by decision (2026-10-31)** — the problem it solved went away
 
-v1.13.1's extra GitHub cron slots made delivery later, not earlier: median 01:50 ET (Aug 25–Sep 28) → 03:29 ET (Sep 29–Oct 11). GitHub does not honour scheduled times under load. Proposed: a Cloudflare Worker Cron Trigger at 23:05 ET that calls a guard-respecting `repository_dispatch`. Needs a fine-grained token with Actions write on this repo only.
+v1.13.1's extra GitHub cron slots first made delivery later (median 03:29 ET, Sep 29–Oct 11), so a Cloudflare Worker Cron Trigger at 23:05 ET was proposed and approved. Then, **from Oct 17 GitHub began honouring the slots: 14 nights in a row delivered 23:16–23:31 ET.** Building the Worker now would add a token and a moving part for no measured gain.
+
+**Re-open if** archive commit times drift past ~00:30 ET for several nights:
+```bash
+TZ=America/New_York git log --since=2026-10-17 --date=format-local:'%a %m-%d %H:%M' --format='%ad %s' -- summaries/
+```
+Design if re-opened: Worker cron → `workflow_dispatch` with an input that makes the run respect the guard + idempotency (dispatch runs currently bypass both); fine-grained token with Actions write on this repo only, stored as a Worker secret.
+
+---
+
+## Nightly Duplicate-Run Push Failure ✅
+**Status:** Complete (2026-10-31, v1.15.1)
+
+The bulletin logged "CI failed: Daily Work Summary — Commit summary to repo" Oct 28–31.
+
+**Tasks:**
+- [x] Read the failed run log: two runs 1 min apart; serialized by the concurrency group, but the second checked out its *queued* commit, not `main`'s tip, so it missed the first run's summary file and lost the push
+- [x] `actions/checkout` now uses `ref: ${{ github.ref }}`
+- [x] `execution/test_workflow.py` (7 checks; fails against v1.15.0's workflow) + `PyYAML` in requirements + Tests workflow triggers on `daily-summary.yml`
+
+**Verification:**
+```bash
+python3 execution/run_tests.py            # 8/8
+gh run list -R zero2webmaster/daily-work-summary -w "Daily Work Summary" -L 30   # no failures after 2026-10-31
+```
 
 ---
 
@@ -342,4 +366,4 @@ v1.13.1's extra GitHub cron slots made delivery later, not earlier: median 01:50
 
 ---
 
-*Last Updated: 2026-10-12 (v1.15.0)*
+*Last Updated: 2026-10-31 (v1.15.1)*

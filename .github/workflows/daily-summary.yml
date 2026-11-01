@@ -36,6 +36,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Check out the branch TIP, not the commit the run was queued on.
+          # By default checkout uses github.sha, which is fixed when the event
+          # fires. A run that waited in the concurrency queue therefore never
+          # saw the summary the previous run had just pushed, so the per-day
+          # idempotency check missed, it regenerated the same file, and its
+          # push was rejected ("fetch first"). That was the nightly
+          # "CI failed: Commit summary to repo" incident, Oct 28-31 2026.
+          ref: ${{ github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5

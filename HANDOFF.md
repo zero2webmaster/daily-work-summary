@@ -1,6 +1,6 @@
 # Handoff — Daily Work Summary
 
-**Last session:** 2026-10-12 | **Version:** 1.15.0
+**Last session:** 2026-10-31 | **Version:** 1.15.1
 
 ## What this project is
 
@@ -12,23 +12,25 @@ guards against silent outages. A separate monthly **Portfolio Stats** workflow
 writes `stats/portfolio-YYYY-MM.json` into the `z2w-agent-coordination` repo for
 https://agents.z2w.us/portfolio.
 
-## Shipped this session (v1.15.0)
+## Shipped this session (v1.15.1)
 
-- **Theme line never asks Kerry for more info.** The AI now reads whole subject
-  lines (it was fed 80-char `...` bullets) and any request-shaped reply becomes
-  "More info needed for a summary". `clean_ai_summary()`.
-- **Version first on each bullet:** subject → `Version:` trailer → `VERSION` file
-  at the commit (`bullet_text()`, `VersionFileReader`). Truncation 80 → 85.
-- Tests: 7/7 suites, new `test_bullets.py` (35 checks).
-- **Measured v1.13.1 send-time change: it failed** (median 01:50 → 03:29 ET).
-  Oct 1 portfolio stats confirmed (−29% code, 290k data lines).
+- **Fixed the nightly "CI failed: Commit summary to repo" alert (Oct 28–31).**
+  Two runs land ~1 min apart near 23:15 ET. The concurrency group serialized
+  them, but the second checked out the commit it was queued on (`github.sha`),
+  not `main`'s tip, so it missed the first run's summary file, rebuilt it, and
+  its push was rejected. Checkout now uses `ref: ${{ github.ref }}`.
+- New `execution/test_workflow.py` (7 checks) guards the checkout ref, the
+  concurrency group and the slot crons. `PyYAML` added to `requirements.txt`.
+  8/8 suites.
+- **Did NOT build the approved Cloudflare Worker timer.** Since Oct 17 the email
+  arrives 23:16–23:31 ET every night. Re-open criteria are in ROADMAP.
 
 ## Outstanding
 
-1. **Waiting on Kerry:** external on-time send trigger (ROADMAP "Send Time:
-   External Trigger"; `[→ Kerry]` in the bulletin). Don't build until he answers.
-2. **2026-10-13:** check `summaries/daily-summary-2026-10-12.md` — versions on
-   most bullets, no question-shaped theme lines.
+1. **After 2026-11-01:** confirm no push failures, and check send times across
+   the DST change (EST from Nov 1 uses the 04:xx UTC cron entries).
+2. **Waiting on Kerry:** switch Airtable off (`DELIVERY_METHOD=email`; still
+   `email,airtable` on 2026-10-31), then remove the Airtable code.
 3. Session-metrics hook is OFF at Kerry's request (2026-09-23). Do not re-add it.
 
 ## Read first

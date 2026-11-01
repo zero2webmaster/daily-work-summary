@@ -13,12 +13,14 @@ on:
     paths:
       - '.github/scripts/**'
       - '.github/workflows/tests.yml'
+      - '.github/workflows/daily-summary.yml'
       - 'execution/**'
       - 'requirements.txt'
   pull_request:
     paths:
       - '.github/scripts/**'
       - '.github/workflows/tests.yml'
+      - '.github/workflows/daily-summary.yml'
       - 'execution/**'
       - 'requirements.txt'
   workflow_dispatch:

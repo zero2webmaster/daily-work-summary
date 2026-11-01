@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 1.15.0
+**Version:** 1.15.1
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -488,6 +488,7 @@ suite is actually present in the clone — an empty run reports failure, never a
 | `test_skill_vault_tally.py` | Skill Vault headline line and its staleness note |
 | `test_portfolio_stats.py` | Monthly LoC/doc/data-line snapshot |
 | `test_session_metrics.py` | Session-metrics Stop hook report |
+| `test_workflow.py` | Nightly workflow shape: checkout of the branch tip, concurrency group, 23:xx ET slot crons |
 
 ---
 
@@ -545,4 +546,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 1.15.0 | Last Updated: 2026-10-12*
+*Version: 1.15.1 | Last Updated: 2026-10-31*
