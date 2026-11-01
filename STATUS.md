@@ -73,7 +73,7 @@ None currently.
 ## ✅ Next Actions
 
 1. **Confirm v1.15.1 (after 2026-11-01).** No "Commit summary to repo" failure in the nightly runs; the second run near 23:15 ET should log "already exists … skipping". Note: DST ends Nov 1, so the slot shifts to the 04:xx UTC cron entries — check the Nov 1 and Nov 2 send times too.
-2. **Optional tidy-up, Kerry's call:** the `AIRTABLE_PAT` / `AIRTABLE_BASE_ID` secrets and the `AIRTABLE_TABLE_*` variables are now unused in this repo; the Airtable base itself can be deleted whenever he likes.
+2. ✅ **Airtable fully retired (2026-10-31):** `AIRTABLE_*` secrets and variables deleted from the repo; Kerry deleted the Airtable token and renamed the base "Daily Work Summary - DEPRECATED" (nothing reads it).
 3. **Session-metrics hook: ON HOLD.** Kerry turned the global Stop hook off on 2026-09-23 and asked that it not be re-added without asking him.
 4. **Kerry's call — realign the misdated June archive** (2026-06-18 → 06-30, 13 files). He chose July-only on 2026-07-31; re-open only if he asks.
 5. Test Slack delivery: add `SLACK_WEBHOOK_URL` secret, set `DELIVERY_METHOD=slack`

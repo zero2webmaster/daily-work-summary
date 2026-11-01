@@ -31,7 +31,7 @@ https://agents.z2w.us/portfolio.
 
 1. **After 2026-11-01:** confirm no push failures, and check send times across
    the DST change (EST from Nov 1 uses the 04:xx UTC cron entries).
-2. Optional: Kerry may delete the unused `AIRTABLE_*` secrets/variables and the Airtable base.
+2. Done: `AIRTABLE_*` secrets/variables deleted; Kerry deleted the token and renamed the base to "… - DEPRECATED".
 3. Session-metrics hook is OFF at Kerry's request (2026-09-23). Do not re-add it.
 
 ## Read first
