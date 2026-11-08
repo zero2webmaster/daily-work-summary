@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 2.0.0
+**Version:** 2.1.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -186,6 +186,7 @@ Set these under **Settings → Secrets and variables → Actions → Variables**
 | `EMAIL_SEND_WINDOW_MIN` | Acceptable delay after the target time, in minutes — wide by default because GitHub throttles cron hard overnight | `480` |
 | `COLLAPSE_REPOS` | Repos shown as one collapsed line instead of a bullet list — see [Collapsing coordination-repo noise](#collapsing-coordination-repo-noise). `none` disables | `z2w-agent-coordination` |
 | `ROLLUP_MIN_REPOS` | How many repos must share one commit subject before they fold into a single line — see [Rolling up work repeated across many repos](#rolling-up-work-repeated-across-many-repos). `0` disables | `2` |
+| `EXTRA_COMMIT_AUTHORS` | Other commit identities counted as your work, besides your GitHub login (comma-separated logins or emails). The default counts commits from Claude Code cloud sessions, which GitHub can't link to your account. In an org repo shared with others, their cloud-session commits count too. `none` = your login only | `noreply@anthropic.com` |
 | `SKILL_VAULT_TALLY` | Set to `false` to hide the Skill Vault headline line — see [Skill Vault tally](#skill-vault-tally-optional) below | `true` (shown) |
 
 **`DELIVERY_METHOD` examples:**
@@ -470,4 +471,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 2.0.0 | Last Updated: 2026-10-31*
+*Version: 2.1.0 | Last Updated: 2026-11-08*

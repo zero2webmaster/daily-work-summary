@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-10-31 (v2.0.0)
+**Last Updated:** 2026-11-08 (v2.1.0)
 
 ---
 
@@ -89,6 +89,12 @@ None currently.
 
 ## 📊 Recent Updates
 
+### Session: 2026-11-08 - Phone (cloud-session) commits now counted (v2.1.0)
+
+- **`commerce-engine`'s bulletin Q answered.** Kerry's phone work on Nov 7 was missing from the email: cloud sessions commit as `Claude <noreply@anthropic.com>`, which the `author=<login>` filter dropped (27 commits that day, via GitHub search). Each repo is now also queried for that identity and merged by sha; `EXTRA_COMMIT_AUTHORS` overrides, `none` reverts.
+- **Kerry chose (phone, multiple choice):** merge to `main` and backfill Nov 7, archive only.
+- **Verified:** 10/10 suites, new `test_cloud_commits.py` 17/17.
+
 ### Session: 2026-10-31 (cont.) - Airtable retired (v2.0.0)
 
 - Kerry said yes: `DELIVERY_METHOD` set to `email`; Airtable client, setup script and workflow, delivery code and env vars removed. Backfill now uses `DELIVERY_METHOD=none`. Leftover `airtable`/`both` values still send the email (`test_delivery.py`, 10 checks). 9/9 suites.
@@ -117,15 +123,6 @@ None currently.
 - **Verified:** 6/6 suites, `test_portfolio_stats` 21 → 48 checks; one real `cloc` run on a scratch fixture confirmed the filter and the split.
 - **Bulletin:** shared clone had another session's uncommitted edits, so this session read and wrote through a separate worktree instead of pulling over them.
 
-### Session: 2026-09-28 - Bulletin triage + send-time consistency (v1.13.1)
-
-- **Kerry's 2026-09-17 question, "why is the send time so variable?", answered with data.** The workflow is scheduled hourly, but GitHub fired it only ~5–6×/day, 3–5h apart. Sends ranged 23:14–05:28 ET over the prior month. Added slot-targeted runs at 23:10/23:25/23:40 ET (EDT + EST) plus a `concurrency` group. Whether GitHub honours these better is an experiment, to be measured ~Oct 12.
-- **audit-engine `standards.gitignore-entries` [HIGH] closed.** Added `.claude/settings.local.json` to `.gitignore` (never tracked; verified with `check-ignore --no-index` against a null global excludes file).
-- **Kerry's 2026-08-20 question answered:** `z2w-templates` is the private repo holding the canonical Templates folder, the source of the private `@zero2webmaster/templates` package. Its "sync … refresh from working copy" commits are routine mirroring of the local Templates folder.
-- **Checked, not a problem:** no Sep 7 archive file exists because Labor Day had zero commits (the run logged "No commits today"). The heartbeat's "not configured" log line is the step's script being echoed; last night's ping returned `{"ok":true}`.
-- **Closed:** the v1.13.0 watch item. The theme line was live from Aug 15 and the "Across N repos" rollup has appeared in real emails (Sep 19, 22, 24).
-- **Verified:** 6/6 suites; test_guard 14/14 (7 new); all 5 workflow YAMLs parse.
-
-*(Earlier sessions — the v1.13.0 digest-density + tracked-tests build (2026-08-15), the v1.11.0 date fix (2026-07-31), the v1.10.0 messages-sent metric (2026-06-19), the v1.9.0 portfolio-stats job and v1.8.0 Skill Vault tally (2026-06-18), the v1.5.2→1.7.0 outage-fix + dead-man's-switch + backfill (2026-06-18), and the v1.0.0 / v1.3.0 / v1.4.0 builds (2026-03-11) — trimmed per the STATUS 3-4-session rule; full history in [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).)*
+*(Earlier sessions — the v1.13.1 send-time + bulletin triage (2026-09-28), the v1.13.0 digest-density + tracked-tests build (2026-08-15), the v1.11.0 date fix (2026-07-31), the v1.10.0 messages-sent metric (2026-06-19), the v1.9.0 portfolio-stats job and v1.8.0 Skill Vault tally (2026-06-18), the v1.5.2→1.7.0 outage-fix + dead-man's-switch + backfill (2026-06-18), and the v1.0.0 / v1.3.0 / v1.4.0 builds (2026-03-11) — trimmed per the STATUS 3-4-session rule; full history in [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).)*
 
 ---

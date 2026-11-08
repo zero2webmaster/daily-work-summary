@@ -374,6 +374,26 @@ grep -rni airtable .github execution      # only the "removed in v2.0.0" notes
 
 ---
 
+## Count Cloud-Session Commits
+**Status:** In progress (2026-11-08, v2.1.0)
+
+`commerce-engine` reported (bulletin, 2026-11-08) that Kerry's phone work was missing from the 2026-11-07 email. Cloud sessions commit as `Claude <noreply@anthropic.com>`, which the `author=<login>` filter dropped.
+
+**Tasks:**
+- [x] `fetch_work_commits()` also queries `EXTRA_COMMIT_AUTHORS` (default `noreply@anthropic.com`) and merges by sha
+- [x] Both workflows forward the variable
+- [x] `execution/test_cloud_commits.py`
+- [ ] Merged to `main`; backfill 2026-11-07 (archive only) shows the commerce-engine and command-center phone commits
+- [ ] 2026-11-08 nightly email includes cloud-session commits
+
+**Verification:**
+```bash
+python3 execution/run_tests.py            # 10/10
+grep -c commerce-engine summaries/daily-summary-2026-11-07.md   # section present with ~20+ commits after backfill
+```
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:
@@ -385,4 +405,4 @@ grep -rni airtable .github execution      # only the "removed in v2.0.0" notes
 
 ---
 
-*Last Updated: 2026-10-31 (v2.0.0)*
+*Last Updated: 2026-11-08 (v2.1.0)*

@@ -51,6 +51,9 @@ jobs:
           # Repos rendered as a single collapsed line (agent/coordination
           # bookkeeping). Unset = z2w-agent-coordination; set to "none" to disable.
           COLLAPSE_REPOS: ${{ vars.COLLAPSE_REPOS }}
+          # Extra commit authors counted as your work (default: Claude Code cloud
+          # sessions, noreply@anthropic.com). Set to "none" to count only your login.
+          EXTRA_COMMIT_AUTHORS: ${{ vars.EXTRA_COMMIT_AUTHORS }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
