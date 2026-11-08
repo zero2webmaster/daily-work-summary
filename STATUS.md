@@ -72,6 +72,8 @@ None currently.
 
 ## ✅ Next Actions
 
+0. **Confirm v2.1.0 (Nov 9):** the Nov 8 email should include cloud-session commits (commerce-engine had many that day). Run time grows slightly (one extra API query per repo).
+
 1. **Confirm v1.15.1 (after 2026-11-01).** No "Commit summary to repo" failure in the nightly runs; the second run near 23:15 ET should log "already exists … skipping". Note: DST ends Nov 1, so the slot shifts to the 04:xx UTC cron entries — check the Nov 1 and Nov 2 send times too.
 2. ✅ **Airtable fully retired (2026-10-31):** `AIRTABLE_*` secrets and variables deleted from the repo; Kerry deleted the Airtable token and renamed the base "Daily Work Summary - DEPRECATED" (nothing reads it).
 3. **Session-metrics hook: ON HOLD.** Kerry turned the global Stop hook off on 2026-09-23 and asked that it not be re-added without asking him.
@@ -93,7 +95,7 @@ None currently.
 
 - **`commerce-engine`'s bulletin Q answered.** Kerry's phone work on Nov 7 was missing from the email: cloud sessions commit as `Claude <noreply@anthropic.com>`, which the `author=<login>` filter dropped (27 commits that day, via GitHub search). Each repo is now also queried for that identity and merged by sha; `EXTRA_COMMIT_AUTHORS` overrides, `none` reverts.
 - **Kerry chose (phone, multiple choice):** merge to `main` and backfill Nov 7, archive only.
-- **Verified:** 10/10 suites, new `test_cloud_commits.py` 17/17.
+- **Verified:** 10/10 suites, new `test_cloud_commits.py` 17/17; CI green on the PR. **Canary:** Nov 7 backfill went 17 commits/10 repos → 57/11 (commerce-engine 2 → 29, command center 0 → 6), no bot commits.
 
 ### Session: 2026-10-31 (cont.) - Airtable retired (v2.0.0)
 
