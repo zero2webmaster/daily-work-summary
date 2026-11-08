@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2026-11-08
+
+### Fixed
+- **Work done from Kerry's phone was missing from the email.** Claude Code cloud sessions commit as `Claude <noreply@anthropic.com>`, which GitHub can't link to his account, and the digest only counted commits by his login. On 2026-11-07 that dropped 27 commits (21 in commerce-engine, 6 in z2w-agent-command-center). Reported by `commerce-engine` on the coordination bulletin. Each repo is now also queried for commits by `noreply@anthropic.com`, and the two lists are merged by sha. It only looks in the repos already walked (yours and your orgs'). The author filter stays, so the bot's own archive commits are still left out.
+
+### Added
+- `EXTRA_COMMIT_AUTHORS` Action variable (both workflows): the extra identities to count. Default `noreply@anthropic.com`; `none` restores login-only.
+
+### Tests
+- New `execution/test_cloud_commits.py` (17 checks): Claude commits counted by default, duplicates merged, newest-first order, the override and `none`, and one identity failing without hiding the other. 10/10 suites pass.
+
 ## [2.0.0] - 2026-10-31
 
 ### Removed

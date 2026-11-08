@@ -482,6 +482,78 @@ def fetch_commits_with_retry(repo, since, author, retries=MAX_RETRIES, until=Non
     return []
 
 
+# ------------------------------------------------------------------
+# Commits made by cloud agent sessions (v2.1.0)
+# ------------------------------------------------------------------
+#
+# The digest filters each repo's commits to `author=<your login>`. Claude Code
+# cloud sessions — the ones Kerry drives from his phone — commit as
+# `Claude <noreply@anthropic.com>`, which GitHub cannot link to his account, so
+# every one of them was silently dropped. Measured on 2026-11-07: 27 such
+# commits (21 in commerce-engine, 6 in z2w-agent-command-center) never reached
+# the email, while that day's laptop commits did. Reported by `commerce-engine`
+# on the coordination bulletin, 2026-11-08.
+#
+# Fix: also fetch commits by these extra author identities (GitHub's commits
+# API accepts an email as `author`) on the SAME repos already walked — the
+# ones you own or belong to — and merge by sha. A Claude-authored commit in
+# your own repo is your work. We deliberately do NOT drop the author filter
+# altogether: that would also pull in bot commits such as this workflow's own
+# `Daily Summary Bot` archive writes and collaborators' work in shared orgs.
+#
+# Caveat: in an organization repo shared with other people, their cloud-session
+# commits use the same identity and will be counted too. Override with the
+# EXTRA_COMMIT_AUTHORS Action variable (comma-separated logins or emails); set
+# it to `none` to go back to your-login-only.
+DEFAULT_EXTRA_COMMIT_AUTHORS = ("noreply@anthropic.com",)
+
+
+def get_extra_commit_authors() -> list[str]:
+    raw = os.environ.get("EXTRA_COMMIT_AUTHORS")
+    if raw is None or not raw.strip():
+        return list(DEFAULT_EXTRA_COMMIT_AUTHORS)
+    if raw.strip().lower() in {"none", "off", "false"}:
+        return []
+    out: list[str] = []
+    for a in raw.split(","):
+        a = a.strip()
+        if a and a.lower() not in {x.lower() for x in out}:
+            out.append(a)
+    return out
+
+
+def _commit_sort_key(c) -> datetime:
+    """Newest-first ordering for a merged list (same order get_commits uses)."""
+    try:
+        d = c.commit.committer.date
+    except AttributeError:
+        d = None
+    if d is None:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+
+
+def fetch_work_commits(repo, since, login, extra_authors, until=None):
+    """Commits by `login` plus each extra author identity, de-duplicated by sha.
+
+    Each identity is a separate API query (the endpoint takes one author), so a
+    failure on one never hides the others — fetch_commits_with_retry already
+    turns errors into an empty list.
+    """
+    seen: set[str] = set()
+    merged = []
+    identities = [login] + [a for a in extra_authors if a.lower() != login.lower()]
+    for author in identities:
+        for c in fetch_commits_with_retry(repo, since, author, until=until):
+            if c.sha in seen:
+                continue
+            seen.add(c.sha)
+            merged.append(c)
+    if len(identities) > 1:
+        merged.sort(key=_commit_sort_key, reverse=True)
+    return merged
+
+
 # AI provider config: (api_key_env, model). Gemini also accepts GEMINI_API_KEY.
 AI_PROVIDERS = {
     "openrouter": ("OPENROUTER_API_KEY", "anthropic/claude-haiku-4.5"),
@@ -762,11 +834,15 @@ def generate_summary() -> dict[str, Any]:
     repos = list(user.get_repos(affiliation="owner,organization_member"))
     print(f"Found {len(repos)} repositories")
 
+    extra_authors = get_extra_commit_authors()
+    if extra_authors:
+        print(f"Also counting commits by: {', '.join(extra_authors)}")
+
     for repo in repos:
         if repo.archived:
             continue
 
-        commits = fetch_commits_with_retry(repo, since, user.login, until=until)
+        commits = fetch_work_commits(repo, since, user.login, extra_authors, until=until)
         if commits:
             messages = [c.commit.message for c in commits]
             owner, repo_name = repo.full_name.split("/", 1)

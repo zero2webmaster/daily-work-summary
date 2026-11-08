@@ -1,7 +1,7 @@
 # Directive: Generate Daily Work Summary
 
-**Version:** 2.0.0
-**Last Updated:** 2026-07-31
+**Version:** 2.1.0
+**Last Updated:** 2026-11-08
 **Owner:** Kerry Kriger
 
 ---
@@ -104,7 +104,8 @@ Set `ROLLUP_MIN_REPOS` to change the threshold (default `2`), or to `0` / `none`
 
 ### Step 2: Collect Commits
 - For each repo, query commits inside the covered day's closed window (`since`/`until` from `_resolve_window()`)
-- Filter to commits authored by the authenticated user
+- Filter to commits authored by the authenticated user **plus each identity in `EXTRA_COMMIT_AUTHORS`** (default `noreply@anthropic.com`), one query per identity, merged by sha and sorted newest-first (`fetch_work_commits()`)
+- **Why (v2.1.0):** Claude Code cloud sessions, the ones Kerry runs from his phone, commit as `Claude <noreply@anthropic.com>`. GitHub can't link that to his login, so `author=<login>` dropped all of it: 27 commits on 2026-11-07 (21 commerce-engine, 6 z2w-agent-command-center). Reported by `commerce-engine` on the bulletin 2026-11-08. The author filter is kept, not dropped, so this workflow's own `Daily Summary Bot` archive commits stay out. Caveat: collaborators' cloud commits in a shared org repo use the same identity and are counted too; `EXTRA_COMMIT_AUTHORS=none` reverts. Covered by `execution/test_cloud_commits.py`.
 - Collect: repo name, commit message (first line), SHA, timestamp
 
 ### Step 0: Time-of-Day Guard (cron only)
