@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-11-08 (v2.1.0)
+**Last Updated:** 2026-11-16 (v2.1.1)
 
 ---
 
@@ -72,7 +72,8 @@ None currently.
 
 ## ✅ Next Actions
 
-0. **Confirm v2.1.0 (Nov 9):** the Nov 8 email should include cloud-session commits (commerce-engine had many that day). Run time grows slightly (one extra API query per repo).
+0. ✅ **v2.1.0 confirmed (2026-11-16):** the Nov 8 email counted 90 commits across 19 repos, and every night Nov 8–15 has a summary with no bot commits.
+0b. **Keep `docs/CAPABILITIES.md` current** in the same commit as any feature change; `test_capabilities.py` enforces it.
 
 1. **Confirm v1.15.1 (after 2026-11-01).** No "Commit summary to repo" failure in the nightly runs; the second run near 23:15 ET should log "already exists … skipping". Note: DST ends Nov 1, so the slot shifts to the 04:xx UTC cron entries — check the Nov 1 and Nov 2 send times too.
 2. ✅ **Airtable fully retired (2026-10-31):** `AIRTABLE_*` secrets and variables deleted from the repo; Kerry deleted the Airtable token and renamed the base "Daily Work Summary - DEPRECATED" (nothing reads it).
@@ -91,6 +92,12 @@ None currently.
 
 ## 📊 Recent Updates
 
+### Session: 2026-11-16 - Capability list (v2.1.1), from Kerry's phone
+
+- **`audit-engine`'s ACTION done:** `docs/CAPABILITIES.md` lists all 28 things the app does, with status and code link, filled from CHANGELOG and checked against the code.
+- **New `test_capabilities.py` (89 checks)** fails when a setting or workflow is missing from the list. Canary: three planted gaps, three failures. 11/11 suites.
+- **Kerry chose (phone, multiple choice):** merge to `main`. No unanswered inbox messages; the Nov 9 CI incident had already recovered.
+
 ### Session: 2026-11-08 - Phone (cloud-session) commits now counted (v2.1.0)
 
 - **`commerce-engine`'s bulletin Q answered.** Kerry's phone work on Nov 7 was missing from the email: cloud sessions commit as `Claude <noreply@anthropic.com>`, which the `author=<login>` filter dropped (27 commits that day, via GitHub search). Each repo is now also queried for that identity and merged by sha; `EXTRA_COMMIT_AUTHORS` overrides, `none` reverts.
@@ -108,6 +115,10 @@ None currently.
 - **Approved outside timer not built.** Delivery has been 23:16–23:31 ET every night since Oct 17. Re-open criteria in ROADMAP.
 - **Checked, not bugs:** Oct 20–21 had no summary because Kerry's own account made no commits (only bots and phone dispatches, which the digest doesn't count).
 - **Verified:** 8/8 suites; new `test_workflow.py` 7/7 and fails against the old workflow; all 5 workflow YAMLs parse.
+
+---
+
+## Session Archive
 
 ### Session: 2026-10-12 - Bullet versions + no-questions theme line (v1.15.0)
 

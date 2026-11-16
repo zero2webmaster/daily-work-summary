@@ -375,7 +375,7 @@ grep -rni airtable .github execution      # only the "removed in v2.0.0" notes
 ---
 
 ## Count Cloud-Session Commits ✅
-**Status:** Complete (2026-11-08, v2.1.0); one watch item below
+**Status:** Complete (2026-11-08, v2.1.0)
 
 `commerce-engine` reported (bulletin, 2026-11-08) that Kerry's phone work was missing from the 2026-11-07 email. Cloud sessions commit as `Claude <noreply@anthropic.com>`, which the `author=<login>` filter dropped.
 
@@ -384,12 +384,30 @@ grep -rni airtable .github execution      # only the "removed in v2.0.0" notes
 - [x] Both workflows forward the variable
 - [x] `execution/test_cloud_commits.py`
 - [x] Merged to `main` (PR #1); backfill 2026-11-07 (archive only): 17 commits/10 repos → 57/11; commerce-engine 2 → 29, z2w-agent-command-center 0 → 6, no bot commits
-- [ ] Watch: 2026-11-08 nightly email includes cloud-session commits
+- [x] Watch: 2026-11-08 nightly email includes cloud-session commits (confirmed 2026-11-16: 90 commits across 19 repos)
 
 **Verification:**
 ```bash
 python3 execution/run_tests.py            # 10/10
 grep -c commerce-engine summaries/daily-summary-2026-11-07.md   # section present with ~20+ commits after backfill
+```
+
+---
+
+## Capability List ✅
+**Status:** Complete (2026-11-16, v2.1.1)
+
+`audit-engine` asked (bulletin ACTION, 2026-11-13) for `docs/CAPABILITIES.md`, per Kerry's 2026-11-05 rule that every app keeps a plain-English list of what it does.
+
+**Tasks:**
+- [x] `docs/CAPABILITIES.md` written from CHANGELOG v1.0.0 → v2.1.0, each entry checked against the code (28 entries, grouped by who uses them)
+- [x] `execution/test_capabilities.py`: fails when a setting or workflow the code uses is not on the page, a code link is broken, or the list is a minor version behind
+- [x] Canary: removing one setting, one workflow and back-dating the version made the suite fail on exactly those three
+
+**Verification:**
+```bash
+python3 execution/run_tests.py            # 11/11
+python3 execution/test_capabilities.py    # 89/89
 ```
 
 ---
@@ -405,4 +423,4 @@ grep -c commerce-engine summaries/daily-summary-2026-11-07.md   # section presen
 
 ---
 
-*Last Updated: 2026-11-08 (v2.1.0)*
+*Last Updated: 2026-11-16 (v2.1.1)*

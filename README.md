@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 2.1.0
+**Version:** 2.1.1
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -433,6 +433,7 @@ suite is actually present in the clone — an empty run reports failure, never a
 │       ├── generate_summary.py        # Summary generator + delivery routing
 │       ├── portfolio_stats.py         # Monthly portfolio LoC/doc-line stats
 │       └── webhook_client.py          # Slack + Discord webhook delivery
+├── docs/CAPABILITIES.md               # Plain-English list of everything the app does
 ├── summaries/                         # Daily archives (auto-generated)
 ├── directives/                        # SOPs
 ├── execution/
@@ -471,4 +472,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 2.1.0 | Last Updated: 2026-11-08*
+*Version: 2.1.1 | Last Updated: 2026-11-16*

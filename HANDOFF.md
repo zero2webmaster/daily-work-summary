@@ -1,6 +1,6 @@
 # Handoff — Daily Work Summary
 
-**Last session:** 2026-10-31 | **Version:** 2.0.0
+**Last session:** 2026-11-16 | **Version:** 2.1.1
 
 ## What this project is
 
@@ -12,7 +12,13 @@ guards against silent outages. A separate monthly **Portfolio Stats** workflow
 writes `stats/portfolio-YYYY-MM.json` into the `z2w-agent-coordination` repo for
 https://agents.z2w.us/portfolio.
 
-## Shipped this session (v1.15.1 → v2.0.0)
+## Shipped 2026-11-16 (v2.1.1, cloud session from Kerry's phone)
+
+- `docs/CAPABILITIES.md`: plain-English list of all 28 features with status and code link (closes `audit-engine`'s 2026-11-13 ACTION). **Update it in the same commit as any feature change.**
+- `execution/test_capabilities.py` (89 checks) fails when a setting or workflow the code uses is missing from the list. 11/11 suites.
+- Confirmed v2.1.0 in production: Nov 8 email counted 90 commits / 19 repos; summaries every night through Nov 15.
+
+## Shipped 2026-10-31 (v1.15.1 → v2.0.0)
 
 - **v2.0.0: Airtable delivery removed** (Kerry's yes, 2026-10-31). `DELIVERY_METHOD=email` set live; backfill uses the new `none` mode; leftover `airtable`/`both` values still send the email. 9/9 suites.
 

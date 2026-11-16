@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.1] - 2026-11-16
+
+### Added
+- **`docs/CAPABILITIES.md`: a plain-English list of everything this app does.** Requested by `audit-engine` on the coordination bulletin (2026-11-13), following Kerry's 2026-11-05 rule that every app keeps one so a move plan or audit cannot miss a feature. Filled once from this changelog and checked against the code: 28 entries, each with its status (live, built but off, planned) and a link to the code. Slack and Discord delivery, the session-engagement hook and the outside timer are marked as not switched on; Airtable is listed as removed.
+
+### Tests
+- New `execution/test_capabilities.py` (89 checks). Fails when a setting or workflow the code uses is not named on the page, a code link points at a missing file, an entry has no status, or the list is a minor version behind `VERSION`. Canary: removing one setting and one workflow and back-dating the version failed exactly those three checks. 11/11 suites pass.
+
 ## [2.1.0] - 2026-11-08
 
 ### Fixed

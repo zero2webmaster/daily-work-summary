@@ -1,7 +1,7 @@
 # Directive: Generate Daily Work Summary
 
-**Version:** 2.1.0
-**Last Updated:** 2026-11-08
+**Version:** 2.1.1
+**Last Updated:** 2026-11-16
 **Owner:** Kerry Kriger
 
 ---
@@ -209,6 +209,7 @@ Based on `DELIVERY_METHOD` variable (comma-separated list, e.g. `email,slack`):
 | `.github/scripts/generate_summary.py` | Main summary generator + delivery routing (Layer 3) |
 | `.github/scripts/webhook_client.py` | Slack + Discord webhook delivery (Layer 3) |
 | `.github/workflows/daily-summary.yml` | Workflow orchestration |
+| `docs/CAPABILITIES.md` | Plain-English list of every feature. **Update it in the same commit as any feature you add, change or remove** (status: live / built, off / built, waiting / planned). `execution/test_capabilities.py` fails if a setting or workflow the code uses is missing from it. |
 
 ## Performance
 
