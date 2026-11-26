@@ -2,20 +2,32 @@ name: Daily Work Summary
 
 on:
   schedule:
-    # Fire hourly at :05 (ride out GitHub cron's typical 5-15 min delay).
-    # The Python script's time-of-day guard reads EMAIL_TIMEZONE +
-    # EMAIL_SEND_HOUR + EMAIL_SEND_MINUTE Action variables and skips the
-    # run unless we're inside the configured local window.
-    # See: https://github.com/zero2webmaster/daily-work-summary#customizing-the-email-schedule
-    - cron: '5 * * * *'
-    # Extra chances near the 23:00 ET send slot (v1.13.1). GitHub drops most
-    # of the hourly runs above — measured 2026-09: ~5-6 runs/day, 3-5h apart —
-    # so the email went out whenever the first surviving run landed (23:14 to
-    # 05:28 over one month). These entries target 23:10/23:25/23:40 in both EDT
-    # (03:xx UTC) and EST (04:xx UTC); the guard skips whichever is outside the
-    # window, and the concurrency group + per-day idempotency prevent a double
-    # send. Only helps when EMAIL_SEND_HOUR is 23 ET; harmless otherwise.
-    - cron: '10,25,40 3,4 * * *'
+    # Three scheduled starts a day (v2.2.0). Until v2.1.1 this file also had an
+    # hourly '5 * * * *' line and a 23:40 slot: ~30 starts a day, every one
+    # billed as at least a minute even though the guard in the script skipped
+    # all but one (Nov 1-24 2026: 719 runs, ~900 billed minutes/month, a third
+    # of the account's Actions allowance; raised by audit-engine 2026-11-24).
+    # Since Oct 17 every email was sent by the 23:10 slot (23:15-23:19 ET), so
+    # the hourly line delivered nothing.
+    #
+    # Slot runs at 23:10 + 23:25 ET. Cron is UTC and has no daylight-saving
+    # rule, so the hour is split by month: Apr-Oct are all EDT (03:xx UTC),
+    # Dec-Feb all EST (04:xx UTC), and March/November, which change over
+    # mid-month, get both hours. The script's time-of-day guard skips the
+    # hour that lands at 22:xx, and the concurrency group + per-day
+    # idempotency stop a second send.
+    #
+    # These lines are tuned to EMAIL_SEND_HOUR=23 America/New_York. If you
+    # change the send time, change these too (README: "Customizing the email
+    # schedule").
+    - cron: '10,25 3 * 4-10 *'
+    - cron: '10,25 4 * 12,1,2 *'
+    - cron: '10,25 3,4 * 3,11 *'
+    # Safety net if GitHub drops both slot runs: 05:40 UTC = 00:40 EST /
+    # 01:40 EDT, inside the 480-minute send window and in the hours GitHub
+    # fires most reliably. On a normal night it finds the summary already
+    # committed and exits. A missed night also trips the Uptime Kuma heartbeat.
+    - cron: '40 5 * * *'
   workflow_dispatch:
 
 # Serialize runs so two near-simultaneous scheduled runs can't both pass the

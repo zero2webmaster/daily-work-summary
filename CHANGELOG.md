@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0] - 2026-11-25
+
+### Changed
+- **The email workflow starts 3 times a night instead of ~30 times a day.** Raised by `audit-engine` on 2026-11-24 after Kerry's 90% Actions-minutes alert: `Daily Work Summary` ran 719 times Nov 1-24, and GitHub bills every start as at least one minute even when the time guard skips it, about 900 minutes a month for one email. Since Oct 17 every email was sent by the 23:10 ET slot, so the hourly `5 * * * *` line delivered nothing; it is removed, as is the 23:40 slot. The schedule is now 23:10 + 23:25 ET (split by month so it is right in both summer and winter time) and a safety run at 05:40 UTC (00:40 EST / 01:40 EDT). About 3 starts a day (5 in March and November): roughly 90-150 minutes a month instead of ~900. Kerry approved merging on 2026-11-25 (phone, multiple choice).
+- If you change `EMAIL_SEND_HOUR` far from 23:00 Eastern, move the cron lines too (README: "Customizing the email schedule"). That is why this is a minor version: before, the Variables alone were enough.
+
+### Tests
+- `execution/test_workflow.py` 7 → 11 checks: walks every night of 2027 through the cron lines in America/New_York and fails if a night has no 23:00-23:15 start, fewer than 3 chances to send, or more than 5 starts in a day, or if an hourly line comes back. Canary: the old workflow failed 3 checks; dropping December from the winter line, or November from the changeover line, each failed 2.
+- `execution/test_guard.py`: the 05:40 UTC safety run counts as last night's slot in both EDT and EST.
+
 ## [2.1.1] - 2026-11-16
 
 ### Added

@@ -1,5 +1,5 @@
 <!-- capabilities-inventory v1 -->
-**Checked against:** v2.1.1 · 2026-11-16
+**Checked against:** v2.2.0 · 2026-11-25
 
 # What Daily Work Summary does
 
@@ -42,7 +42,7 @@ Status words: **live** (running now), **built, off** (in the code, not switched 
 ## Keeping it reliable
 
 - **Missed-email alarm.** After each real send, pings an Uptime Kuma monitor (`UPTIME_KUMA_PUSH_URL`); if a night is missed, the monitor alerts. Live. [code](../.github/workflows/daily-summary.yml)
-- **Extra start times near 23:00.** Several scheduled starts around 23:10–23:40 Eastern, plus a queue so two runs never send at once. Live. [code](../.github/workflows/daily-summary.yml)
+- **Three start times a night.** Scheduled starts at 23:10 and 23:25 Eastern (correct in summer and winter time) and a safety run around 1am, plus a queue so two runs never send at once. Replaced the hourly schedule in v2.2.0 to save ~800 Actions minutes a month. Live. [code](../.github/workflows/daily-summary.yml)
 - **Automatic tests.** The "Tests" workflow runs every test suite on each change and fails if it finds none. Live. [code](../.github/workflows/tests.yml)
 
 ## For other apps

@@ -1,6 +1,6 @@
 # Handoff — Daily Work Summary
 
-**Last session:** 2026-11-16 | **Version:** 2.1.1
+**Last session:** 2026-11-25 | **Version:** 2.2.0
 
 ## What this project is
 
@@ -11,6 +11,12 @@ orchestration → deterministic Python in `.github/scripts/`. Delivery: email
 guards against silent outages. A separate monthly **Portfolio Stats** workflow
 writes `stats/portfolio-YYYY-MM.json` into the `z2w-agent-coordination` repo for
 https://agents.z2w.us/portfolio.
+
+## Shipped 2026-11-25 (v2.2.0, cloud session from Kerry's phone)
+
+- **Scheduled starts cut from ~30 a day to 3** (answers `audit-engine`'s 2026-11-24 Q; ~900 → ~90–150 billed Actions minutes/month). Crons: `10,25 3 * 4-10 *`, `10,25 4 * 12,1,2 *`, `10,25 3,4 * 3,11 *`, `40 5 * * *`. Tuned to 23:00 ET; change them if `EMAIL_SEND_HOUR` moves.
+- `test_workflow.py` now walks a year of nights through the crons (11 checks). Merged to `main` at Kerry's yes.
+- **Watch:** send time stays ~23:15 ET and the Actions tab shows ~3 runs/day. A missed night trips the Uptime Kuma heartbeat; the fallback plan is the Worker timer in ROADMAP.
 
 ## Shipped 2026-11-16 (v2.1.1, cloud session from Kerry's phone)
 

@@ -49,7 +49,8 @@ for label, t, expect in cases:
     if not ok:
         print(f"        reason: {reason}")
 
-# v1.13.1 slot-targeted cron entries '10,25,40 3,4 * * *' (UTC), checked against
+# Slot-targeted cron times (v1.13.1; trimmed to :10/:25 + a 05:40 fallback in
+# v2.2.0, the :40 cases are kept as guard coverage), checked against
 # Kerry's live config (23:00 ET, 480m). Each UTC time is converted to ET, so
 # these cover both EDT (UTC-4) and EST (UTC-5) — the 03:xx UTC entries land at
 # 22:xx in winter and must be rejected, not sent an hour early.
@@ -61,6 +62,9 @@ slot_cases = [
     ("03:40 UTC in EST = 22:40 (early)", "2026-12-01 03:40", False),
     ("04:10 UTC in EST = 23:10 (send)",  "2026-12-01 04:10", True),
     ("04:40 UTC in EST = 23:40 (send)",  "2026-12-01 04:40", True),
+    # v2.2.0 safety-net cron '40 5 * * *': must still count as last night's slot.
+    ("05:40 UTC in EDT = 01:40 (fallback)", "2026-09-28 05:40", True),
+    ("05:40 UTC in EST = 00:40 (fallback)", "2026-12-01 05:40", True),
 ]
 for label, utc, expect in slot_cases:
     et = _dt.strptime(utc, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc).astimezone(ET)

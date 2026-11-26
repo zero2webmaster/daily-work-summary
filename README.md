@@ -1,6 +1,6 @@
 # Daily Work Summary
 
-**Version:** 2.1.1
+**Version:** 2.2.0
 
 Automated daily email summaries of your GitHub development work across all repositories. Runs via GitHub Actions — no server required.
 
@@ -205,7 +205,7 @@ Set these under **Settings → Secrets and variables → Actions → Variables**
 
 **TL;DR — set three Variables and you're done. No cron math, no YAML edits, no daylight-saving fiddling.**
 
-The workflow itself fires hourly. The Python script then checks whether your local clock has reached your target time before doing any real work — so 23 of the 24 hourly runs exit in a couple of seconds and only the run nearest your target sends the email. This means you can change your timezone or your preferred send time without ever touching `.github/workflows/daily-summary.yml`.
+The workflow starts three times a night, aimed at 23:10 and 23:25 Eastern plus a safety run around 1am. The Python script then checks whether your local clock has reached your target time before doing any real work, so a start outside your window exits in seconds and only one run sends the email. **If you pick a send time far from 23:00 Eastern, also move the cron lines** (see "When the cron line itself might still need a change" below); the Variables alone set the time, the cron lines set when the workflow wakes up to check it.
 
 #### Step 1 — Pick your timezone
 
@@ -286,11 +286,13 @@ You live in Berlin, you usually wrap up work around 11 PM, and you want the emai
 | `EMAIL_SEND_HOUR` | `23` |
 | `EMAIL_SEND_MINUTE` | `15` |
 
-Done. The 23:00–23:59 hourly run will send the email; every other hour's run will exit in seconds. The email subject's date, the markdown heading inside the email, the filename in `summaries/`, the commit message, and the "Covers …" line at the bottom of the email will all show the Berlin-local date of the **slot being delivered**, so a run that slips past midnight still reports June 5's work as June 5 (not June 6 like a UTC-anchored or run-time-anchored summary would).
+Then change the cron lines to wake at about 23:20 Berlin time (21:20/22:20 UTC; see below). The first run after 23:15 will send the email; any other run exits in seconds. The email subject's date, the markdown heading inside the email, the filename in `summaries/`, the commit message, and the "Covers …" line at the bottom of the email will all show the Berlin-local date of the **slot being delivered**, so a run that slips past midnight still reports June 5's work as June 5 (not June 6 like a UTC-anchored or run-time-anchored summary would).
 
 #### When the cron line itself might still need a change
 
-The only reason to edit `.github/workflows/daily-summary.yml` directly is if you want to change how often the workflow CHECKS the time. The default `'5 * * * *'` (hourly at :05) is the baseline check. **In practice GitHub fires far fewer of those than scheduled** — measured on this repo in September 2026, about 5–6 runs a day, 3–5 hours apart — so the email goes out on the first run that survives after your target, which can be several hours late. The workflow therefore carries a second line, `'10,25,40 3,4 * * *'`, aimed at 23:10/23:25/23:40 Eastern in both summer and winter time. If you move your send time, move that line to match (UTC hours for your target); leaving it is harmless, since the guard skips any run outside your window and a `concurrency` group prevents double-sends. If you wanted minute-level precision, you could switch to `'*/15 * * * *'` (every 15 minutes) and tighten the window — but that burns more GitHub Actions minutes for no real benefit.
+The Variables set *what time* the email goes out; the cron lines in `.github/workflows/daily-summary.yml` set *when the workflow wakes up to check*. They ship tuned to 23:00 Eastern (v2.2.0): `'10,25 3 * 4-10 *'` (summer), `'10,25 4 * 12,1,2 *'` (winter), `'10,25 3,4 * 3,11 *'` (the two months the clocks change), and a safety run `'40 5 * * *'`. Cron is in UTC and ignores daylight saving, hence the month split. If you move your send time, move these to match (UTC hours for your target).
+
+**Why not just run hourly?** Earlier versions did (`'5 * * * *'`). GitHub bills every run as at least one minute even when it exits in seconds, so ~30 runs a day cost ~900 Actions minutes a month, a third of a free account's allowance, for one email. GitHub also skipped most of those hourly runs anyway. A missed night is caught by the Uptime Kuma heartbeat (see below), and `execution/test_workflow.py` fails if any night of the year lacks a start in the send window.
 
 ---
 
@@ -472,4 +474,4 @@ Contributions welcome. Open an issue or PR at [github.com/zero2webmaster/daily-w
 
 *Created by [Dr. Kerry Kriger](https://zero2webmaster.com/kerry-kriger) · [Zero2Webmaster](https://zero2webmaster.com/)*
 
-*Version: 2.1.1 | Last Updated: 2026-11-16*
+*Version: 2.2.0 | Last Updated: 2026-11-25*

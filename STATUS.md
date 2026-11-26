@@ -1,6 +1,6 @@
 # Daily Work Summary - Project Status
 
-**Last Updated:** 2026-11-16 (v2.1.1)
+**Last Updated:** 2026-11-25 (v2.2.0)
 
 ---
 
@@ -72,6 +72,8 @@ None currently.
 
 ## ✅ Next Actions
 
+00. **Confirm v2.2.0 (after 2026-11-26):** the Nov 25 and later emails still arrive ~23:15 ET and the Actions tab shows ~3 `Daily Work Summary` runs a day, not ~30.
+
 0. ✅ **v2.1.0 confirmed (2026-11-16):** the Nov 8 email counted 90 commits across 19 repos, and every night Nov 8–15 has a summary with no bot commits.
 0b. **Keep `docs/CAPABILITIES.md` current** in the same commit as any feature change; `test_capabilities.py` enforces it.
 
@@ -92,6 +94,12 @@ None currently.
 
 ## 📊 Recent Updates
 
+### Session: 2026-11-25 - 30 runs a day → 3 (v2.2.0), from Kerry's phone
+
+- **`audit-engine`'s Q answered** (Kerry's 90% Actions-minutes alert): the workflow started ~30 times a day and each start bills a minute, ~900 minutes/month. Every email since Oct 27 came from the 23:10 slot, so the hourly line was dropped; now 23:10 + 23:25 ET (month-split for daylight saving) plus a 05:40 UTC safety run. ~90–150 minutes/month.
+- **Kerry chose (phone, multiple choice):** merge to `main`.
+- **Verified:** 11/11 suites; `test_workflow.py` 7 → 11 checks, walking a full year. Canary: old workflow and two planted DST mistakes fail.
+
 ### Session: 2026-11-16 - Capability list (v2.1.1), from Kerry's phone
 
 - **`audit-engine`'s ACTION done:** `docs/CAPABILITIES.md` lists all 28 things the app does, with status and code link, filled from CHANGELOG and checked against the code.
@@ -109,16 +117,16 @@ None currently.
 - Kerry said yes: `DELIVERY_METHOD` set to `email`; Airtable client, setup script and workflow, delivery code and env vars removed. Backfill now uses `DELIVERY_METHOD=none`. Leftover `airtable`/`both` values still send the email (`test_delivery.py`, 10 checks). 9/9 suites.
 - Deleted this session's two temporary git worktrees at Kerry's request (both clean and pushed first).
 
+---
+
+## Session Archive
+
 ### Session: 2026-10-31 - Nightly push failure fixed; outside timer shelved (v1.15.1)
 
 - **Nightly "CI failed: Commit summary to repo" (Oct 28–31) fixed.** Not two runs racing, as first thought: the concurrency group did serialize them. The second run checked out the commit it was *queued* on, so it never saw the first run's pushed summary, rebuilt it, and lost the push. Checkout now uses the branch tip. The email was never doubled.
 - **Approved outside timer not built.** Delivery has been 23:16–23:31 ET every night since Oct 17. Re-open criteria in ROADMAP.
 - **Checked, not bugs:** Oct 20–21 had no summary because Kerry's own account made no commits (only bots and phone dispatches, which the digest doesn't count).
 - **Verified:** 8/8 suites; new `test_workflow.py` 7/7 and fails against the old workflow; all 5 workflow YAMLs parse.
-
----
-
-## Session Archive
 
 ### Session: 2026-10-12 - Bullet versions + no-questions theme line (v1.15.0)
 

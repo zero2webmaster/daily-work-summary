@@ -412,6 +412,26 @@ python3 execution/test_capabilities.py    # 89/89
 
 ---
 
+## Fewer Scheduled Runs ✅
+**Status:** Complete (2026-11-25, v2.2.0)
+
+`audit-engine` asked (bulletin Q, 2026-11-24, Kerry's 90% Actions-minutes alert) whether the workflow can run once a day: ~30 starts a day, each billed as at least a minute, were ~900 of the account's 3,000 monthly minutes.
+
+**Tasks:**
+- [x] Measured first: every email Oct 27 – Nov 24 went out 23:15–23:20 ET, i.e. from the 23:10 slot; the hourly line delivered nothing
+- [x] Dropped the hourly `5 * * * *` line and the 23:40 slot; split the 23:10/23:25 slot by month so it is right in EDT and EST; added a `40 5 * * *` UTC safety run
+- [x] `test_workflow.py` walks every night of 2027; canary: old workflow and two planted DST mistakes all fail
+- [x] Merged to `main` at Kerry's yes (phone, 2026-11-25)
+- [ ] **Watch (next session):** Nov 25 onward still sends ~23:15 ET, and the Actions run count is ~3/day. If a night is missed, the Uptime Kuma heartbeat alerts; the next step would then be the Worker timer below (which also takes this to exactly 1 start a day)
+
+**Verification:**
+```bash
+python3 execution/run_tests.py            # 11/11
+python3 execution/test_workflow.py        # 11/11
+```
+
+---
+
 ## Post-Core Improvements (Future)
 
 📋 **Pending** - Implement after core is stable:
@@ -423,4 +443,4 @@ python3 execution/test_capabilities.py    # 89/89
 
 ---
 
-*Last Updated: 2026-11-16 (v2.1.1)*
+*Last Updated: 2026-11-25 (v2.2.0)*
