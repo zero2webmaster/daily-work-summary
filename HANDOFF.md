@@ -2,6 +2,11 @@
 
 **Last session:** 2026-11-25 | **Version:** 2.2.0
 
+### Laptop catch-up
+
+Branch `claude/bold-mccarthy-zw23yr` is already merged to `main` (b856454).
+- Push the version tag (the cloud session's git connection refused tag pushes): `git fetch origin && git tag -a v2.2.0 b856454 -m "v2.2.0" && git push origin v2.2.0`
+
 ## What this project is
 
 A GitHub Actions cron that emails Kerry a daily digest of his commits across all
